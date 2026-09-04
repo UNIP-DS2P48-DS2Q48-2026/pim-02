@@ -68,6 +68,12 @@ Novas sprints devem ser adicionadas na mesma pasta (`sprint-02.md`, `sprint-03.m
 |---|---|
 | [Diagrama de Classes (Astah)](./docs/astah/diagrama_de_classes.asta) | Modelo UML das classes do sistema (abrir com [Astah](https://astah.net/)) |
 
+### Modelagem de Banco de Dados
+
+| Documento | Conteúdo |
+|---|---|
+| [Modelagem do Banco de Dados](./docs/Modelagem_DB/) | Modelos do banco de dados (abrir com [brModelo](https://www.sis4win.com.br/brmodelo/)) |
+
 ### Documentação Acadêmica
 
 | Documento | Conteúdo |
