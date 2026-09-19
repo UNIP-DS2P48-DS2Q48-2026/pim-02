@@ -56,7 +56,7 @@ para acessar o sistema de acordo com o meu perfil.
 ### Critérios de aceitação
 
 * Permitir login com e-mail e senha.
-* Identificar o perfil (`role`) do usuário: Administrador, Recepcionista, Técnico ou Cliente.
+* Identificar o `perfil` do usuário: Administrador, Recepcionista, Técnico ou Cliente.
 * Exibir mensagem quando o login for inválido.
 * Exibir somente as funcionalidades permitidas pela Matriz de Permissões.
 

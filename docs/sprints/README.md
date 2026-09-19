@@ -2,9 +2,9 @@
 
 Cadência: **1 semana = 1 sprint**, fechando toda **sexta-feira**. No fechamento de cada sprint, na mesma reunião:
 
-1. **Sprint Review** da sprint que está fechando — o que foi entregue, à vista de todos.
-2. **Retrospective** — o que funcionou, o que atrapalhou, o que muda na próxima.
-3. **Sprint Planning** da sprint seguinte — meta e PBIs da próxima semana, já registrados no arquivo `sprint-XX.md` correspondente.
+1. **Sprint Review** da sprint que está fechando - o que foi entregue, à vista de todos.
+2. **Retrospective** - o que funcionou, o que atrapalhou, o que muda na próxima.
+3. **Sprint Planning** da sprint seguinte - meta e PBIs da próxima semana, já registrados no arquivo `sprint-XX.md` correspondente.
 
 As Sprints 01 e 02 foram reconstruídas a partir do histórico do Git, pois não haviam sido documentadas em tempo real. A Sprint 03 (implementação em C) segue em andamento; o trabalho de análise e reescrita de requisitos feito na mesma semana foi registrado à parte, na Sprint 04.
 

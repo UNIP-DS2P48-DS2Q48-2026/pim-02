@@ -1,6 +1,6 @@
 # Sprint 01
 
-**Status:** Concluída — reconstruída a partir do histórico do Git (não foi documentada em tempo real).
+**Status:** Concluída - reconstruída a partir do histórico do Git (não foi documentada em tempo real).
 
 **Período:** 27/08/2026 a 04/09/2026.
 
@@ -10,7 +10,7 @@ Estruturar a documentação inicial do projeto e definir a organização fictíc
 
 ## Product Backlog Items
 
-Trabalho de base do PBI01 (estrutura do projeto) — na parte documental, não ainda no código em C.
+Trabalho de base do PBI01 (estrutura do projeto) - na parte documental, não ainda no código em C.
 
 ## Tasks
 
@@ -31,7 +31,7 @@ Documentação inicial publicada no repositório, servindo de base para as sprin
 
 ### Problemas
 
-- A sprint não foi planejada nem documentada enquanto acontecia — reconstruída agora a partir do Git.
+- A sprint não foi planejada nem documentada enquanto acontecia - reconstruída agora a partir do Git.
 
 ### Melhorias
 

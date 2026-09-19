@@ -1,6 +1,6 @@
 # Sprint 02
 
-**Status:** Concluída — reconstruída a partir do histórico do Git (não foi documentada em tempo real).
+**Status:** Concluída - reconstruída a partir do histórico do Git (não foi documentada em tempo real).
 
 **Período:** 05/09/2026 a 11/09/2026.
 
