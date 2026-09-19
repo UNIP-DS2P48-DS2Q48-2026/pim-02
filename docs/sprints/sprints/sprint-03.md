@@ -1,12 +1,12 @@
 # Sprint 03
 
-**Status:** Em andamento — foco atual, ainda não concluída.
+**Status:** Em andamento - foco atual, ainda não concluída.
 
 **Período:** iniciada em 12/09/2026, sem data de fechamento definida ainda.
 
 ## Sprint Goal
 
-*A confirmar na próxima reunião de planning.* Foco original: dar início à implementação (estrutura do projeto em C), que segue pendente — nenhum arquivo `.c`/`.h` existe no repositório ainda.
+*A confirmar na próxima reunião de planning.* Foco original: dar início à implementação (estrutura do projeto em C), que segue pendente - nenhum arquivo `.c`/`.h` existe no repositório ainda.
 
 ## Product Backlog Items
 
@@ -18,7 +18,7 @@
 
 ## Sprint Review
 
-*Ainda não fechada — sem entregas registradas nesta sprint.*
+*Ainda não fechada - sem entregas registradas nesta sprint.*
 
 ## Retrospective
 

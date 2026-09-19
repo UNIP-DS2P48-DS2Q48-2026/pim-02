@@ -16,11 +16,11 @@
 
 ## Escopo do Sistema
 
-O sistema será desenvolvido exclusivamente em linguagem C e funcionará por meio do terminal. Todas as operações deverão ser realizadas utilizando menus, opções numéricas, entradas de texto e mensagens exibidas no próprio terminal. O foco será desenvolver uma aplicação de console que permita representar os principais processos da empresa de manutenção, desde o atendimento ao cliente e abertura da ordem de serviço até a execução, o teste e a entrega — cobrindo tanto serviços de **hardware** (conserto físico de equipamentos) quanto de **software** (licenças, instalação e manutenção de programas).
+O sistema será desenvolvido exclusivamente em linguagem C e funcionará por meio do terminal. Todas as operações deverão ser realizadas utilizando menus, opções numéricas, entradas de texto e mensagens exibidas no próprio terminal. O foco será desenvolver uma aplicação de console que permita representar os principais processos da empresa de manutenção, desde o atendimento ao cliente e abertura da ordem de serviço até a execução, o teste e a entrega - cobrindo tanto serviços de **hardware** (conserto físico de equipamentos) quanto de **software** (licenças, instalação e manutenção de programas).
 
 ## Fora do Escopo
 
-Itens deliberadamente fora do sistema — decisão tomada, não uma lacuna:
+Itens deliberadamente fora do sistema - decisão tomada, não uma lacuna:
 
 - **Controle de estoque de peças.** Peças usadas ficam registradas como texto/observação na OS (RF07), sem controle de quantidade, entrada/saída ou fornecedores.
 - **Agendamento e manutenção preventiva.** O atendimento é sempre sob demanda: o processo começa quando o cliente traz um problema (RF04); não há agenda de visitas, monitoramento remoto ou lembretes automáticos.
@@ -51,7 +51,7 @@ O sistema deverá permitir registrar informações mais completas, como data de 
 
 ## Perfis de Usuário
 
-Todos os perfis do sistema são armazenados em um único cadastro (`users`), diferenciados por um campo `role`: **Administrador**, **Recepcionista**, **Técnico** ou **Cliente**. Técnicos possuem um campo próprio (especialidade) armazenado nesse mesmo cadastro - não existe uma tabela separada por perfil. Todo usuário (de qualquer perfil) tem também um `status` (ativo/inativo, RN12).
+Todos os perfis do sistema são armazenados em um único cadastro (`usuario`), diferenciados por um campo `perfil`: **Administrador**, **Recepcionista**, **Técnico** ou **Cliente**. Técnicos possuem um campo próprio (especialidade) armazenado nesse mesmo cadastro - não existe uma tabela separada por perfil. Todo usuário (de qualquer perfil) tem também um `status` (ativo/inativo, RN12).
 
 A matriz abaixo é a fonte única de permissões do sistema. Qualquer requisito ou regra de negócio que trate de "quem pode fazer o quê" remete a ela, em vez de repetir a mesma informação em vários lugares.
 
@@ -75,7 +75,7 @@ A matriz abaixo é a fonte única de permissões do sistema. Qualquer requisito 
 
 **RF01: Autenticação e controle de acesso por perfil**
 
-O sistema deverá permitir o login por **e-mail** e senha e, após identificar o `role` do usuário, apresentar somente as funcionalidades permitidas para ele, conforme a Matriz de Permissões.
+O sistema deverá permitir o login por **e-mail** e senha e, após identificar o `perfil` do usuário, apresentar somente as funcionalidades permitidas para ele, conforme a Matriz de Permissões.
 
 **RF02: Gerenciar usuários**
 
@@ -161,15 +161,19 @@ Fluxo principal, alternativo e de exceção de cada etapa operacional (RF04 a RF
 
 - **RN11:** Na ausência de um Recepcionista ou Técnico disponível, o Administrador poderá ocupar esse papel na ordem de serviço.
 
-- **RN12:** "Remover" um usuário ou equipamento significa marcar seu `status` como inativo, preservando o histórico das ordens de serviço relacionadas — o sistema não deverá excluir esses registros fisicamente.
+- **RN12:** "Remover" um usuário ou equipamento significa marcar seu `status` como inativo, preservando o histórico das ordens de serviço relacionadas - o sistema não deverá excluir esses registros fisicamente.
 
 - **RN13:** O e-mail de cada usuário e o CPF de cada cliente deverão ser únicos no sistema.
 
-- **RN14:** Um usuário, cliente ou equipamento inativo não poderá ser vinculado a uma nova ordem de serviço, nem poderá ser inativado enquanto tiver uma ordem de serviço em andamento.
+- **RN14:** Um usuário, cliente ou equipamento inativo não poderá ser vinculado a uma nova ordem de serviço, nem poderá ser inativado enquanto tiver uma ordem de serviço em andamento - reforçado no próprio banco de dados por trigger, não apenas na lógica do programa (ver [Integridade de status](../Modelagem_DB/der-simplificado.md#integridade-de-status-vínculos-com-usuárioequipamento-inativo-rn14)).
+
+- **RN15:** Um registro em `tecnico_os` só poderá referenciar um usuário cujo `perfil` seja `tecnico` ou, na ausência deste (RN11), `admin` - reforçado no próprio banco de dados por trigger, não apenas na lógica do programa (ver [Integridade de papel](../Modelagem_DB/der-simplificado.md#integridade-de-papel-tecnico_os-e-equipamento)).
+
+- **RN16:** Um `equipamento` só poderá estar vinculado (`id_cliente`) a um usuário cujo `perfil` seja `cliente` - reforçado no próprio banco de dados por trigger, não apenas na lógica do programa (ver [Integridade de papel](../Modelagem_DB/der-simplificado.md#integridade-de-papel-tecnico_os-e-equipamento)).
 
 ## Requisitos Inversos
 
-O que o sistema **não** deve permitir — o inverso de cada requisito/regra, explícito para não depender de interpretação da Matriz de Permissões.
+O que o sistema **não** deve permitir - o inverso de cada requisito/regra, explícito para não depender de interpretação da Matriz de Permissões.
 
 | Código | O sistema NÃO deve permitir que... | Relacionado a |
 |---|---|---|
@@ -183,13 +187,15 @@ O que o sistema **não** deve permitir — o inverso de cada requisito/regra, ex
 | RI08 | um perfil altere campos da OS fora da sua função (ex.: Técnico alterando dado administrativo). | RN07 |
 | RI09 | uma OS finalizada seja alterada como se estivesse em andamento, exceto pelo Administrador. | RN06, RN08 |
 | RI10 | um Cliente visualize dados, equipamentos ou ordens de serviço de outro cliente. | RN10 |
-| RI11 | uma OS cancelada ou arquivada seja excluída definitivamente — o histórico deve ser preservado. | RN09 |
-| RI12 | um usuário ou equipamento com ordens de serviço vinculadas seja excluído fisicamente — deve ser inativado. | RN12 |
+| RI11 | uma OS cancelada ou arquivada seja excluída definitivamente - o histórico deve ser preservado. | RN09 |
+| RI12 | um usuário ou equipamento com ordens de serviço vinculadas seja excluído fisicamente - deve ser inativado. | RN12 |
 | RI13 | dois usuários com o mesmo e-mail, ou dois clientes com o mesmo CPF, sejam cadastrados. | RN13 |
 | RI14 | uma OS seja aberta para cliente/equipamento inativo, ou que um usuário/equipamento seja inativado com OS em andamento. | RN14 |
+| RI15 | um usuário com `perfil` Recepcionista ou Cliente seja relacionado como técnico em `tecnico_os` - o próprio banco rejeita o registro. | RN15 |
+| RI16 | um `equipamento` seja vinculado (`id_cliente`) a um usuário com `perfil` diferente de Cliente (ex.: um Técnico) - o próprio banco rejeita o registro. | RN16 |
 
 ## Modelo de Dados (Visão Geral)
 
-O sistema é sustentado por 4 tabelas: `users` (todos os perfis, diferenciados por `role`), `equipamentos`, `os` (ordem de serviço) e `tecnicos_rel` (associação entre técnicos e OS, permitindo um ou mais técnicos por ordem). Não existe controle de estoque ou de peças como funcionalidade do sistema.
+O sistema é sustentado por 4 tabelas, nomeadas no singular e em português: `usuario` (todos os perfis, diferenciados por `perfil`), `equipamento`, `os` (ordem de serviço) e `tecnico_os` (associação entre técnicos e OS, permitindo um ou mais técnicos por ordem). Não existe controle de estoque ou de peças como funcionalidade do sistema.
 
 Detalhamento completo dos campos e o diagrama entidade-relacionamento em [Modelagem de Banco de Dados - DER Simplificado](../Modelagem_DB/der-simplificado.md).
