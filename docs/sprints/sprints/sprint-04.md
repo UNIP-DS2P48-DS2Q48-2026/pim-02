@@ -1,6 +1,6 @@
 # Sprint 04
 
-**Status:** Concluída — fechada em 18/09/2026.
+**Status:** Concluída - fechada em 18/09/2026.
 
 **Período:** 12/09/2026 a 18/09/2026 (mesma semana da Sprint 03, que segue em andamento à parte).
 
@@ -10,7 +10,7 @@ Confrontar os requisitos existentes com o recado do professor e com o fluxo real
 
 ## Product Backlog Items
 
-PBI01 a PBI12 (reescritos nesta sprint) — ver [product-backlog.md](../../product-backlog/product-backlog.md).
+PBI01 a PBI12 (reescritos nesta sprint) - ver [product-backlog.md](../../product-backlog/product-backlog.md).
 
 ## Tasks
 
@@ -40,7 +40,7 @@ Requisitos, backlog e modelo de dados totalmente reescritos e sincronizados entr
 
 ### Problemas
 
-- Passaram-se sprints de trabalho sem nenhuma documentada em tempo real — a defasagem só foi percebida nesta sprint.
+- Passaram-se sprints de trabalho sem nenhuma documentada em tempo real - a defasagem só foi percebida nesta sprint.
 
 ### Melhorias
 

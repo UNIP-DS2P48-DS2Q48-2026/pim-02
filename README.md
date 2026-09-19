@@ -44,8 +44,6 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 
 ## Documentação
 
-> A pasta `docs/` é modular: cada novo documento (requisito, diagrama, ata, sprint etc.) ganha sua própria subpasta e uma linha nova aqui.
-
 ### Levantamento e Requisitos
 
 | Documento | Conteúdo |
@@ -61,8 +59,6 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 | [Product Backlog](./docs/product-backlog/product-backlog.md) | Backlog priorizado (PBIs), vinculado aos requisitos, com prioridade e story points |
 | [Sprints](./docs/sprints/README.md) | Cadência semanal (1 semana = 1 sprint, fecha toda sexta), Definition of Done e o histórico de cada sprint |
 
-Novas sprints devem ser adicionadas na mesma pasta (`sprint-05.md`, ...) e listadas na tabela de [docs/sprints/README.md](./docs/sprints/README.md).
-
 ### Diagramas
 
 | Documento | Conteúdo |
@@ -73,7 +69,7 @@ Novas sprints devem ser adicionadas na mesma pasta (`sprint-05.md`, ...) e lista
 
 | Documento | Conteúdo |
 |---|---|
-| [DER Simplificado](./docs/Modelagem_DB/der-simplificado.md) | Modelo atual: 4 tabelas (`users`, `equipamentos`, `os`, `tecnicos_rel`), sem estoque |
+| [DER Simplificado](./docs/Modelagem_DB/der-simplificado.md) | As 4 tabelas do sistema (`usuario`, `equipamento`, `os`, `tecnico_os`), campos, regras de negócio reforçadas por trigger e diagrama entidade-relacionamento |
 | [Modelagem do Banco de Dados](./docs/Modelagem_DB/) | Modelo anterior, mantido como histórico (abrir com [brModelo](https://www.sis4win.com.br/brmodelo/)) |
 
 ### Documentação Acadêmica
@@ -83,4 +79,4 @@ Novas sprints devem ser adicionadas na mesma pasta (`sprint-05.md`, ...) e lista
 | [Manual PIM II - ADS (PDF)](<./docs/manual-pim/Manual_PIM_II - ADS.pdf>) | Manual acadêmico oficial exigido pela instituição |
 | [Manual PIM II - ADS (Word)](<./docs/manual-pim/Manual_PIM_II - ADS.docx>) | Versão editável do manual acadêmico |
 
-Backups periódicos da documentação em Word ficam em [`docs/backup-word/`](./docs/backup-word/) e não devem ser usados como referência - a fonte oficial é sempre a versão em Markdown listada acima.
+O backup não se limita à documentação em Word: todo o conteúdo do repositório é versionado pelo Git, com histórico completo de alterações. [`docs/documentacao-pim/`](./docs/documentacao-pim/) guarda especificamente cópias periódicas do Word e não deve ser usado como referência - a fonte oficial é sempre a versão em Markdown listada acima.

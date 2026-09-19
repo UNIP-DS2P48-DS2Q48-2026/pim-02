@@ -1,6 +1,6 @@
 # Sprint 05
 
-**Status:** Em planejamento — a fechar na próxima reunião de sexta-feira.
+**Status:** Em planejamento - a fechar na próxima reunião de sexta-feira.
 
 **Período:** 19/09/2026 a 25/09/2026.
 
