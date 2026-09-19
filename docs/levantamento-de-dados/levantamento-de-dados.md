@@ -6,26 +6,23 @@ A partir das informações fornecidas, foram identificados os principais process
 
 Segundo o proprietário, o processo inicia-se com o **atendimento ao cliente**, realizado pelo Recepcionista. Nesse momento, são coletadas as informações do cliente, do equipamento e do problema apresentado. Quando necessário, uma nova ordem de serviço é aberta para registrar formalmente o atendimento.
 
-Após a abertura da ordem de serviço, o equipamento é encaminhado para um **Técnico**, que fica responsável pela análise e execução da manutenção. O Técnico deve conseguir consultar as ordens atribuídas a ele, registrar o diagnóstico, informar os serviços realizados, registrar as peças utilizadas e atualizar o andamento do atendimento.
+Após a abertura da ordem de serviço, o equipamento é encaminhado para um ou mais **Técnicos**, que ficam responsáveis pela análise e execução da manutenção. O(s) Técnico(s) devem conseguir consultar as ordens atribuídas a eles, registrar o diagnóstico, informar os serviços realizados e atualizar o andamento do atendimento, incluindo o teste de funcionamento após o reparo.
 
-Durante esse processo, o **Recepcionista** continua responsável pelo contato com o cliente, principalmente em relação ao orçamento, aprovação do serviço e acompanhamento da situação da ordem de serviço.
+Durante esse processo, o **Recepcionista** continua responsável pelo contato com o cliente: elaboração do orçamento, registro da aprovação (ou negociação) do serviço, notificação da entrega, recebimento do pagamento e coleta do feedback do cliente.
 
-Também foi identificado que o **estoque de peças** necessita de um controle específico. Conforme solicitado pelo proprietário, essa atividade ficará sob responsabilidade exclusiva do **Administrador**, que será responsável pelo cadastro das peças, controle das quantidades disponíveis e registro das entradas e saídas do estoque.
-
-O **Administrador** terá uma função de gestão geral do sistema. Apesar de possuir acesso aos dados e poder realizar alterações quando necessário, ele não será responsável pelas atividades operacionais realizadas diariamente pelo Recepcionista e pelo Técnico. Dessa forma, cada perfil possuirá responsabilidades específicas, evitando a concentração das atividades em um único usuário.
+O **Administrador** terá uma função de gestão geral do sistema, incluindo o cadastro da equipe (recepcionistas e técnicos). Apesar de possuir acesso aos dados e poder realizar alterações quando necessário, ele não será responsável pelas atividades operacionais realizadas diariamente pelo Recepcionista e pelo Técnico - exceto na ausência de um deles, quando poderá cobrir a função. Dessa forma, cada perfil possuirá responsabilidades específicas, evitando a concentração das atividades em um único usuário.
 
 Com base nesse levantamento, foram definidas as seguintes necessidades principais:
 
 * Controle de acesso dos usuários conforme suas funções.
-* Cadastro e gerenciamento de clientes.
-* Cadastro e gerenciamento de equipamentos.
-* Cadastro e gerenciamento de técnicos e recepcionistas.
+* Cadastro e gerenciamento de usuários (administrador, recepcionista, técnico) e de clientes.
+* Cadastro e gerenciamento de equipamentos, tanto de hardware quanto de software (licenças).
 * Abertura e acompanhamento de ordens de serviço.
-* Registro de diagnósticos e serviços realizados.
+* Registro de diagnósticos e serviços realizados, com um ou mais técnicos por ordem de serviço.
+* Elaboração de orçamento e registro da aprovação ou negociação do cliente.
 * Acompanhamento do status das ordens de serviço.
-* Controle de orçamento e aprovação do cliente.
-* Controle de peças utilizadas nas manutenções.
-* Gerenciamento do estoque pelo Administrador.
+* Registro do teste de funcionamento após o reparo.
+* Registro de entrega, pagamento e feedback do cliente.
 * Consulta do histórico dos atendimentos.
 * Geração de consultas e indicadores sobre os serviços realizados.
 * Persistência das informações para que os dados não sejam perdidos após o encerramento do sistema.
@@ -53,146 +50,141 @@ para começar o desenvolvimento das funcionalidades do sistema.
 PBI relacionado: PBI02
 
 Como usuário do sistema,
-quero fazer login com usuário e senha,
+quero fazer login com e-mail e senha,
 para acessar o sistema de acordo com o meu perfil.
 
 ### Critérios de aceitação
 
-* Permitir login com usuário e senha.
-* Identificar o perfil do usuário: Administrador, Recepcionista, Técnico ou Cliente.
+* Permitir login com e-mail e senha.
+* Identificar o perfil (`role`) do usuário: Administrador, Recepcionista, Técnico ou Cliente.
 * Exibir mensagem quando o login for inválido.
-* Exibir somente as funcionalidades permitidas para o perfil autenticado.
+* Exibir somente as funcionalidades permitidas pela Matriz de Permissões.
 
-## US03 – Gerenciar clientes
+## US03 – Gerenciar usuários
 
 PBI relacionado: PBI03
 
-Como Administrador ou Recepcionista,
-quero gerenciar os dados dos clientes,
-para manter as informações dos clientes registradas e disponíveis para os atendimentos.
+Como Administrador,
+quero gerenciar os usuários da equipe (administradores, recepcionistas e técnicos),
+para manter a equipe registrada e com acesso adequado ao sistema.
 
 ### Critérios de aceitação
 
-* Permitir cadastrar cliente.
-* Permitir consultar clientes.
-* Permitir editar cliente conforme as permissões do usuário.
-* Permitir excluir cliente conforme as permissões do usuário.
+* Permitir cadastrar, consultar, editar e ativar/inativar usuários com perfil admin, recepcionista ou técnico.
+* Registrar especialidade para usuários com perfil técnico.
 * Validar campos obrigatórios.
 * Persistir os dados em arquivo.
 
-## US04 – Gerenciar equipamentos
+## US04 – Gerenciar equipamentos (hardware e software)
 
 PBI relacionado: PBI04
 
 Como Administrador ou Recepcionista,
-quero gerenciar os equipamentos dos clientes,
+quero gerenciar os equipamentos dos clientes, sejam de hardware ou de software,
 para manter os equipamentos registrados e vinculados aos seus respectivos proprietários.
 
 ### Critérios de aceitação
 
-* Permitir cadastrar equipamento.
+* Permitir cadastrar equipamento, indicando a categoria (hardware ou software).
 * Permitir consultar equipamentos.
 * Permitir editar equipamento conforme as permissões do usuário.
-* Permitir excluir equipamento conforme as permissões do usuário.
+* Permitir ativar/inativar equipamento conforme as permissões do usuário.
 * Vincular equipamento a um cliente.
 * Impedir o cadastro de equipamento sem cliente vinculado.
 
-## US05 – Gerenciar técnicos e recepcionistas
+## US05 – Abrir ordem de serviço
 
 PBI relacionado: PBI05
 
-Como Administrador,
-quero gerenciar técnicos e recepcionistas,
-para manter os funcionários responsáveis pelas atividades da empresa registrados no sistema.
+Como Recepcionista,
+quero abrir uma ordem de serviço vinculada a um equipamento,
+para registrar formalmente o atendimento e o problema relatado pelo cliente.
 
 ### Critérios de aceitação
 
-* Permitir cadastrar técnico.
-* Permitir consultar técnicos.
-* Permitir editar técnico.
-* Permitir excluir técnico conforme as regras do sistema.
-* Permitir cadastrar recepcionista.
-* Permitir consultar recepcionistas.
-* Permitir editar recepcionista.
-* Permitir excluir recepcionista conforme as regras do sistema.
+* Permitir abrir uma OS vinculada a um equipamento existente.
+* Permitir cadastrar o cliente durante o atendimento, caso ainda não exista.
+* Registrar o problema informado pelo cliente e a data de abertura.
+* Impedir abertura de OS sem equipamento vinculado.
+* Permitir ao Administrador abrir a OS na ausência de um Recepcionista disponível.
 
-## US06 – Gerenciar peças e estoque
+## US06 – Registrar diagnóstico técnico
 
 PBI relacionado: PBI06
 
-Como Administrador,
-quero gerenciar as peças e o estoque da empresa,
-para controlar a disponibilidade dos componentes utilizados nas manutenções.
-
-### Critérios de aceitação
-
-* Permitir cadastrar peça.
-* Permitir consultar peças.
-* Permitir editar peça.
-* Permitir excluir peça conforme as regras do sistema.
-* Permitir registrar entrada de peças.
-* Permitir registrar saída de peças.
-* Controlar a quantidade disponível em estoque.
-* Impedir quantidade negativa.
-* Impedir saída superior à quantidade disponível.
-
-## US07 – Gerenciar ordens de serviço
-
-PBI relacionado: PBI07
-
-Como Recepcionista,
-quero abrir e gerenciar ordens de serviço,
-para registrar os atendimentos realizados pela empresa e acompanhar o serviço solicitado pelo cliente.
-
-### Critérios de aceitação
-
-* Permitir abrir uma OS vinculada a um equipamento.
-* Registrar o problema informado pelo cliente.
-* Permitir atribuir a OS a um Técnico.
-* Permitir consultar ordens de serviço.
-* Permitir acompanhar o andamento da OS.
-* Permitir registrar orçamento e aprovação.
-* Permitir cancelar uma OS conforme as regras do sistema.
-* Permitir ao Administrador consultar e editar os dados da OS quando necessário.
-
-## US08 – Executar manutenção da ordem de serviço
-
-PBI relacionado: PBI08
-
 Como Técnico,
-quero registrar as informações técnicas das minhas ordens de serviço,
-para documentar o diagnóstico e os serviços realizados no equipamento.
+quero registrar o diagnóstico de uma ordem de serviço atribuída a mim,
+para documentar o problema identificado no equipamento.
 
 ### Critérios de aceitação
 
 * Permitir consultar as OS atribuídas ao Técnico.
 * Permitir visualizar os dados do equipamento e o problema informado.
-* Permitir registrar diagnóstico.
-* Permitir registrar peças utilizadas ou necessárias.
-* Permitir registrar o serviço realizado.
-* Permitir atualizar o andamento da manutenção.
-* Permitir registrar observações técnicas.
-* Permitir finalizar a execução técnica da OS.
+* Permitir registrar o diagnóstico.
 
-## US09 – Controlar status e histórico da ordem de serviço
+## US07 – Elaborar orçamento e registrar aprovação do cliente
 
-PBI relacionado: PBI09
+PBI relacionado: PBI07
 
-Como usuário responsável pelo acompanhamento da OS,
-quero acompanhar o status e o histórico da ordem de serviço,
-para saber em que etapa o atendimento se encontra e manter o histórico do serviço.
+Como Recepcionista,
+quero elaborar o orçamento e registrar a resposta do cliente,
+para avançar a OS somente após a aprovação do serviço.
 
 ### Critérios de aceitação
 
-* Permitir alterar o status da OS conforme o andamento.
-* Possibilitar estados como Aberta, Em análise, Aguardando orçamento, Aguardando aprovação, Em manutenção, Aguardando peça, Pronta, Finalizada e Cancelada.
-* Manter o histórico das ordens finalizadas.
-* Manter o histórico das ordens canceladas.
-* Impedir alterações incompatíveis com o estado atual da OS.
+* Permitir calcular e registrar o orçamento a partir do diagnóstico.
+* Permitir registrar a aprovação do cliente.
+* Permitir registrar negociação quando o cliente não aprovar, repetindo o ciclo até aprovação ou arquivamento.
+* Permitir arquivar a OS quando não houver aprovação após a negociação.
 
-## US10 – Consultar informações e relatórios
+## US08 – Executar manutenção com um ou mais técnicos
+
+PBI relacionado: PBI08
+
+Como Técnico,
+quero registrar as ações realizadas durante o reparo,
+para documentar o serviço executado no equipamento.
+
+### Critérios de aceitação
+
+* Permitir atribuir um ou mais técnicos à mesma OS.
+* Permitir registrar as ações realizadas por cada técnico.
+* Permitir registrar quando o reparo não funcionar e reiniciar a execução.
+* Permitir atualizar o status da OS ao concluir o reparo.
+
+## US09 – Registrar teste de funcionamento
+
+PBI relacionado: PBI09
+
+Como Técnico,
+quero registrar o teste de funcionamento após o reparo,
+para confirmar que o equipamento está pronto para entrega.
+
+### Critérios de aceitação
+
+* Permitir registrar o resultado do teste pós-reparo.
+* Permitir aprovar internamente o teste, encaminhando a OS para entrega.
+* Permitir reencaminhar para novo reparo quando o teste não for aprovado.
+
+## US10 – Registrar entrega, pagamento e feedback do cliente
 
 PBI relacionado: PBI10
+
+Como Recepcionista,
+quero registrar a entrega do equipamento, o pagamento e o feedback do cliente,
+para concluir a ordem de serviço.
+
+### Critérios de aceitação
+
+* Permitir notificar o cliente e apresentar a OS.
+* Permitir registrar o pagamento recebido.
+* Permitir registrar o feedback do cliente (satisfeito ou não).
+* Permitir reabrir a OS para correção quando o cliente não estiver satisfeito.
+* Permitir finalizar a OS quando o cliente estiver satisfeito.
+
+## US11 – Consultar informações e histórico
+
+PBI relacionado: PBI11
 
 Como usuário do sistema,
 quero consultar informações de acordo com meu perfil,
@@ -200,16 +192,15 @@ para acompanhar os dados relevantes para minhas atividades.
 
 ### Critérios de aceitação
 
-* Administrador consulta informações gerais do sistema.
-* Recepcionista consulta clientes, equipamentos e ordens de serviço necessárias ao atendimento.
-* Técnico consulta suas próprias ordens de serviço.
-* Cliente consulta seus próprios dados, equipamentos e ordens de serviço.
-* Sistema apresenta indicadores simples, como quantidade de OS abertas, em manutenção, finalizadas e canceladas.
-* Sistema permite consultar informações relacionadas ao estoque para o Administrador.
+* Administrador consulta todas as ordens de serviço e usuários.
+* Recepcionista consulta as ordens de serviço que atende.
+* Técnico consulta as ordens de serviço que executa.
+* Cliente consulta somente suas próprias ordens de serviço.
+* Manter o histórico de ordens finalizadas e canceladas/arquivadas.
 
-## US11 – Validar dados do sistema
+## US12 – Validar dados do sistema
 
-PBI relacionado: PBI11
+PBI relacionado: PBI12
 
 Como usuário do sistema,
 quero que meus dados sejam validados antes de serem salvos,
@@ -218,9 +209,8 @@ para evitar cadastros incompletos ou inconsistentes.
 ### Critérios de aceitação
 
 * Validar campos obrigatórios nos cadastros.
-* Verificar a existência de registros relacionados.
+* Verificar a existência de registros relacionados (cliente, equipamento, OS).
 * Impedir relacionamentos inválidos.
 * Impedir operações não permitidas para o perfil do usuário.
-* Impedir operações que gerem quantidade negativa no estoque.
 * Exibir mensagem de erro quando os dados forem inválidos.
 * Manter os dados persistidos após o encerramento do programa.
