@@ -1,4 +1,4 @@
-# pim-02 — Sistema de Gestão de Manutenção de Equipamentos
+# pim-02 - Sistema de Gestão de Manutenção de Equipamentos
 
 **Empresa:** ByteTech (fictícia) &nbsp;|&nbsp; **Grupo:** UNIP-DS2P48-DS2Q48-2026
 
@@ -17,7 +17,7 @@ Projeto acadêmico (PIM) desenvolvido em **linguagem C** com interface em **term
 
 ## Sobre a empresa
 
-**ByteTech** é uma empresa fictícia especializada em manutenção de computadores, notebooks, impressoras e demais equipamentos utilizados por pequenas empresas.
+**ByteTech** é uma empresa fictícia especializada em manutenção de **hardware** (conserto de computadores, notebooks, impressoras e demais equipamentos) e de **software** (licenças, instalação e manutenção de programas) para **pessoas físicas**.
 
 Atualmente o controle de clientes, equipamentos, técnicos, ordens de serviço e peças é feito por planilhas e anotações, o que dificulta localizar ordens de serviço, acompanhar seu andamento, controlar o estoque de peças e obter indicadores sobre os serviços realizados. O objetivo do sistema é substituir esse controle manual, organizando esses processos em uma aplicação de console.
 
@@ -51,16 +51,17 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 | Documento | Conteúdo |
 |---|---|
 | [Levantamento de Dados](./docs/levantamento-de-dados/levantamento-de-dados.md) | Entrevista com o proprietário da empresa, necessidades identificadas e User Stories derivadas delas |
-| [Requisitos do Sistema](./docs/requisitos/requisitos.md) | Identificação do projeto, escopo, hierarquia de usuários, requisitos funcionais (RF), não funcionais (RNF) e regras de negócio (RN) |
+| [Requisitos do Sistema](./docs/requisitos/requisitos.md) | Identificação do projeto, escopo, perfis de usuário, requisitos funcionais (RF), não funcionais (RNF), regras de negócio (RN) e casos de uso detalhados |
+| [Requisitos em planilha](./docs/requisitos/requisitos.xlsx) | Os mesmos RF/RNF/RN/Matriz de Permissões/Casos de Uso, separados por aba, com linhas em branco para adicionar itens |
 
 ### Planejamento (Scrum)
 
 | Documento | Conteúdo |
 |---|---|
 | [Product Backlog](./docs/product-backlog/product-backlog.md) | Backlog priorizado (PBIs), vinculado aos requisitos, com prioridade e story points |
-| [Sprint 01](./docs/sprints/sprints/sprint-01.md) | Objetivo, tarefas, review e retrospectiva da Sprint 01 |
+| [Sprints](./docs/sprints/README.md) | Cadência semanal (1 semana = 1 sprint, fecha toda sexta), Definition of Done e o histórico de cada sprint |
 
-Novas sprints devem ser adicionadas na mesma pasta (`sprint-02.md`, `sprint-03.md`, ...) e listadas aqui.
+Novas sprints devem ser adicionadas na mesma pasta (`sprint-05.md`, ...) e listadas na tabela de [docs/sprints/README.md](./docs/sprints/README.md).
 
 ### Diagramas
 
@@ -72,7 +73,8 @@ Novas sprints devem ser adicionadas na mesma pasta (`sprint-02.md`, `sprint-03.m
 
 | Documento | Conteúdo |
 |---|---|
-| [Modelagem do Banco de Dados](./docs/Modelagem_DB/) | Modelos do banco de dados (abrir com [brModelo](https://www.sis4win.com.br/brmodelo/)) |
+| [DER Simplificado](./docs/Modelagem_DB/der-simplificado.md) | Modelo atual: 4 tabelas (`users`, `equipamentos`, `os`, `tecnicos_rel`), sem estoque |
+| [Modelagem do Banco de Dados](./docs/Modelagem_DB/) | Modelo anterior, mantido como histórico (abrir com [brModelo](https://www.sis4win.com.br/brmodelo/)) |
 
 ### Documentação Acadêmica
 
@@ -81,4 +83,4 @@ Novas sprints devem ser adicionadas na mesma pasta (`sprint-02.md`, `sprint-03.m
 | [Manual PIM II - ADS (PDF)](<./docs/manual-pim/Manual_PIM_II - ADS.pdf>) | Manual acadêmico oficial exigido pela instituição |
 | [Manual PIM II - ADS (Word)](<./docs/manual-pim/Manual_PIM_II - ADS.docx>) | Versão editável do manual acadêmico |
 
-Backups periódicos da documentação em Word ficam em [`docs/backup-word/`](./docs/backup-word/) e não devem ser usados como referência — a fonte oficial é sempre a versão em Markdown listada acima.
+Backups periódicos da documentação em Word ficam em [`docs/backup-word/`](./docs/backup-word/) e não devem ser usados como referência - a fonte oficial é sempre a versão em Markdown listada acima.
