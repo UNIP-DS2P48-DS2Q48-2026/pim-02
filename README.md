@@ -64,6 +64,8 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 | Documento | Conteúdo |
 |---|---|
 | [Diagrama de Classes (Astah)](./docs/astah/diagrama_de_classes.asta) | Modelo UML das classes do sistema (abrir com [Astah](https://astah.net/)) |
+| [Diagrama de Casos de Uso (Astah)](./docs/Modalagem_casos_de_uso/diagramas.asta) | Casos de uso por ator, separados em pacotes (abrir com [Astah](https://astah.net/)) |
+| [Casos de Uso](./docs/Modalagem_casos_de_uso/casos-de-uso.md) | Explicação de cada elipse do diagrama, correlacionada com o fluxograma, e o fluxo detalhado (principal/alternativo/exceção) do processo operacional |
 
 ### Modelagem de Banco de Dados
 
