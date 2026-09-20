@@ -91,7 +91,13 @@ O sistema deverá permitir registrar uma nova ordem de serviço vinculada a um e
 
 **RF05: Registrar diagnóstico técnico**
 
-O sistema deverá permitir a um técnico registrar o diagnóstico de uma ordem de serviço atribuída a ele.
+O sistema deverá permitir a um técnico realizar a vistoria de uma ordem de serviço atribuída a ele, registrando:
+
+a) uma **observação técnica**, que pode ser atualizada/editada pelo técnico ao longo da vistoria, descrevendo falhas identificadas e testes realizados no equipamento;
+
+b) o **diagnóstico final**, consolidando a situação atual do equipamento e o serviço necessário para o reparo.
+
+O diagnóstico final é obrigatório e é ele que libera a OS para a etapa de orçamento (RF06). A observação técnica é opcional e serve de apoio ao processo de vistoria, mas não substitui o diagnóstico final.
 
 **RF06: Elaborar orçamento e registrar aprovação do cliente**
 
@@ -113,7 +119,9 @@ O sistema deverá permitir registrar a notificação ao cliente, o pagamento rec
 
 O sistema deverá permitir consultar ordens de serviço, equipamentos e usuários de acordo com o perfil autenticado, conforme a Matriz de Permissões, incluindo o histórico de ordens finalizadas e canceladas.
 
-Fluxo principal, alternativo e de exceção de cada etapa operacional (RF04 a RF09) em [Casos de Uso Detalhados](./casos-de-uso.md).
+Essa consulta inclui contagens e filtros operacionais sobre o histórico (por exemplo, quantidade de equipamentos que passaram por manutenção em um determinado período), restritos ao próprio perfil autenticado. Não inclui indicadores financeiros, de custo ou gerenciais - esses seguem fora do escopo (ver [Fora do Escopo](#fora-do-escopo)).
+
+Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo principal, alternativo e de exceção, pós-condição), organizado por diagrama e correlacionado com o fluxograma, em [Casos de Uso](../Modalagem_casos_de_uso/casos-de-uso.md).
 
 ## Requisitos Não Funcionais
 
