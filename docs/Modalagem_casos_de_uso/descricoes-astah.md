@@ -8,8 +8,8 @@ O `diagramas.asta` é dividido em pacotes (um diagrama por área). Convenções 
 
 - **Boneco (ator):** quem interage com o sistema - Admin, Recepcionista, Técnico ou Cliente.
 - **Elipse:** um caso de uso - uma ação que o sistema oferece.
-- **Seta simples (ator → elipse):** associação - esse ator pode executar esse caso de uso.
-- **Seta com triângulo vazado (ator → ator):** generalização entre atores. Usada para representar a RN11 - o Administrador generaliza Recepcionista e Técnico, ou seja, herda tudo o que esses perfis podem fazer, cobrindo a ausência de um deles.
+- **Seta simples (do ator para a elipse):** associação - esse ator pode executar esse caso de uso.
+- **Seta com triângulo vazado (de um ator para outro):** generalização entre atores. Usada para representar a RN11 - o Administrador generaliza Recepcionista e Técnico, ou seja, herda tudo o que esses perfis podem fazer, cobrindo a ausência de um deles.
 
 O campo **Actor** lista os atores ligados diretamente ao caso de uso no diagrama. O Admin só aparece nele quando tem associação direta (cadastros de usuários e relatórios). Nos demais, ele participa por generalização, e o Astah não permite vinculá-lo ali. Por isso o Actor traz uma linha "Admin: por generalização..." e a linha "Herança" da Note explica o motivo.
 
@@ -1203,7 +1203,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RN07/RI08 - o Recepcionista altera só dados administrativos; RN08/RI09 - OS finalizada não é alterada, exceto pelo Admin (RN06).
 Dados: atualiza `os.problema_relatado` e `atualizado_em`. Campos técnicos (diagnostico, resultado_teste, `tecnico_os.observacoes_tecnicas`) ficam bloqueados.
-Observação: a OS não guarda dados do cliente. Ela aponta só para o equipamento (id_equipamento), e o cliente é obtido pelo dono do equipamento (`equipamento.id_cliente` → `usuario`). Para alterar dados do cliente, usar o UC18.
+Observação: a OS não guarda dados do cliente. Ela aponta só para o equipamento (id_equipamento), e o cliente é obtido pelo dono do equipamento (`equipamento.id_cliente`, que aponta para `usuario`). Para alterar dados do cliente, usar o UC18.
 
 ### UC27 - Cancelar Ordem de Serviço
 
@@ -1299,7 +1299,7 @@ Observação: pela RN11, o Admin pode ser atribuído como técnico quando não h
 ### UC29 - Registrar Entrega e Pagamento
 
 **Summary**
-Permite que o Recepcionista registre a entrega do equipamento e o pagamento recebido (RF09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Notificar cliente" → "Apresentar OS" → "Receber pagamento", em Entrega ao Cliente.
+Permite que o Recepcionista registre a entrega do equipamento e o pagamento recebido (RF09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Notificar cliente" > "Apresentar OS" > "Receber pagamento", em Entrega ao Cliente.
 
 **Actor**
 Recepcionista.
@@ -1344,7 +1344,7 @@ Observação: o valor de referência para a divergência (7a) é `os.orcamento` 
 ### UC30 - Registrar Feedback do Cliente
 
 **Summary**
-Permite registrar se o cliente ficou satisfeito com o serviço, finalizando a OS ou reabrindo-a para novo reparo (RF09). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente satisfeito?" → "Receber feedback", em Entrega ao Cliente.
+Permite registrar se o cliente ficou satisfeito com o serviço, finalizando a OS ou reabrindo-a para novo reparo (RF09). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente satisfeito?" > "Receber feedback", em Entrega ao Cliente.
 
 **Actor**
 Cliente, Recepcionista.
@@ -1392,7 +1392,7 @@ Observação: o Cliente dá a resposta e o Recepcionista registra. Se o cliente 
 ### UC31 - Registrar Observação Técnica sobre Equipamento
 
 **Summary**
-Permite que o Técnico registre o que identificou na inspeção e nos testes iniciais do equipamento (RF05). Disponível para Técnico e, por herança, Admin. Fluxograma: "Inspeção visual" → "Identificar falhas", em Diagnóstico Técnico.
+Permite que o Técnico registre o que identificou na inspeção e nos testes iniciais do equipamento (RF05). Disponível para Técnico e, por herança, Admin. Fluxograma: "Inspeção visual" > "Identificar falhas", em Diagnóstico Técnico.
 
 **Actor**
 Técnico.
@@ -1438,7 +1438,7 @@ Observação: é opcional e editável; serve de apoio ao diagnóstico final (UC3
 ### UC32 - Registrar Diagnóstico do Equipamento
 
 **Summary**
-Permite que o Técnico consolide as observações em um diagnóstico final e libere a OS para orçamento (RF05). Disponível para Técnico e, por herança, Admin. Fluxograma: "Testes funcionaram?" → "Relatório de diagnóstico", em Diagnóstico Técnico.
+Permite que o Técnico consolide as observações em um diagnóstico final e libere a OS para orçamento (RF05). Disponível para Técnico e, por herança, Admin. Fluxograma: "Testes funcionaram?" > "Relatório de diagnóstico", em Diagnóstico Técnico.
 
 **Actor**
 Técnico.
@@ -1478,12 +1478,12 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Técnico, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF05; RI03 - Recepcionista e Cliente não registram diagnóstico; RN07 - campo técnico, do Técnico.
 Dados: atualiza `os.diagnostico`.
-Observação: com o diagnóstico preenchido, a OS fica liberada para o orçamento (UC36). Mesmo sem defeito encontrado (5a), a OS segue o fluxo normal, com orçamento de valor zero (RN18): orçamento → aprovação → execução sem reparo → teste → entrega.
+Observação: com o diagnóstico preenchido, a OS fica liberada para o orçamento (UC36). Mesmo sem defeito encontrado (5a), a OS segue o fluxo normal, com orçamento de valor zero (RN18): orçamento, aprovação, execução sem reparo, teste e entrega.
 
 ### UC33 - Executar Manutenção
 
 **Summary**
-Permite que um ou mais técnicos registrem o reparo realizado no equipamento (RF07, RN04). Disponível para Técnico e, por herança, Admin. Fluxograma: "Separar peças" → "Realizar reparos" → "Registrar ações", em Execução do Serviço.
+Permite que um ou mais técnicos registrem o reparo realizado no equipamento (RF07, RN04). Disponível para Técnico e, por herança, Admin. Fluxograma: "Separar peças" > "Realizar reparos" > "Registrar ações", em Execução do Serviço.
 
 **Actor**
 Técnico.
@@ -1621,7 +1621,7 @@ Observação: o aviso ao cliente acontece fora do sistema (telefone ou presencia
 ### UC36 - Registrar Orçamento
 
 **Summary**
-Permite que o Recepcionista monte o orçamento a partir do diagnóstico e o envie ao cliente (RF06). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Analisar relatório técnico" → "Calcular custo" → "Montar proposta" → "Enviar", em Elaboração do Orçamento.
+Permite que o Recepcionista monte o orçamento a partir do diagnóstico e o envie ao cliente (RF06). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Analisar relatório técnico" > "Calcular custo" > "Montar proposta" > "Enviar", em Elaboração do Orçamento.
 
 **Actor**
 Recepcionista.
@@ -1749,7 +1749,7 @@ Observação: o Técnico não consulta orçamento, pois não está associado a e
 ### UC39 - Registrar Aprovação do Orçamento
 
 **Summary**
-Permite que o Cliente aprove o orçamento recebido, liberando a OS para execução (RF06). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? → Sim → Iniciar serviço", em Aprovação do Cliente.
+Permite que o Cliente aprove o orçamento recebido, liberando a OS para execução (RF06). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? > Sim > Iniciar serviço", em Aprovação do Cliente.
 
 **Actor**
 Cliente, Recepcionista.
@@ -1795,7 +1795,7 @@ Observação: o próprio Cliente registra a resposta pelo sistema, ou o Recepcio
 ### UC40 - Registrar Recusa do Orçamento
 
 **Summary**
-Permite que o Cliente recuse o orçamento recebido, abrindo uma rodada de negociação (RF06). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? → Não → Negociar", em Aprovação do Cliente.
+Permite que o Cliente recuse o orçamento recebido, abrindo uma rodada de negociação (RF06). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? > Não > Negociar", em Aprovação do Cliente.
 
 **Actor**
 Cliente, Recepcionista.
@@ -1843,7 +1843,7 @@ Observação: o próprio Cliente registra a resposta, ou o Recepcionista registr
 ### UC41 - Arquivar Orçamento
 
 **Summary**
-Arquiva a OS quando o cliente recusa também a proposta renegociada, preservando o histórico (RN09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? (negociado) → Não → Arquivar OS", em Aprovação do Cliente.
+Arquiva a OS quando o cliente recusa também a proposta renegociada, preservando o histórico (RN09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? (negociado) > Não > Arquivar OS", em Aprovação do Cliente.
 
 **Actor**
 Recepcionista.
