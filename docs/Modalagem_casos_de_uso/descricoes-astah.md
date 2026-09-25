@@ -13,11 +13,29 @@ O `diagramas.asta` é dividido em pacotes (um diagrama por área). Convenções 
 
 O campo **Actor** lista os atores ligados diretamente ao caso de uso no diagrama. O Admin só aparece nele quando tem associação direta (cadastros de usuários e relatórios). Nos demais, ele participa por generalização, e o Astah não permite vinculá-lo ali. Por isso o Actor traz uma linha "Admin: por generalização..." e a linha "Herança" da Note explica o motivo.
 
+## Mapa do menu
+
+Todo fluxo principal começa pela opção do menu, escrita como caminho ("Clientes > Cadastrar"). O menu é textual, com opções numéricas (RNF03), e cada perfil só vê as opções permitidas pela Matriz de Permissões (RN10).
+
+- **Tela inicial:** Entrar
+- **Menu principal:** Meus Dados · Alterar Minha Senha · Sair
+- **Administradores:** Cadastrar · Consultar · Editar · Inativar
+- **Recepcionistas:** Cadastrar · Consultar · Editar · Inativar
+- **Técnicos:** Cadastrar · Consultar · Editar · Inativar
+- **Clientes:** Cadastrar · Consultar · Editar · Inativar
+- **Equipamentos:** Cadastrar · Consultar · Editar · Inativar
+- **Ordens de Serviço:** Criar · Consultar · Editar · Cancelar · Atribuir Técnico · Registrar Entrega · Registrar Feedback
+- **Manutenção:** Registrar Observação Técnica · Registrar Diagnóstico · Executar Manutenção · Registrar Teste · OS Prontas para Entrega
+- **Orçamentos:** Registrar · Editar · Consultar · Aprovar · Recusar · Arquivar
+- **Histórico e Relatórios:** Histórico de Equipamento · Relatórios
+
 ## Padrões usados
 
-- **Fluxo principal:** alterna ator e sistema e termina com "O caso de uso é encerrado."
+- **Precondition:** uma condição por linha. A primeira é sempre a autenticação, escrita como "Usuário autenticado (UC01) com perfil ..." e listando os perfis na ordem Cliente, Técnico, Recepcionista e Admin (o Admin sempre por último). As demais usam frases curtas no mesmo formato ("Cliente-alvo cadastrado (UC16).", "... cadastrado e com `status` ativo (UCnn).").
+- **Campos sem conteúdo:** escrever só "Não se aplica.". Explicações vão para a Note.
+- **Fluxo principal:** começa pela opção do menu (ver Mapa do menu), um passo por ação, alternando ator e sistema. Quando altera dados, termina com o sistema informando o resultado. A última linha é sempre "O caso de uso é encerrado." Operações que inativam, cancelam, arquivam ou respondem orçamento pedem confirmação; a desistência é uma exceção.
 - **Extensões:** identificadas pelo passo em que ocorrem, em uma única linha já explicada: `2a: <situação>. <o que acontece>. <para onde volta / encerramento>.` `3a` é a primeira extensão do passo 3 e `3b` a segunda do mesmo passo. A letra não se repete no mesmo caso de uso, mesmo entre Branch e Exception.
-- **Branch Sequence:** extensão que termina com sucesso por outro caminho. Termina dizendo para onde volta ("Retorna ao passo N.").
+- **Branch Sequence:** extensão que termina com sucesso por outro caminho. Termina dizendo para onde volta ("Retorna ao passo N.") ou, quando o processo segue em outro caso de uso (ex.: OS volta para novo reparo), com "O caso de uso é encerrado."
 - **Exception Sequence:** extensão que impede o objetivo. Termina sempre com "O caso de uso é encerrado."
 - **Regras:** usam a numeração oficial de [requisitos.md](../requisitos/requisitos.md) (RN01-RN19, RI01-RI17, RNF01-RNF10). Não criar numeração local por caso de uso.
 - **Note:** sempre com as mesmas 4 linhas, na mesma ordem:
@@ -40,25 +58,28 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário previamente cadastrado no sistema, com `status` ativo (RN12).
+Usuário cadastrado no sistema e com `status` ativo (RN12).
 
 **Postcondition**
 Sessão iniciada, com o perfil do usuário identificado.
 
 **Base Sequence**
-1. O usuário informa e-mail e senha.
-2. O sistema localiza o cadastro pelo e-mail (RN13, único).
-3. O sistema compara a senha informada com o hash armazenado (RNF10).
-4. O sistema libera as funcionalidades do perfil (`perfil`) conforme a Matriz de Permissões (RN10).
-5. O caso de uso é encerrado.
+1. O usuário seleciona a opção "Entrar" na tela inicial.
+2. O sistema solicita e-mail e senha.
+3. O usuário informa e-mail e senha.
+4. O sistema localiza o cadastro pelo e-mail (RN13, único).
+5. O sistema compara a senha informada com o hash armazenado (RNF10).
+6. O sistema verifica se o usuário está com `status` ativo (RN12).
+7. O sistema inicia a sessão e exibe o menu principal com as opções do perfil do usuário, conforme a Matriz de Permissões (RN10).
+8. O caso de uso é encerrado.
 
 **Branch Sequence**
-3a: Senha incorreta. O sistema informa que as credenciais são inválidas, sem indicar se o e-mail existe ou não. O usuário informa novamente a senha. Retorna ao passo 3.
+5a: Senha incorreta. O sistema informa que as credenciais são inválidas, sem indicar se o e-mail existe ou não. Retorna ao passo 2.
 
 **Exception Sequence**
-2a: E-mail não cadastrado. O sistema rejeita o login com a mesma mensagem genérica da senha incorreta, para não expor quais e-mails existem. O caso de uso é encerrado.
+4a: E-mail não cadastrado. O sistema rejeita o login com a mesma mensagem genérica da senha incorreta, para não expor quais e-mails existem. O caso de uso é encerrado.
 
-4a: Usuário inativo. O sistema identifica `status` inativo e impede o login mesmo com credenciais corretas (RN12). O caso de uso é encerrado.
+6a: Usuário inativo. O sistema impede o login mesmo com credenciais corretas (RN12). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -79,15 +100,15 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (sessão ativa, UC01).
+Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Sessão encerrada.
 
 **Base Sequence**
-1. O usuário solicita encerrar a sessão.
-2. O sistema encerra a sessão.
-3. O sistema retorna à tela de login.
+1. O usuário seleciona a opção "Sair" no menu principal.
+2. O sistema encerra a sessão, descartando os dados do usuário logado.
+3. O sistema retorna à tela inicial.
 4. O caso de uso é encerrado.
 
 **Branch Sequence**
@@ -115,22 +136,23 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01).
+Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O usuário solicita ver os próprios dados.
+1. O usuário seleciona a opção "Meus Dados" no menu principal.
 2. O sistema identifica o usuário pela sessão ativa.
-3. O sistema exibe o cadastro do usuário autenticado (dados comuns do perfil).
-4. O caso de uso é encerrado.
+3. O sistema busca as informações cadastrais do usuário.
+4. O sistema exibe os dados cadastrais do usuário (nome, e-mail, telefone, CPF e perfil, conforme o perfil).
+5. O caso de uso é encerrado.
 
 **Branch Sequence**
-3a: Dados específicos do perfil. Se o usuário for Técnico (ou Admin atuando como técnico), o sistema também exibe a especialidade. Retorna ao passo 4.
+4a: Dados específicos do perfil. Se o usuário for Técnico (ou Admin atuando como técnico), o sistema também exibe a especialidade. Retorna ao passo 5.
 
 **Exception Sequence**
-Não se aplica. O usuário só acessa o próprio registro (RI10 impede ver dados de outro usuário por essa via).
+Não se aplica.
 
 **Sub UseCase**
 Não se aplica.
@@ -151,13 +173,13 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01).
+Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Senha do usuário alterada. O próximo login (UC01) passa a exigir a nova senha.
 
 **Base Sequence**
-1. O usuário solicita alterar a própria senha.
+1. O usuário seleciona a opção "Alterar Minha Senha" no menu principal.
 2. O sistema solicita a senha atual, a nova senha e a confirmação da nova senha.
 3. O usuário informa a senha atual, a nova senha e a confirmação.
 4. O sistema confere a senha atual com o hash armazenado (RNF10).
@@ -196,25 +218,27 @@ Permite que o Admin cadastre um novo administrador no sistema (RF02, RN05). Disp
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Novo administrador cadastrado, apto a autenticar-se (UC01).
 
 **Base Sequence**
-1. O Admin acessa o cadastro de administradores.
-2. O Admin informa nome, e-mail e senha do novo administrador.
-3. O sistema valida os campos obrigatórios e a unicidade do e-mail (RN13).
-4. O sistema grava o cadastro com `perfil = admin` e `status = ativo`.
-5. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Administradores > Cadastrar" no menu.
+2. O sistema solicita nome, e-mail e senha do novo administrador.
+3. O Admin informa os dados solicitados.
+4. O sistema valida os campos obrigatórios e a unicidade do e-mail (RN13).
+5. O sistema grava o cadastro com `perfil = admin`, `status = ativo` e a senha em hash (RNF10).
+6. O sistema informa que o cadastro foi realizado.
+7. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
+4a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
 
-3b: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
+4b: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -234,18 +258,21 @@ Permite que o Admin busque e liste os administradores cadastrados, inclusive os 
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O Admin busca ou lista os administradores cadastrados.
-2. O sistema exibe os registros, incluindo os inativos (RN12 preserva o histórico).
-3. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Administradores > Consultar" no menu.
+2. O sistema solicita um filtro de busca (nome ou e-mail) ou a listagem completa.
+3. O Admin informa o filtro ou escolhe listar todos.
+4. O sistema busca os administradores cadastrados, incluindo os inativos (RN12).
+5. O sistema exibe os registros encontrados, com o `status` de cada um.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhum registro encontrado. O sistema informa que não há administradores para o filtro informado. Retorna ao passo 2.
 
 **Exception Sequence**
 Não se aplica.
@@ -268,23 +295,28 @@ Permite que o Admin altere os dados de um administrador cadastrado (RF02). Dispo
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01); administrador-alvo previamente cadastrado (UC04).
+Usuário autenticado (UC01) com perfil Admin.
+Administrador-alvo cadastrado (UC04).
 
 **Postcondition**
 Cadastro do administrador atualizado.
 
 **Base Sequence**
-1. O Admin seleciona um administrador cadastrado.
-2. O Admin altera os dados desejados (nome, e-mail, senha).
-3. O sistema valida os campos e, se o e-mail foi alterado, sua unicidade (RN13).
-4. O sistema grava a alteração e atualiza `atualizado_em`.
-5. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Administradores > Editar" no menu.
+2. O sistema exibe a lista de administradores cadastrados.
+3. O Admin seleciona o administrador que deseja alterar.
+4. O sistema exibe os dados atuais do administrador.
+5. O Admin altera os dados desejados (nome, e-mail, senha).
+6. O sistema valida os campos e, se o e-mail foi alterado, sua unicidade (RN13).
+7. O sistema grava a alteração e atualiza `atualizado_em`.
+8. O sistema informa que o cadastro foi atualizado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
+6a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -304,24 +336,33 @@ Permite que o Admin inative um administrador, preservando o histórico das OS re
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01); administrador-alvo com `status` ativo.
+Usuário autenticado (UC01) com perfil Admin.
+Administrador-alvo cadastrado e com `status` ativo (UC04).
 
 **Postcondition**
 Administrador inativo. Não pode mais autenticar-se (RN12) nem ser vinculado a uma nova OS.
 
 **Base Sequence**
-1. O Admin seleciona um administrador cadastrado.
-2. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" em que esse administrador atue como atendente ou como técnico substituto (RN14).
-3. O sistema marca `status = inativo`, preservando o histórico das OS relacionadas (RN12).
-4. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Administradores > Inativar" no menu.
+2. O sistema exibe a lista de administradores ativos.
+3. O Admin seleciona o administrador que deseja inativar.
+4. O sistema verifica se o administrador selecionado não é o próprio usuário da sessão (RN17).
+5. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" em que esse administrador atue como atendente ou como técnico substituto (RN14).
+6. O sistema solicita a confirmação da inativação.
+7. O Admin confirma a inativação.
+8. O sistema marca `status = inativo`, preservando o histórico das OS relacionadas (RN12).
+9. O sistema informa que o administrador foi inativado.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-1a: Admin seleciona o próprio cadastro. O sistema impede a inativação, pois é necessário manter pelo menos um Admin ativo para configurar o sistema (RN17, RI17). O caso de uso é encerrado.
+4a: Admin seleciona o próprio cadastro. O sistema impede a inativação, pois é necessário manter pelo menos um Admin ativo para configurar o sistema (RN17, RI17). O caso de uso é encerrado.
 
-2a: OS em andamento vinculada. O sistema impede a inativação e informa a existência de OS em andamento (RN14, RI14). O caso de uso é encerrado.
+5a: OS em andamento vinculada. O sistema impede a inativação e informa a existência de OS em andamento (RN14, RI14). O caso de uso é encerrado.
+
+7a: Admin desiste da inativação. O sistema cancela a operação sem alterar o cadastro. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -345,25 +386,27 @@ Permite que o Admin cadastre um novo recepcionista (RF02, RN05). Disponível ape
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Novo recepcionista cadastrado, apto a autenticar-se (UC01) e a abrir OS (RF04).
 
 **Base Sequence**
-1. O Admin acessa o cadastro de recepcionistas.
-2. O Admin informa nome, e-mail e senha do novo recepcionista.
-3. O sistema valida os campos obrigatórios e a unicidade do e-mail (RN13).
-4. O sistema grava o cadastro com `perfil = recepcionista` e `status = ativo`.
-5. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Recepcionistas > Cadastrar" no menu.
+2. O sistema solicita nome, e-mail e senha do novo recepcionista.
+3. O Admin informa os dados solicitados.
+4. O sistema valida os campos obrigatórios e a unicidade do e-mail (RN13).
+5. O sistema grava o cadastro com `perfil = recepcionista`, `status = ativo` e a senha em hash (RNF10).
+6. O sistema informa que o cadastro foi realizado.
+7. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail já cadastrado. O sistema rejeita o cadastro (RN13, RI13). O caso de uso é encerrado.
+4a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
 
-3b: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
+4b: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -383,18 +426,21 @@ Permite que o Admin busque e liste os recepcionistas cadastrados, inclusive os i
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O Admin busca ou lista os recepcionistas cadastrados.
-2. O sistema exibe os registros, incluindo os inativos.
-3. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Recepcionistas > Consultar" no menu.
+2. O sistema solicita um filtro de busca (nome ou e-mail) ou a listagem completa.
+3. O Admin informa o filtro ou escolhe listar todos.
+4. O sistema busca os recepcionistas cadastrados, incluindo os inativos (RN12).
+5. O sistema exibe os registros encontrados, com o `status` de cada um.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhum registro encontrado. O sistema informa que não há recepcionistas para o filtro informado. Retorna ao passo 2.
 
 **Exception Sequence**
 Não se aplica.
@@ -417,23 +463,28 @@ Permite que o Admin altere os dados de um recepcionista cadastrado (RF02). Dispo
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01); recepcionista-alvo previamente cadastrado (UC08).
+Usuário autenticado (UC01) com perfil Admin.
+Recepcionista-alvo cadastrado (UC08).
 
 **Postcondition**
 Cadastro do recepcionista atualizado.
 
 **Base Sequence**
-1. O Admin seleciona um recepcionista cadastrado.
-2. O Admin altera os dados desejados.
-3. O sistema valida os campos e, se o e-mail foi alterado, sua unicidade (RN13).
-4. O sistema grava a alteração e atualiza `atualizado_em`.
-5. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Recepcionistas > Editar" no menu.
+2. O sistema exibe a lista de recepcionistas cadastrados.
+3. O Admin seleciona o recepcionista que deseja alterar.
+4. O sistema exibe os dados atuais do recepcionista.
+5. O Admin altera os dados desejados (nome, e-mail, senha).
+6. O sistema valida os campos e, se o e-mail foi alterado, sua unicidade (RN13).
+7. O sistema grava a alteração e atualiza `atualizado_em`.
+8. O sistema informa que o cadastro foi atualizado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail já utilizado. O sistema rejeita a alteração (RN13, RI13). O caso de uso é encerrado.
+6a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -453,22 +504,30 @@ Permite que o Admin inative um recepcionista, preservando o histórico (RF02, RN
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01); recepcionista-alvo com `status` ativo.
+Usuário autenticado (UC01) com perfil Admin.
+Recepcionista-alvo cadastrado e com `status` ativo (UC08).
 
 **Postcondition**
-Recepcionista inativo. Não pode mais autenticar-se nem abrir novas OS.
+Recepcionista inativo. Não pode mais autenticar-se (RN12) nem abrir novas OS.
 
 **Base Sequence**
-1. O Admin seleciona um recepcionista cadastrado.
-2. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" com esse recepcionista como atendente (`os.id_atendente`, RN14).
-3. O sistema marca `status = inativo` (RN12).
-4. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Recepcionistas > Inativar" no menu.
+2. O sistema exibe a lista de recepcionistas ativos.
+3. O Admin seleciona o recepcionista que deseja inativar.
+4. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" com esse recepcionista como atendente (`os.id_atendente`, RN14).
+5. O sistema solicita a confirmação da inativação.
+6. O Admin confirma a inativação.
+7. O sistema marca `status = inativo` (RN12).
+8. O sistema informa que o recepcionista foi inativado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-2a: OS em andamento atendida por ele. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+4a: OS em andamento atendida por ele. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+
+6a: Admin desiste da inativação. O sistema cancela a operação sem alterar o cadastro. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -492,25 +551,27 @@ Permite que o Admin cadastre um novo técnico, incluindo sua especialidade (RF02
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Novo técnico cadastrado, apto a autenticar-se (UC01) e a ser atribuído a uma OS (RF07).
 
 **Base Sequence**
-1. O Admin acessa o cadastro de técnicos.
-2. O Admin informa nome, e-mail, senha e especialidade do novo técnico.
-3. O sistema valida os campos obrigatórios e a unicidade do e-mail (RN13).
-4. O sistema grava o cadastro com `perfil = tecnico` e `status = ativo`.
-5. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Técnicos > Cadastrar" no menu.
+2. O sistema solicita nome, e-mail, senha e especialidade do novo técnico.
+3. O Admin informa os dados solicitados.
+4. O sistema valida os campos obrigatórios (incluindo a especialidade) e a unicidade do e-mail (RN13).
+5. O sistema grava o cadastro com `perfil = tecnico`, `status = ativo` e a senha em hash (RNF10).
+6. O sistema informa que o cadastro foi realizado.
+7. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail já cadastrado. O sistema rejeita o cadastro (RN13, RI13). O caso de uso é encerrado.
+4a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
 
-3b: Campo obrigatório vazio, incluindo especialidade. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
+4b: Campo obrigatório vazio, incluindo especialidade. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -530,18 +591,21 @@ Permite que o Admin busque e liste os técnicos cadastrados, com especialidade e
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O Admin busca ou lista os técnicos cadastrados.
-2. O sistema exibe os registros, incluindo a especialidade e os inativos.
-3. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Técnicos > Consultar" no menu.
+2. O sistema solicita um filtro de busca (nome ou e-mail) ou a listagem completa.
+3. O Admin informa o filtro ou escolhe listar todos.
+4. O sistema busca os técnicos cadastrados, incluindo os inativos (RN12).
+5. O sistema exibe os registros encontrados, com o `status` de cada um e a especialidade.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhum registro encontrado. O sistema informa que não há técnicos para o filtro informado. Retorna ao passo 2.
 
 **Exception Sequence**
 Não se aplica.
@@ -564,23 +628,28 @@ Permite que o Admin altere os dados de um técnico cadastrado, inclusive a espec
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01); técnico-alvo previamente cadastrado (UC12).
+Usuário autenticado (UC01) com perfil Admin.
+Técnico-alvo cadastrado (UC12).
 
 **Postcondition**
 Cadastro do técnico atualizado.
 
 **Base Sequence**
-1. O Admin seleciona um técnico cadastrado.
-2. O Admin altera os dados desejados, incluindo a especialidade.
-3. O sistema valida os campos e, se o e-mail foi alterado, sua unicidade (RN13).
-4. O sistema grava a alteração e atualiza `atualizado_em`.
-5. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Técnicos > Editar" no menu.
+2. O sistema exibe a lista de técnicos cadastrados.
+3. O Admin seleciona o técnico que deseja alterar.
+4. O sistema exibe os dados atuais do técnico.
+5. O Admin altera os dados desejados (nome, e-mail, senha, especialidade).
+6. O sistema valida os campos e, se o e-mail foi alterado, sua unicidade (RN13).
+7. O sistema grava a alteração e atualiza `atualizado_em`.
+8. O sistema informa que o cadastro foi atualizado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail já utilizado. O sistema rejeita a alteração (RN13, RI13). O caso de uso é encerrado.
+6a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -600,22 +669,30 @@ Permite que o Admin inative um técnico, preservando o histórico (RF02, RN12). 
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01); técnico-alvo com `status` ativo.
+Usuário autenticado (UC01) com perfil Admin.
+Técnico-alvo cadastrado e com `status` ativo (UC12).
 
 **Postcondition**
-Técnico inativo. Não pode mais autenticar-se nem ser atribuído a novas OS.
+Técnico inativo. Não pode mais autenticar-se (RN12) nem ser atribuído a novas OS.
 
 **Base Sequence**
-1. O Admin seleciona um técnico cadastrado.
-2. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" em que esse técnico esteja atribuído (`tecnico_os`, RN14).
-3. O sistema marca `status = inativo` (RN12).
-4. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Técnicos > Inativar" no menu.
+2. O sistema exibe a lista de técnicos ativos.
+3. O Admin seleciona o técnico que deseja inativar.
+4. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" em que esse técnico esteja atribuído (`tecnico_os`, RN14).
+5. O sistema solicita a confirmação da inativação.
+6. O Admin confirma a inativação.
+7. O sistema marca `status = inativo` (RN12).
+8. O sistema informa que o técnico foi inativado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-2a: OS em andamento atribuída a ele. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+4a: OS em andamento atribuída a ele. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+
+6a: Admin desiste da inativação. O sistema cancela a operação sem alterar o cadastro. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -640,33 +717,36 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
 
 **Postcondition**
 Cliente cadastrado, apto a ter equipamentos vinculados (RF03) e OS abertas (RF04).
 
 **Base Sequence**
-1. O atendente informa nome, e-mail, telefone, senha e CPF do cliente.
-2. O sistema valida os campos obrigatórios e a unicidade de e-mail e CPF (RN13).
-3. O sistema grava o cadastro com `perfil = cliente` e `status = ativo`.
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Clientes > Cadastrar" no menu.
+2. O sistema solicita nome, e-mail, telefone, CPF e senha do cliente.
+3. O atendente informa os dados do cliente.
+4. O sistema valida os campos obrigatórios e a unicidade de e-mail e CPF (RN13).
+5. O sistema grava o cadastro com `perfil = cliente`, `status = ativo` e a senha em hash (RNF10).
+6. O sistema informa que o cliente foi cadastrado.
+7. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-2a: E-mail ou CPF já cadastrados. O sistema rejeita o cadastro (RN13, RI13). O caso de uso é encerrado.
+4a: E-mail ou CPF já cadastrados. O sistema rejeita o cadastro (RN13, RI13). O caso de uso é encerrado.
 
-2b: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
+4b: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
-Não se aplica. Pode ser acionado a partir de UC24 - Criar Ordem de Serviço.
+Não se aplica.
 
 **Note**
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF02 - o Recepcionista pode cadastrar clientes durante o atendimento; RN13/RI13 - e-mail e CPF únicos; RNF09 - campos obrigatórios; RNF10 - senha gravada como hash.
 Dados: insere em `usuario` com perfil = "cliente", status = "ativo", cpf e telefone.
-Observação: é o único cadastro de usuário que não é feito só pelo Admin: a RN05 vale para a equipe, e o cliente é registrado durante o atendimento (UC24). A senha permite ao cliente acessar o sistema para consultar suas OS e responder ao orçamento.
+Observação: é o único cadastro de usuário que não é feito só pelo Admin: a RN05 vale para a equipe, e o cliente é registrado pelo Recepcionista no atendimento, antes da abertura da OS (UC24). A senha permite ao cliente acessar o sistema para consultar suas OS e responder ao orçamento.
 
 ### UC17 - Consultar Cliente
 
@@ -678,21 +758,24 @@ Recepcionista, Técnico.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista, Admin ou Técnico (UC01).
+Usuário autenticado (UC01) com perfil Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O ator busca ou lista clientes cadastrados.
-2. O sistema exibe os registros dentro do escopo do perfil (RN10).
-3. O caso de uso é encerrado.
+1. O ator seleciona a opção "Clientes > Consultar" no menu.
+2. O sistema solicita um filtro de busca (nome, CPF ou e-mail) ou a listagem completa.
+3. O ator informa o filtro ou escolhe listar todos.
+4. O sistema busca os clientes dentro do escopo do perfil (RN10).
+5. O sistema exibe os registros encontrados, com o `status` de cada um.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhum registro encontrado. O sistema informa que não há clientes para o filtro informado. Retorna ao passo 2.
 
 **Exception Sequence**
-2a: Cliente fora do escopo do Técnico. O Técnico tenta consultar um cliente de uma OS não atribuída a ele. O sistema nega o acesso (RN10). O caso de uso é encerrado.
+4b: Cliente fora do escopo do Técnico. O Técnico tenta consultar um cliente de uma OS não atribuída a ele e o sistema nega o acesso (RN10). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -713,23 +796,28 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); cliente-alvo previamente cadastrado (UC16).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Cliente-alvo cadastrado (UC16).
 
 **Postcondition**
 Cadastro do cliente atualizado.
 
 **Base Sequence**
-1. O atendente seleciona um cliente cadastrado.
-2. O atendente altera os dados desejados.
-3. O sistema valida os campos e, se e-mail/CPF foram alterados, sua unicidade (RN13).
-4. O sistema grava a alteração e atualiza `atualizado_em`.
-5. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Clientes > Editar" no menu.
+2. O sistema solicita o cliente a ser alterado (busca por nome ou CPF).
+3. O atendente seleciona o cliente.
+4. O sistema exibe os dados atuais do cliente.
+5. O atendente altera os dados desejados (nome, e-mail, telefone, CPF, senha).
+6. O sistema valida os campos e, se e-mail/CPF foram alterados, sua unicidade (RN13).
+7. O sistema grava a alteração e atualiza `atualizado_em`.
+8. O sistema informa que o cadastro foi atualizado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: E-mail ou CPF já utilizados. O sistema rejeita a alteração (RN13, RI13). O caso de uso é encerrado.
+6a: E-mail ou CPF já utilizados. O sistema rejeita a alteração (RN13, RI13). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -750,22 +838,30 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); cliente-alvo com `status` ativo.
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Cliente-alvo cadastrado e com `status` ativo (UC16).
 
 **Postcondition**
-Cliente inativo. Não pode mais autenticar-se, ter novos equipamentos vinculados nem novas OS abertas.
+Cliente inativo. Não pode mais autenticar-se (RN12), ter novos equipamentos vinculados nem novas OS abertas.
 
 **Base Sequence**
-1. O atendente seleciona um cliente cadastrado.
-2. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" vinculada a um equipamento desse cliente (RN14).
-3. O sistema marca `status = inativo` (RN12).
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Clientes > Inativar" no menu.
+2. O sistema solicita o cliente a ser inativado (busca por nome ou CPF).
+3. O atendente seleciona o cliente.
+4. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" vinculada a um equipamento desse cliente (RN14).
+5. O sistema solicita a confirmação da inativação.
+6. O atendente confirma a inativação.
+7. O sistema marca `status = inativo` (RN12).
+8. O sistema informa que o cliente foi inativado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-2a: OS em andamento vinculada. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+4a: OS em andamento vinculada. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+
+6a: Atendente desiste da inativação. O sistema cancela a operação sem alterar o cadastro. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -790,25 +886,31 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); cliente proprietário previamente cadastrado e ativo (UC16).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Cliente proprietário cadastrado (UC16).
 
 **Postcondition**
 Equipamento cadastrado, apto a receber uma OS (RF04).
 
 **Base Sequence**
-1. O atendente seleciona o cliente proprietário.
-2. O atendente informa categoria (hardware ou software), tipo, marca e modelo/número de série (ou chave de licença).
-3. O sistema valida os campos obrigatórios e vincula o equipamento ao cliente (RN01).
-4. O sistema grava o cadastro com `status = ativo`.
-5. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Equipamentos > Cadastrar" no menu.
+2. O sistema solicita o cliente proprietário (busca por nome ou CPF).
+3. O atendente seleciona o cliente proprietário.
+4. O sistema verifica se o cliente está com `status` ativo (RN14).
+5. O sistema solicita categoria (hardware ou software), tipo, marca e modelo/número de série.
+6. O atendente informa os dados do equipamento.
+7. O sistema valida os campos obrigatórios e vincula o equipamento ao cliente (RN01).
+8. O sistema grava o cadastro com `status = ativo`.
+9. O sistema informa que o equipamento foi cadastrado.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
-2a: Equipamento de software. O atendente informa a chave de licença no lugar do número de série. Retorna ao passo 3.
+6a: Equipamento de software. O atendente informa a chave de licença no lugar do número de série. Retorna ao passo 7.
 
 **Exception Sequence**
-1a: Cliente inativo. O sistema impede o cadastro do equipamento (RN14). O caso de uso é encerrado.
+4a: Cliente inativo. O sistema impede o cadastro do equipamento (RN14). O caso de uso é encerrado.
 
-3a: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
+7a: Campo obrigatório vazio. O sistema indica o campo não preenchido e impede o avanço (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -829,23 +931,26 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01).
+Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O ator busca ou lista equipamentos.
-2. O sistema exibe os registros dentro do escopo do perfil (RN10).
-3. O caso de uso é encerrado.
+1. O ator seleciona a opção "Equipamentos > Consultar" no menu.
+2. O sistema solicita um filtro de busca (cliente, tipo ou número de série) ou a listagem completa.
+3. O ator informa o filtro ou escolhe listar todos.
+4. O sistema busca os equipamentos dentro do escopo do perfil (RN10).
+5. O sistema exibe os registros encontrados, com o `status` de cada um.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhum registro encontrado. O sistema informa que não há equipamentos para o filtro informado. Retorna ao passo 2.
 
 **Exception Sequence**
-2a: Cliente consulta equipamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
+4b: Cliente consulta equipamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
 
-2b: Técnico consulta equipamento fora do seu escopo. O Técnico tenta consultar equipamento de uma OS não atribuída a ele. O sistema nega o acesso (RN10). O caso de uso é encerrado.
+4c: Técnico consulta equipamento fora do seu escopo. O Técnico tenta consultar equipamento de uma OS não atribuída a ele e o sistema nega o acesso (RN10). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -866,23 +971,28 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); equipamento-alvo previamente cadastrado (UC20).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Equipamento-alvo cadastrado (UC20).
 
 **Postcondition**
 Cadastro do equipamento atualizado.
 
 **Base Sequence**
-1. O atendente seleciona um equipamento cadastrado.
-2. O atendente altera os dados desejados (tipo, marca, modelo/número de série).
-3. O sistema valida os campos.
-4. O sistema grava a alteração, atualizando `atualizado_em`.
-5. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Equipamentos > Editar" no menu.
+2. O sistema solicita o equipamento a ser alterado (busca por cliente ou número de série).
+3. O atendente seleciona o equipamento.
+4. O sistema exibe os dados atuais do equipamento.
+5. O atendente altera os dados desejados (tipo, marca, modelo/número de série).
+6. O sistema valida os campos.
+7. O sistema grava a alteração e atualiza `atualizado_em`.
+8. O sistema informa que o equipamento foi atualizado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-3a: Campo obrigatório removido/vazio. O sistema impede o avanço (RNF09). O caso de uso é encerrado.
+6a: Campo obrigatório removido/vazio. O sistema impede o avanço (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -903,22 +1013,30 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); equipamento-alvo com `status` ativo.
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Equipamento-alvo cadastrado e com `status` ativo (UC20).
 
 **Postcondition**
 Equipamento inativo. Não pode mais receber uma nova OS.
 
 **Base Sequence**
-1. O atendente seleciona um equipamento cadastrado.
-2. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" vinculada a esse equipamento (RN14).
-3. O sistema marca `status = inativo` (RN12).
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Equipamentos > Inativar" no menu.
+2. O sistema solicita o equipamento a ser inativado (busca por cliente ou número de série).
+3. O atendente seleciona o equipamento.
+4. O sistema verifica se existe alguma OS "aberta" ou "em_andamento" vinculada a esse equipamento (RN14).
+5. O sistema solicita a confirmação da inativação.
+6. O atendente confirma a inativação.
+7. O sistema marca `status = inativo` (RN12).
+8. O sistema informa que o equipamento foi inativado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-2a: OS em andamento vinculada. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+4a: OS em andamento vinculada. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
+
+6a: Atendente desiste da inativação. O sistema cancela a operação sem alterar o cadastro. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -943,37 +1061,46 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); equipamento identificado (UC20).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Equipamento cadastrado (UC20).
 
 **Postcondition**
-OS registrada com status "Aberta", pronta para a vistoria (UC31/UC32).
+OS registrada com status "aberta", pronta para a vistoria (UC31/UC32).
 
 **Base Sequence**
-1. O atendente coleta os dados do cliente e do equipamento.
-2. O sistema verifica se o cliente já possui cadastro.
-3. O atendente registra o problema relatado.
-4. O sistema abre a OS com status "Aberta", registra o atendente responsável (RN03) e a encaminha para diagnóstico.
-5. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Ordens de Serviço > Criar" no menu.
+2. O sistema solicita o CPF do cliente.
+3. O atendente informa o CPF do cliente.
+4. O sistema verifica se o cliente já possui cadastro.
+5. O sistema exibe os equipamentos cadastrados do cliente.
+6. O atendente seleciona o equipamento que será atendido.
+7. O sistema verifica se o cliente e o equipamento estão com `status` ativo (RN14).
+8. O sistema solicita o problema relatado.
+9. O atendente informa o problema relatado pelo cliente.
+10. O sistema abre a OS com status "aberta", data de abertura e o atendente responsável (RN03).
+11. O sistema informa o número da OS criada e a encaminha para diagnóstico.
+12. O caso de uso é encerrado.
 
 **Branch Sequence**
-2a: Cliente sem cadastro. O sistema registra o cliente (UC16). Retorna ao passo 3.
+Não se aplica.
 
 **Exception Sequence**
-1a: Equipamento sem cliente vinculado. O equipamento foi informado sem cliente vinculado e sem dados para novo cadastro. O sistema rejeita a abertura (RN01, RI02). O caso de uso é encerrado.
+4a: Cliente sem cadastro. O sistema informa que o cliente e o equipamento precisam ser cadastrados antes da abertura da OS (UC16, UC20) e não abre a OS (RN01, RI02). O caso de uso é encerrado.
 
-1b: Cliente ou equipamento inativo. O sistema impede a abertura de nova OS (RN14). O caso de uso é encerrado.
+5a: Cliente sem equipamento cadastrado. O sistema informa que o equipamento precisa ser cadastrado antes da abertura da OS (UC20) e não abre a OS (RN02, RI02). O caso de uso é encerrado.
 
-3a: Problema relatado não informado. O sistema impede o avanço para o passo 4 (RNF09). O caso de uso é encerrado.
+7a: Cliente ou equipamento inativo. O sistema impede a abertura de nova OS (RN14). O caso de uso é encerrado.
+
+9a: Problema relatado não informado. O sistema impede o avanço para o passo 10 (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
-UC16 - Cadastrar Cliente (quando o cliente não possui cadastro).
-UC20 - Cadastrar Equipamento (quando o equipamento não está cadastrado).
+Não se aplica.
 
 **Note**
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RN02 - a OS pertence a um equipamento; RN03 - aberta pelo Recepcionista (ou Admin, RN11); RN14/RI14 - equipamento, cliente e atendente ativos; RI02 - não abre OS sem equipamento vinculado a cliente; RNF09.
 Dados: insere em `os` (id_equipamento, id_atendente = usuário logado, data_abertura, problema_relatado, status = "aberta"). O trigger `trg_os_valida_ativos_ins` reforça a RN14.
-Observação: é o ponto de entrada do processo: os casos de uso de manutenção, orçamento e entrega dependem desta OS.
+Observação: é o ponto de entrada do processo: os casos de uso de manutenção, orçamento e entrega dependem desta OS. A OS só é aberta para cliente e equipamento cadastrados antes; este caso de uso não faz cadastro. Se faltar algum dos dois, o atendente usa primeiro o UC16 (Cadastrar Cliente) e/ou o UC20 (Cadastrar Equipamento) e depois volta a abrir a OS.
 
 ### UC25 - Consultar Ordem de Serviço
 
@@ -985,21 +1112,24 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01).
+Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O ator busca ou lista ordens de serviço.
-2. O sistema exibe as OS dentro do escopo do perfil (RN10), incluindo finalizadas e canceladas.
-3. O caso de uso é encerrado.
+1. O ator seleciona a opção "Ordens de Serviço > Consultar" no menu.
+2. O sistema solicita um filtro de busca (número da OS, cliente, status ou período) ou a listagem completa.
+3. O ator informa o filtro ou escolhe listar todas.
+4. O sistema busca as OS dentro do escopo do perfil (RN10), incluindo finalizadas e canceladas.
+5. O sistema exibe as OS encontradas, com equipamento, status e etapa atual.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhuma OS encontrada. O sistema informa que não há OS para o filtro informado. Retorna ao passo 2.
 
 **Exception Sequence**
-2a: Cliente consulta OS de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
+4b: Cliente consulta OS de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1020,24 +1150,31 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); OS previamente criada (UC24), não finalizada.
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+OS criada (UC24).
 
 **Postcondition**
 Dados administrativos da OS atualizados.
 
 **Base Sequence**
-1. O atendente seleciona a OS.
-2. O atendente altera os campos administrativos (ex.: problema relatado).
-3. O sistema grava a alteração e atualiza `atualizado_em`.
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Ordens de Serviço > Editar" no menu.
+2. O sistema solicita o número da OS.
+3. O atendente informa o número da OS.
+4. O sistema verifica se a OS não está finalizada (RN08).
+5. O sistema exibe os dados administrativos atuais da OS.
+6. O atendente altera os campos administrativos (ex.: problema relatado).
+7. O sistema verifica se apenas campos administrativos foram alterados (RN07).
+8. O sistema grava a alteração e atualiza `atualizado_em`.
+9. O sistema informa que a OS foi atualizada.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-1a: OS finalizada. O sistema impede a alteração, exceto pelo Admin (RN08, RI09). O caso de uso é encerrado.
+4a: OS finalizada. O sistema impede a alteração, exceto pelo Admin (RN08, RI09). O caso de uso é encerrado.
 
-2a: Alteração de campo técnico. O atendente tenta alterar diagnóstico ou resultado do teste. O sistema rejeita, pois esse campo pertence à função do Técnico (RN07, RI08). O caso de uso é encerrado.
+7a: Alteração de campo técnico. O atendente tenta alterar diagnóstico ou resultado do teste e o sistema rejeita, pois esse campo pertence à função do Técnico (RN07, RI08). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1058,22 +1195,30 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); OS previamente criada (UC24), não finalizada.
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+OS criada (UC24).
 
 **Postcondition**
 OS cancelada, mantida no histórico (não pode ser excluída fisicamente, RI11).
 
 **Base Sequence**
-1. O atendente seleciona a OS a ser cancelada.
-2. O sistema marca a OS com status "cancelada".
-3. O sistema preserva o registro para fins de histórico (RN09).
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Ordens de Serviço > Cancelar" no menu.
+2. O sistema solicita o número da OS.
+3. O atendente informa o número da OS a ser cancelada.
+4. O sistema verifica se a OS não está finalizada (RN08).
+5. O sistema solicita a confirmação do cancelamento.
+6. O atendente confirma o cancelamento.
+7. O sistema marca a OS com status "cancelada", preservando o registro para fins de histórico (RN09).
+8. O sistema informa que a OS foi cancelada.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-1a: OS já finalizada. O sistema impede o cancelamento (RN08). O caso de uso é encerrado.
+4a: OS já finalizada. O sistema impede o cancelamento (RN08). O caso de uso é encerrado.
+
+6a: Atendente desiste do cancelamento. O sistema mantém a OS sem alteração. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1094,23 +1239,31 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); OS previamente criada (UC24); técnico(s) cadastrado(s) e ativo(s) (UC12).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+OS criada (UC24).
+Técnico(s) cadastrado(s) e com `status` ativo (UC12).
 
 **Postcondition**
 OS com um ou mais técnicos atribuídos, pronta para a vistoria (UC31/UC32).
 
 **Base Sequence**
-1. O atendente seleciona a OS e um ou mais técnicos disponíveis.
-2. O sistema grava um registro em `tecnico_os` para cada técnico atribuído (RN04).
-3. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Ordens de Serviço > Atribuir Técnico" no menu.
+2. O sistema solicita o número da OS.
+3. O atendente informa o número da OS.
+4. O sistema exibe os técnicos ativos, com a especialidade de cada um.
+5. O atendente seleciona o técnico disponível.
+6. O sistema verifica se o usuário selecionado tem perfil técnico ou admin (RN15) e está com `status` ativo (RN14).
+7. O sistema grava o registro em `tecnico_os` (RN04).
+8. O sistema informa que o técnico foi atribuído à OS.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
-1a: Mais de um técnico necessário. O atendente repete a atribuição, uma linha por técnico, todas vinculadas à mesma OS (RN04). Retorna ao passo 2.
+8a: Mais de um técnico necessário. O atendente escolhe atribuir outro técnico à mesma OS; cada técnico gera uma linha própria em `tecnico_os` (RN04). Retorna ao passo 4.
 
 **Exception Sequence**
-1b: Técnico inativo. O sistema impede a atribuição (RN14). O caso de uso é encerrado.
+6a: Técnico inativo. O sistema impede a atribuição (RN14). O caso de uso é encerrado.
 
-2a: Usuário sem perfil técnico nem admin. O sistema rejeita o registro (RN15, RI15, reforçado por trigger). O caso de uso é encerrado.
+6b: Usuário sem perfil técnico nem admin. O sistema rejeita o registro (RN15, RI15, reforçado por trigger). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1131,22 +1284,29 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); teste de funcionamento aprovado (UC34).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Teste de funcionamento aprovado (UC34).
 
 **Postcondition**
 Pagamento registrado, OS pronta para o feedback do cliente (UC30).
 
 **Base Sequence**
-1. O atendente notifica o cliente e apresenta a OS.
-2. O atendente informa o valor recebido.
-3. O sistema registra o pagamento recebido.
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Ordens de Serviço > Registrar Entrega" no menu.
+2. O sistema solicita o número da OS.
+3. O atendente informa o número da OS.
+4. O sistema verifica se o teste de funcionamento foi aprovado (RF08).
+5. O sistema exibe a OS com o valor do orçamento aprovado.
+6. O atendente apresenta a OS ao cliente e informa o valor recebido.
+7. O sistema compara o valor recebido com o orçamento aprovado.
+8. O sistema registra a data de entrega e o valor pago.
+9. O sistema informa que a entrega foi registrada.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
-3a: Valor pago divergente. O sistema alerta que o valor não corresponde ao orçamento aprovado (RNF09). O atendente corrige ou confirma o valor. Retorna ao passo 3.
+7a: Valor pago divergente. O sistema alerta que o valor não corresponde ao orçamento aprovado (RNF09). O atendente corrige ou confirma o valor. Retorna ao passo 8.
 
 **Exception Sequence**
-1a: OS sem teste aprovado. O sistema impede a notificação de entrega (RF08). O caso de uso é encerrado.
+4a: OS sem teste aprovado. O sistema impede o registro da entrega (RF08). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1155,7 +1315,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF09; RI07 - o Técnico não registra entrega nem pagamento; RNF09 - valor informado.
 Dados: atualiza `os.data_entrega` e `os.valor_pago`.
-Observação: o valor de referência para a divergência (3a) é `os.orcamento` já aprovado pelo cliente. Quando o orçamento é de valor zero (RN18), a entrega é registrada com `valor_pago` = 0,00.
+Observação: o valor de referência para a divergência (7a) é `os.orcamento` já aprovado pelo cliente. Quando o orçamento é de valor zero (RN18), a entrega é registrada com `valor_pago` = 0,00.
 
 ### UC30 - Registrar Feedback do Cliente
 
@@ -1167,22 +1327,28 @@ Cliente, Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01); entrega e pagamento já registrados (UC29).
+Usuário autenticado (UC01) com perfil Cliente, Recepcionista ou Admin.
+Entrega e pagamento registrados (UC29).
 
 **Postcondition**
 OS finalizada com pagamento e feedback registrados, ou reaberta para novo reparo.
 
 **Base Sequence**
-1. O cliente informa se está satisfeito com o serviço.
-2. O sistema registra o feedback.
-3. O sistema finaliza a OS (status "finalizada").
-4. O caso de uso é encerrado.
+1. O ator seleciona a opção "Ordens de Serviço > Registrar Feedback" no menu.
+2. O sistema solicita o número da OS.
+3. O ator informa o número da OS.
+4. O sistema pergunta se o cliente ficou satisfeito com o serviço e solicita um comentário.
+5. O cliente informa que está satisfeito e, se quiser, deixa um comentário.
+6. O sistema registra o feedback.
+7. O sistema finaliza a OS (status "finalizada").
+8. O sistema informa que a OS foi finalizada.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
-1a: Cliente não satisfeito. O sistema registra o feedback e o erro relatado. O sistema retorna a OS para execução de manutenção (UC33). O caso de uso é encerrado.
+5a: Cliente não satisfeito. O sistema registra o feedback e o erro relatado e retorna a OS para execução de manutenção (UC33). O caso de uso é encerrado.
 
 **Exception Sequence**
-Não se aplica. Nenhuma exceção além das já cobertas pela pré-condição.
+Não se aplica.
 
 **Sub UseCase**
 Não se aplica.
@@ -1207,24 +1373,30 @@ Técnico.
 Admin: por generalização (herda de Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Técnico ou Admin (UC01); OS atribuída ao técnico (UC28).
+Usuário autenticado (UC01) com perfil Técnico ou Admin.
+OS atribuída ao técnico (UC28).
 
 **Postcondition**
 Observação técnica registrada (opcional, editável), servindo de apoio ao diagnóstico final (UC32).
 
 **Base Sequence**
-1. O técnico realiza a inspeção visual e os testes iniciais no equipamento.
-2. O técnico registra a observação técnica com o que foi identificado.
-3. O sistema grava a observação vinculada à OS.
-4. O caso de uso é encerrado.
+1. O técnico seleciona a opção "Manutenção > Registrar Observação Técnica" no menu.
+2. O sistema exibe as OS atribuídas ao técnico.
+3. O técnico seleciona a OS.
+4. O sistema verifica se a OS está atribuída ao técnico (RN10).
+5. O técnico realiza a inspeção visual e os testes iniciais no equipamento.
+6. O técnico registra a observação técnica com o que foi identificado.
+7. O sistema grava a observação vinculada à OS.
+8. O sistema informa que a observação foi registrada.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
-1a: Nenhuma falha aparente. O técnico segue para novos testes ou encerra a vistoria registrando esse resultado. Retorna ao passo 2.
+5a: Nenhuma falha aparente. O técnico segue para novos testes ou encerra a vistoria registrando esse resultado. Retorna ao passo 6.
 
-3a: Edição da observação. O técnico edita a observação enquanto a vistoria continua. Retorna ao passo 3.
+8a: Edição da observação. O técnico edita a observação enquanto a vistoria continua. Retorna ao passo 7.
 
 **Exception Sequence**
-1b: OS não atribuída ao técnico. O sistema impede o início da vistoria (RN10). O caso de uso é encerrado.
+4a: OS não atribuída ao técnico. O sistema impede o início da vistoria (RN10). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1245,22 +1417,29 @@ Técnico.
 Admin: por generalização (herda de Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Técnico ou Admin (UC01); OS atribuída ao técnico (UC28).
+Usuário autenticado (UC01) com perfil Técnico ou Admin.
+OS atribuída ao técnico (UC28).
 
 **Postcondition**
 OS com diagnóstico técnico registrado, pronta para orçamento (UC36).
 
 **Base Sequence**
-1. O técnico consolida a observação técnica (UC31) em um diagnóstico final.
-2. O técnico registra a situação do equipamento e o serviço necessário para o reparo.
-3. O sistema libera a OS para a etapa de orçamento (RF06).
-4. O caso de uso é encerrado.
+1. O técnico seleciona a opção "Manutenção > Registrar Diagnóstico" no menu.
+2. O sistema exibe as OS atribuídas ao técnico.
+3. O técnico seleciona a OS.
+4. O sistema exibe as observações técnicas registradas (UC31).
+5. O técnico consolida as observações em um diagnóstico final.
+6. O técnico registra a situação do equipamento e o serviço necessário para o reparo.
+7. O sistema grava o diagnóstico.
+8. O sistema libera a OS para a etapa de orçamento (RF06).
+9. O sistema informa que o diagnóstico foi registrado.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
-1a: Nenhuma falha identificada. O técnico registra o diagnóstico final indicando equipamento sem defeito encontrado e nenhum serviço necessário (RN18). Retorna ao passo 3.
+5a: Nenhuma falha identificada. O técnico registra o diagnóstico final indicando equipamento sem defeito encontrado e nenhum serviço necessário (RN18). Retorna ao passo 7.
 
 **Exception Sequence**
-1b: Nenhuma observação técnica preenchida. O sistema alerta antes de permitir o fechamento do diagnóstico (RNF09). O caso de uso é encerrado.
+4a: Nenhuma observação técnica preenchida. O sistema alerta antes de permitir o fechamento do diagnóstico (RNF09). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1269,7 +1448,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Técnico, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF05; RI03 - Recepcionista e Cliente não registram diagnóstico; RN07 - campo técnico, do Técnico.
 Dados: atualiza `os.diagnostico`.
-Observação: com o diagnóstico preenchido, a OS fica liberada para o orçamento (UC36). Mesmo sem defeito encontrado (1a), a OS segue o fluxo normal, com orçamento de valor zero (RN18): orçamento → aprovação → execução sem reparo → teste → entrega.
+Observação: com o diagnóstico preenchido, a OS fica liberada para o orçamento (UC36). Mesmo sem defeito encontrado (5a), a OS segue o fluxo normal, com orçamento de valor zero (RN18): orçamento → aprovação → execução sem reparo → teste → entrega.
 
 ### UC33 - Executar Manutenção
 
@@ -1281,26 +1460,32 @@ Técnico.
 Admin: por generalização (herda de Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Técnico ou Admin (UC01); orçamento aprovado (UC39).
+Usuário autenticado (UC01) com perfil Técnico ou Admin.
+Orçamento aprovado pelo cliente (UC39).
 
 **Postcondition**
 OS com reparo concluído, pronta para teste (UC34).
 
 **Base Sequence**
-1. O(s) técnico(s) separam peças e realizam o reparo.
-2. O técnico registra as ações realizadas.
-3. O sistema atualiza o status da OS.
-4. O caso de uso é encerrado.
+1. O técnico seleciona a opção "Manutenção > Executar Manutenção" no menu.
+2. O sistema exibe as OS atribuídas ao técnico.
+3. O técnico seleciona a OS.
+4. O sistema verifica se o orçamento da OS foi aprovado (RF06).
+5. O(s) técnico(s) separam peças e realizam o reparo.
+6. O técnico registra as ações realizadas.
+7. O sistema grava as ações e atualiza o status da OS.
+8. O sistema informa que o reparo foi registrado.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
-1a: Mais de um técnico. Cada técnico registra suas próprias ações, vinculadas à mesma OS (RN04). Retorna ao passo 3.
+5a: Mais de um técnico. Cada técnico registra suas próprias ações, vinculadas à mesma OS (RN04). Retorna ao passo 7.
 
-1b: Nenhum reparo necessário. O diagnóstico não encontrou defeito e o orçamento aprovado é de valor zero (RN18). O técnico não separa peças e registra que nenhum reparo foi necessário. Retorna ao passo 3.
+5b: Nenhum reparo necessário. O diagnóstico não encontrou defeito e o orçamento aprovado é de valor zero (RN18). O técnico não separa peças e registra que nenhum reparo foi necessário. Retorna ao passo 7.
 
-2a: Reparo não funciona. O técnico registra o problema. Retorna ao passo 1.
+6a: Reparo não funciona. O técnico registra o problema. Retorna ao passo 5.
 
 **Exception Sequence**
-1c: OS sem orçamento aprovado. O sistema impede o início da execução (RF06). O caso de uso é encerrado.
+4a: OS sem orçamento aprovado. O sistema impede o início da execução (RF06). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1321,25 +1506,31 @@ Técnico.
 Admin: por generalização (herda de Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Técnico ou Admin (UC01); reparo concluído (UC33).
+Usuário autenticado (UC01) com perfil Técnico ou Admin.
+Reparo concluído (UC33).
 
 **Postcondition**
 OS aprovada internamente (pronta para UC35) ou reencaminhada para novo reparo.
 
 **Base Sequence**
-1. O técnico realiza o teste pós-reparo.
-2. O sistema registra se os testes funcionaram.
-3. O técnico verifica o desempenho.
-4. O sistema registra a aprovação interna e a OS segue para entrega (RF09).
-5. O caso de uso é encerrado.
+1. O técnico seleciona a opção "Manutenção > Registrar Teste" no menu.
+2. O sistema exibe as OS atribuídas ao técnico com reparo registrado.
+3. O técnico seleciona a OS.
+4. O sistema verifica se o reparo foi concluído (RF07).
+5. O técnico realiza o teste pós-reparo.
+6. O técnico informa se os testes funcionaram.
+7. O técnico verifica o desempenho do equipamento.
+8. O sistema registra o teste como "aprovado" (aprovação interna) e a OS segue para entrega (RF09).
+9. O sistema informa que o teste foi registrado.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
-2a: Testes não funcionaram. O técnico detecta o problema. A OS retorna ao passo 1 de UC33 (novo reparo). O caso de uso é encerrado.
+6a: Testes não funcionaram. O técnico detecta o problema e o sistema registra o teste como "reprovado". A OS retorna ao passo 5 de UC33 (novo reparo). O caso de uso é encerrado.
 
-3a: Desempenho insatisfatório. O técnico verifica o problema. A OS retorna a UC33 para novo reparo. O caso de uso é encerrado.
+7a: Desempenho insatisfatório. O técnico verifica o problema e o sistema registra o teste como "reprovado". A OS retorna a UC33 para novo reparo. O caso de uso é encerrado.
 
 **Exception Sequence**
-1a: Reparo não concluído. O sistema impede o início do teste (RF07). O caso de uso é encerrado.
+4a: Reparo não concluído. O sistema impede o início do teste (RF07). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1360,21 +1551,25 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); teste de funcionamento aprovado internamente (UC34).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Teste de funcionamento aprovado (UC34).
 
 **Postcondition**
 Cliente informado, OS pronta para entrega e pagamento (UC29).
 
 **Base Sequence**
-1. O sistema avisa o atendente de que a OS está pronta para entrega.
-2. O atendente informa o cliente de que o serviço foi concluído.
-3. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Manutenção > OS Prontas para Entrega" no menu.
+2. O sistema exibe as OS com teste aprovado que ainda não foram entregues.
+3. O atendente seleciona a OS.
+4. O sistema exibe os dados de contato do cliente, obtidos pelo equipamento da OS.
+5. O atendente informa o cliente de que o serviço foi concluído.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-1a: OS sem aprovação interna do teste. O sistema impede o aviso de conclusão (RF08). O caso de uso é encerrado.
+3a: OS sem aprovação interna do teste. O sistema impede o aviso de conclusão (RF08). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1399,22 +1594,29 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); diagnóstico técnico registrado (UC32).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Diagnóstico técnico registrado (UC32).
 
 **Postcondition**
 Orçamento enviado, aguardando aprovação do cliente (UC39/UC40).
 
 **Base Sequence**
-1. O sistema apresenta o relatório de diagnóstico.
-2. O atendente calcula o custo e monta a proposta.
-3. O sistema envia o orçamento ao cliente.
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Orçamentos > Registrar" no menu.
+2. O sistema exibe as OS com diagnóstico registrado que aguardam orçamento.
+3. O atendente seleciona a OS.
+4. O sistema verifica se existe diagnóstico técnico registrado (RF05).
+5. O sistema apresenta o relatório de diagnóstico.
+6. O atendente calcula o custo e informa o valor da proposta.
+7. O sistema grava o orçamento.
+8. O sistema disponibiliza o orçamento para o cliente responder.
+9. O sistema informa que o orçamento foi enviado.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
-2a: Diagnóstico sem defeito. O atendente registra o orçamento com valor zero (R$ 0,00), informando na proposta que nenhum reparo é necessário (RN18). Retorna ao passo 3.
+6a: Diagnóstico sem defeito. O atendente registra o orçamento com valor zero (R$ 0,00), informando na proposta que nenhum reparo é necessário (RN18). Retorna ao passo 7.
 
 **Exception Sequence**
-1a: Sem diagnóstico registrado. O sistema impede o início do orçamento (RF05). O caso de uso é encerrado.
+4a: Sem diagnóstico registrado. O sistema impede o início do orçamento (RF05). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1435,21 +1637,29 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); orçamento previamente registrado (UC36) e recusado pelo cliente (UC40).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Orçamento registrado (UC36) e recusado pelo cliente (UC40).
 
 **Postcondition**
 Orçamento atualizado, aguardando nova resposta do cliente.
 
 **Base Sequence**
-1. O atendente ajusta a proposta com base na recusa do cliente.
-2. O sistema reenvia o orçamento atualizado ao cliente, reabrindo o ciclo de aprovação (UC39/UC40).
-3. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Orçamentos > Editar" no menu.
+2. O sistema exibe as OS com orçamento recusado pelo cliente.
+3. O atendente seleciona a OS.
+4. O sistema verifica se existe recusa registrada para o orçamento.
+5. O sistema exibe o orçamento atual e a recusa do cliente.
+6. O atendente ajusta a proposta e informa o novo valor.
+7. O sistema grava o novo valor e limpa a resposta anterior do cliente.
+8. O sistema reenvia o orçamento atualizado ao cliente, reabrindo o ciclo de aprovação (UC39/UC40).
+9. O sistema informa que o orçamento foi reenviado.
+10. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-1a: Orçamento sem recusa registrada. O sistema não permite a renegociação (pré-condição não satisfeita). O caso de uso é encerrado.
+4a: Orçamento sem recusa registrada. O sistema não permite a renegociação (pré-condição não satisfeita). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1470,21 +1680,24 @@ Cliente, Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01).
+Usuário autenticado (UC01) com perfil Cliente, Recepcionista ou Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O ator seleciona a OS.
-2. O sistema exibe o valor e o status do orçamento.
-3. O caso de uso é encerrado.
+1. O ator seleciona a opção "Orçamentos > Consultar" no menu.
+2. O sistema exibe as OS com orçamento dentro do escopo do perfil (RN10).
+3. O ator seleciona a OS.
+4. O sistema busca o orçamento da OS.
+5. O sistema exibe o valor e a situação do orçamento (aguardando resposta, aprovado ou recusado).
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: OS sem orçamento. O sistema informa que a OS ainda não tem orçamento registrado. Retorna ao passo 2.
 
 **Exception Sequence**
-2a: Cliente consulta orçamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
+4b: Cliente consulta orçamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1505,22 +1718,32 @@ Cliente, Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Cliente, Recepcionista ou Admin (UC01); orçamento enviado (UC36 ou UC37).
+Usuário autenticado (UC01) com perfil Cliente, Recepcionista ou Admin.
+Orçamento enviado ao cliente e aguardando resposta (UC36 ou UC37).
 
 **Postcondition**
 OS com orçamento aprovado, pronta para execução.
 
 **Base Sequence**
-1. O cliente analisa o orçamento recebido.
-2. O cliente aprova a proposta.
-3. O sistema libera a OS para execução da manutenção (UC33).
-4. O caso de uso é encerrado.
+1. O ator seleciona a opção "Orçamentos > Aprovar" no menu.
+2. O sistema exibe os orçamentos aguardando resposta, dentro do escopo do perfil (RN10).
+3. O ator seleciona a OS.
+4. O sistema exibe o valor e a proposta do orçamento.
+5. O cliente analisa o orçamento e aprova a proposta.
+6. O sistema solicita a confirmação da aprovação.
+7. O ator confirma a aprovação.
+8. O sistema registra a resposta como "aprovado".
+9. O sistema libera a OS para execução da manutenção (UC33).
+10. O sistema informa que o orçamento foi aprovado.
+11. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-1a: Nenhum orçamento pendente. O sistema não exibe a opção de aprovação. O caso de uso é encerrado.
+2a: Nenhum orçamento pendente. O sistema informa que não há orçamentos aguardando resposta. O caso de uso é encerrado.
+
+7a: Ator desiste da aprovação. O sistema mantém o orçamento aguardando resposta. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1541,22 +1764,32 @@ Cliente, Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Cliente, Recepcionista ou Admin (UC01); orçamento enviado (UC36 ou UC37).
+Usuário autenticado (UC01) com perfil Cliente, Recepcionista ou Admin.
+Orçamento enviado ao cliente e aguardando resposta (UC36 ou UC37).
 
 **Postcondition**
 OS aguardando renegociação (UC37) ou arquivamento (UC41), conforme o resultado da negociação.
 
 **Base Sequence**
-1. O cliente analisa o orçamento recebido.
-2. O cliente recusa a proposta.
-3. O sistema abre uma rodada de negociação (UC37).
-4. O caso de uso é encerrado.
+1. O ator seleciona a opção "Orçamentos > Recusar" no menu.
+2. O sistema exibe os orçamentos aguardando resposta, dentro do escopo do perfil (RN10).
+3. O ator seleciona a OS.
+4. O sistema exibe o valor e a proposta do orçamento.
+5. O cliente analisa o orçamento e recusa a proposta.
+6. O sistema solicita a confirmação da recusa.
+7. O ator confirma a recusa.
+8. O sistema registra a resposta como "recusado".
+9. O sistema abre uma rodada de negociação (UC37).
+10. O sistema informa que o orçamento foi recusado.
+11. O caso de uso é encerrado.
 
 **Branch Sequence**
-3a: Recusa após renegociação. Se a proposta recusada já era a renegociada, o sistema encaminha a OS para arquivamento (UC41). O caso de uso é encerrado.
+9a: Recusa após renegociação. Se a proposta recusada já era a renegociada, o sistema encaminha a OS para arquivamento (UC41). O caso de uso é encerrado.
 
 **Exception Sequence**
-Não se aplica. Nenhuma exceção além da pré-condição.
+2a: Nenhum orçamento pendente. O sistema informa que não há orçamentos aguardando resposta. O caso de uso é encerrado.
+
+7a: Ator desiste da recusa. O sistema mantém o orçamento aguardando resposta. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1577,22 +1810,30 @@ Recepcionista.
 Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado com perfil Recepcionista ou Admin (UC01); orçamento renegociado (UC37) e recusado novamente pelo cliente (UC40).
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Orçamento renegociado (UC37) e recusado novamente pelo cliente (UC40).
 
 **Postcondition**
 OS arquivada. Preservada no histórico, sem seguir para execução (RI11, não pode ser excluída fisicamente).
 
 **Base Sequence**
-1. O sistema constata que a proposta negociada também foi recusada.
-2. O atendente confirma o arquivamento.
-3. O sistema arquiva a OS, preservando o histórico (RN09).
-4. O caso de uso é encerrado.
+1. O atendente seleciona a opção "Orçamentos > Arquivar" no menu.
+2. O sistema exibe as OS cuja proposta renegociada foi recusada.
+3. O atendente seleciona a OS.
+4. O sistema constata que a proposta negociada também foi recusada.
+5. O sistema solicita a confirmação do arquivamento.
+6. O atendente confirma o arquivamento.
+7. O sistema arquiva a OS, preservando o histórico (RN09).
+8. O sistema informa que a OS foi arquivada.
+9. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-Não se aplica. Nenhuma exceção além da pré-condição.
+4a: Proposta renegociada ainda sem recusa. O sistema não permite o arquivamento (pré-condição não satisfeita). O caso de uso é encerrado.
+
+6a: Atendente desiste do arquivamento. O sistema mantém a OS sem alteração. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1617,21 +1858,24 @@ Cliente, Técnico, Recepcionista.
 Admin: por generalização (herda de Recepcionista e Técnico, RN11). Não aparece vinculado neste campo - ver Note.
 
 **Precondition**
-Usuário autenticado (UC01).
+Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O ator seleciona um equipamento.
-2. O sistema exibe o histórico de OS desse equipamento, dentro do escopo do perfil (RN10).
-3. O caso de uso é encerrado.
+1. O ator seleciona a opção "Histórico e Relatórios > Histórico de Equipamento" no menu.
+2. O sistema solicita o equipamento (busca por cliente ou número de série).
+3. O ator seleciona o equipamento.
+4. O sistema busca as OS desse equipamento, dentro do escopo do perfil (RN10).
+5. O sistema exibe o histórico de OS do equipamento (datas, status, técnicos e diagnóstico).
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Equipamento sem OS. O sistema informa que o equipamento ainda não tem histórico de atendimento. Retorna ao passo 2.
 
 **Exception Sequence**
-2a: Cliente consulta equipamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
+4b: Cliente consulta equipamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1651,18 +1895,21 @@ Permite que o Admin consulte indicadores operacionais sobre o histórico, filtra
 Admin (associação direta).
 
 **Precondition**
-Usuário autenticado com perfil Admin (UC01).
+Usuário autenticado (UC01) com perfil Admin.
 
 **Postcondition**
 Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
-1. O Admin escolhe um filtro (ex.: período de tempo).
-2. O sistema retorna contagens/indicadores operacionais sobre o histórico (ex.: quantos equipamentos passaram por manutenção no período).
-3. O caso de uso é encerrado.
+1. O Admin seleciona a opção "Histórico e Relatórios > Relatórios" no menu.
+2. O sistema exibe os relatórios disponíveis e solicita o período.
+3. O Admin escolhe o relatório e informa o período.
+4. O sistema calcula as contagens e os indicadores operacionais do período (ex.: quantos equipamentos passaram por manutenção).
+5. O sistema exibe o relatório.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+4a: Nenhum dado no período. O sistema informa que não há registros para o período escolhido. Retorna ao passo 2.
 
 **Exception Sequence**
 Não se aplica.
