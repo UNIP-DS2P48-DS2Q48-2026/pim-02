@@ -58,7 +58,7 @@ A matriz abaixo é a fonte única de permissões do sistema. Qualquer requisito 
 | Ação | Admin | Recepcionista | Técnico | Cliente |
 |---|---|---|---|---|
 | Autenticar-se no sistema | ✔ | ✔ | ✔ | ✔ |
-| Alterar a própria senha | ✔ | ✔ | ✔ | ✔ |
+| Alterar Senha (a própria) | ✔ | ✔ | ✔ | ✔ |
 | Gerenciar usuários da equipe (admin/recepcionista/técnico) | ✔ | - | - | - |
 | Cadastrar cliente (durante o atendimento) | ✔¹ | ✔ | - | - |
 | Gerenciar equipamentos | ✔¹ | ✔ | - | consulta os próprios |
