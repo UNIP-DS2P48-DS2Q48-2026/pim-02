@@ -69,7 +69,7 @@ CREATE TABLE os (
     diagnostico                 TEXT,
     orcamento                   DECIMAL(10,2),
     status                      ENUM('aberta', 'em_andamento', 'finalizada', 'cancelada') NOT NULL DEFAULT 'aberta',
-    resultado_resposta_cliente  VARCHAR(255),
+    resultado_resposta_cliente  ENUM('aprovado', 'recusado'),
     data_entrega                DATE,
     resultado_teste             ENUM('aprovado', 'reprovado'),
     valor_pago                  DECIMAL(10,2),
@@ -82,6 +82,7 @@ CREATE TABLE os (
     CONSTRAINT fk_os_atendente   FOREIGN KEY (id_atendente)   REFERENCES usuario (id_usuario),
     CONSTRAINT chk_os_status CHECK (status IN ('aberta', 'em_andamento', 'finalizada', 'cancelada')),
     CONSTRAINT chk_os_resultado_teste CHECK (resultado_teste IN ('aprovado', 'reprovado')),
+    CONSTRAINT chk_os_resposta_cliente CHECK (resultado_resposta_cliente IN ('aprovado', 'recusado')),
     CONSTRAINT chk_os_satisfeito CHECK (satisfeito IN ('sim', 'nao'))
 ) ENGINE=InnoDB;
 

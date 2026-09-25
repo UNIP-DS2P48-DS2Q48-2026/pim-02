@@ -73,7 +73,7 @@ CREATE TABLE os (
     diagnostico                 NVARCHAR(MAX)   NULL,
     orcamento                   DECIMAL(10,2)   NULL,
     status                      NVARCHAR(20)    NOT NULL DEFAULT 'aberta',
-    resultado_resposta_cliente  NVARCHAR(255)   NULL,
+    resultado_resposta_cliente  NVARCHAR(10)    NULL,
     data_entrega                DATE            NULL,
     resultado_teste             NVARCHAR(10)    NULL,
     valor_pago                  DECIMAL(10,2)   NULL,
@@ -85,6 +85,7 @@ CREATE TABLE os (
     CONSTRAINT fk_os_atendente   FOREIGN KEY (id_atendente)   REFERENCES usuario (id_usuario),
     CONSTRAINT chk_os_status CHECK (status IN ('aberta', 'em_andamento', 'finalizada', 'cancelada')),
     CONSTRAINT chk_os_resultado_teste CHECK (resultado_teste IN ('aprovado', 'reprovado')),
+    CONSTRAINT chk_os_resposta_cliente CHECK (resultado_resposta_cliente IN ('aprovado', 'recusado')),
     CONSTRAINT chk_os_satisfeito CHECK (satisfeito IN ('sim', 'nao'))
 );
 GO

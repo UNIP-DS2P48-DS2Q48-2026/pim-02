@@ -40,7 +40,7 @@ CREATE TABLE os (
     orcamento                   DECIMAL(10,2),
     status                      TEXT    NOT NULL DEFAULT 'aberta'
                                  CHECK (status IN ('aberta', 'em_andamento', 'finalizada', 'cancelada')),
-    resultado_resposta_cliente  TEXT,
+    resultado_resposta_cliente  TEXT    CHECK (resultado_resposta_cliente IN ('aprovado', 'recusado')),
     data_entrega                DATE,
     resultado_teste             TEXT    CHECK (resultado_teste IN ('aprovado', 'reprovado')),
     valor_pago                  DECIMAL(10,2),
