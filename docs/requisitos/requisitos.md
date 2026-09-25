@@ -58,6 +58,7 @@ A matriz abaixo é a fonte única de permissões do sistema. Qualquer requisito 
 | Ação | Admin | Recepcionista | Técnico | Cliente |
 |---|---|---|---|---|
 | Autenticar-se no sistema | ✔ | ✔ | ✔ | ✔ |
+| Alterar a própria senha | ✔ | ✔ | ✔ | ✔ |
 | Gerenciar usuários da equipe (admin/recepcionista/técnico) | ✔ | - | - | - |
 | Cadastrar cliente (durante o atendimento) | ✔¹ | ✔ | - | - |
 | Gerenciar equipamentos | ✔¹ | ✔ | - | consulta os próprios |
@@ -75,7 +76,7 @@ A matriz abaixo é a fonte única de permissões do sistema. Qualquer requisito 
 
 **RF01: Autenticação e controle de acesso por perfil**
 
-O sistema deverá permitir o login por **e-mail** e senha e, após identificar o `perfil` do usuário, apresentar somente as funcionalidades permitidas para ele, conforme a Matriz de Permissões.
+O sistema deverá permitir o login por **e-mail** e senha e, após identificar o `perfil` do usuário, apresentar somente as funcionalidades permitidas para ele, conforme a Matriz de Permissões. Todo usuário autenticado poderá também alterar a própria senha (RN19).
 
 **RF02: Gerenciar usuários**
 
@@ -121,7 +122,7 @@ O sistema deverá permitir consultar ordens de serviço, equipamentos e usuário
 
 Essa consulta inclui contagens e filtros operacionais sobre o histórico (por exemplo, quantidade de equipamentos que passaram por manutenção em um determinado período), restritos ao próprio perfil autenticado. Não inclui indicadores financeiros, de custo ou gerenciais - esses seguem fora do escopo (ver [Fora do Escopo](#fora-do-escopo)).
 
-Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo principal, alternativo e de exceção, pós-condição), organizado por diagrama e correlacionado com o fluxograma, em [Casos de Uso](../Modalagem_casos_de_uso/casos-de-uso.md).
+Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo principal, alternativo e de exceção, pós-condição), organizado por diagrama e correlacionado com o fluxograma, em [Casos de Uso](../Modalagem_casos_de_uso/descricoes-astah.md).
 
 ## Requisitos Não Funcionais
 
@@ -169,7 +170,7 @@ Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo princi
 
 - **RN11:** Na ausência de um Recepcionista ou Técnico disponível, o Administrador poderá ocupar esse papel na ordem de serviço.
 
-- **RN12:** "Remover" um usuário ou equipamento significa marcar seu `status` como inativo, preservando o histórico das ordens de serviço relacionadas - o sistema não deverá excluir esses registros fisicamente.
+- **RN12:** "Remover" um usuário ou equipamento significa marcar seu `status` como inativo, preservando o histórico das ordens de serviço relacionadas - o sistema não deverá excluir esses registros fisicamente. Um usuário inativo não poderá mais acessar o sistema (login bloqueado).
 
 - **RN13:** O e-mail de cada usuário e o CPF de cada cliente deverão ser únicos no sistema.
 
@@ -178,6 +179,12 @@ Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo princi
 - **RN15:** Um registro em `tecnico_os` só poderá referenciar um usuário cujo `perfil` seja `tecnico` ou, na ausência deste (RN11), `admin` - reforçado no próprio banco de dados por trigger, não apenas na lógica do programa (ver [Integridade de papel](../Modelagem_DB/der-simplificado.md#integridade-de-papel-tecnico_os-e-equipamento)).
 
 - **RN16:** Um `equipamento` só poderá estar vinculado (`id_cliente`) a um usuário cujo `perfil` seja `cliente` - reforçado no próprio banco de dados por trigger, não apenas na lógica do programa (ver [Integridade de papel](../Modelagem_DB/der-simplificado.md#integridade-de-papel-tecnico_os-e-equipamento)).
+
+- **RN17:** O Administrador não poderá inativar o próprio cadastro, garantindo que o sistema tenha sempre ao menos um Administrador ativo para configurá-lo.
+
+- **RN18:** Quando o diagnóstico técnico não encontrar defeito no equipamento, a ordem de serviço seguirá o fluxo normal com orçamento de valor zero, passando pela aprovação do cliente, pelo teste de funcionamento e pela entrega, sem cobrança.
+
+- **RN19:** Todo usuário autenticado poderá alterar a própria senha, informando a senha atual e digitando a nova senha duas vezes para confirmação.
 
 ## Requisitos Inversos
 
@@ -201,6 +208,7 @@ O que o sistema **não** deve permitir - o inverso de cada requisito/regra, expl
 | RI14 | uma OS seja aberta para cliente/equipamento inativo, ou que um usuário/equipamento seja inativado com OS em andamento. | RN14 |
 | RI15 | um usuário com `perfil` Recepcionista ou Cliente seja relacionado como técnico em `tecnico_os` - o próprio banco rejeita o registro. | RN15 |
 | RI16 | um `equipamento` seja vinculado (`id_cliente`) a um usuário com `perfil` diferente de Cliente (ex.: um Técnico) - o próprio banco rejeita o registro. | RN16 |
+| RI17 | um Administrador inative o próprio cadastro, deixando o sistema sem nenhum Administrador ativo. | RN17 |
 
 ## Modelo de Dados (Visão Geral)
 
