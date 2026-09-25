@@ -18,7 +18,7 @@ O campo **Actor** lista os atores ligados diretamente ao caso de uso no diagrama
 Todo fluxo principal começa pela opção do menu, escrita como caminho ("Clientes > Cadastrar"). O menu é textual, com opções numéricas (RNF03), e cada perfil só vê as opções permitidas pela Matriz de Permissões (RN10).
 
 - **Tela inicial:** Entrar
-- **Menu principal:** Meus Dados · Alterar Minha Senha · Sair
+- **Menu principal:** Meus Dados · Alterar Senha · Sair
 - **Administradores:** Cadastrar · Consultar · Editar · Inativar
 - **Recepcionistas:** Cadastrar · Consultar · Editar · Inativar
 - **Técnicos:** Cadastrar · Consultar · Editar · Inativar
@@ -33,8 +33,8 @@ Todo fluxo principal começa pela opção do menu, escrita como caminho ("Client
 
 - **Precondition:** uma condição por linha. A primeira é sempre a autenticação, escrita como "Usuário autenticado (UC01) com perfil ..." e listando os perfis na ordem Cliente, Técnico, Recepcionista e Admin (o Admin sempre por último). As demais usam frases curtas no mesmo formato ("Cliente-alvo cadastrado (UC16).", "... cadastrado e com `status` ativo (UCnn).").
 - **Campos sem conteúdo:** escrever só "Não se aplica.". Explicações vão para a Note.
-- **Fluxo principal:** começa pela opção do menu (ver Mapa do menu), um passo por ação, alternando ator e sistema. Quando altera dados, termina com o sistema informando o resultado. A última linha é sempre "O caso de uso é encerrado." Operações que inativam, cancelam, arquivam ou respondem orçamento pedem confirmação; a desistência é uma exceção.
-- **Extensões:** identificadas pelo passo em que ocorrem, em uma única linha já explicada: `2a: <situação>. <o que acontece>. <para onde volta / encerramento>.` `3a` é a primeira extensão do passo 3 e `3b` a segunda do mesmo passo. A letra não se repete no mesmo caso de uso, mesmo entre Branch e Exception.
+- **Fluxo principal:** começa pela opção do menu (ver Mapa do menu), um passo por ação, alternando ator e sistema. Quando altera dados, termina com o sistema informando o resultado. A última linha é sempre "O caso de uso é encerrado." Operações que inativam, cancelam, arquivam ou respondem orçamento pedem confirmação antes de gravar; a desistência na confirmação é uma exceção.
+- **Extensões:** identificadas pelo passo em que ocorrem, em uma única linha já explicada: `2a: <situação>. <o que acontece>. <para onde volta / encerramento>.` `3a` é a primeira extensão do passo 3 e `3b` a segunda do mesmo passo. `*a` vale para qualquer passo: é usado para "Voltar ao menu", presente em todos os casos de uso (exceto Fazer Logout, que tem um passo só). Em operações que gravam dados, voltar descarta o que foi informado, sem gravar nada. Ele não substitui as extensões específicas de cada caso de uso. A letra não se repete no mesmo caso de uso, mesmo entre Branch e Exception.
 - **Branch Sequence:** extensão que termina com sucesso por outro caminho. Termina dizendo para onde volta ("Retorna ao passo N.") ou, quando o processo segue em outro caso de uso (ex.: OS volta para novo reparo), com "O caso de uso é encerrado."
 - **Exception Sequence:** extensão que impede o objetivo. Termina sempre com "O caso de uso é encerrado."
 - **Regras:** usam a numeração oficial de [requisitos.md](../requisitos/requisitos.md) (RN01-RN19, RI01-RI17, RNF01-RNF10). Não criar numeração local por caso de uso.
@@ -75,6 +75,8 @@ Sessão iniciada, com o perfil do usuário identificado.
 
 **Branch Sequence**
 5a: Senha incorreta. O sistema informa que as credenciais são inválidas, sem indicar se o e-mail existe ou não. Retorna ao passo 2.
+
+*a: Desistir do login (em qualquer passo). O usuário escolhe voltar. O sistema descarta o que foi digitado e permanece na tela inicial, sem iniciar sessão. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: E-mail não cadastrado. O sistema rejeita o login com a mesma mensagem genérica da senha incorreta, para não expor quais e-mails existem. O caso de uso é encerrado.
@@ -151,6 +153,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Dados específicos do perfil. Se o usuário for Técnico (ou Admin atuando como técnico), o sistema também exibe a especialidade. Retorna ao passo 5.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 Não se aplica.
 
@@ -161,9 +165,9 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização dos atores Recepcionista e Técnico, herdando as associações deles. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RI10 - o usuário só vê o próprio registro; RNF10 - a senha nunca é exibida.
 Dados: lê `usuario` pelo id da sessão (nome, email, telefone, cpf, perfil, especialidade).
-Observação: os campos exibidos variam por perfil: CPF existe só para Cliente e especialidade só para Técnico. Este caso de uso não edita dados: a própria senha é trocada no UC44 (Alterar Minha Senha), e os demais dados nos casos de uso "Editar" (Admin ou Recepcionista).
+Observação: os campos exibidos variam por perfil: CPF existe só para Cliente e especialidade só para Técnico. Este caso de uso não edita dados: a própria senha é trocada no UC44 (Alterar Senha), e os demais dados nos casos de uso "Editar" (Admin ou Recepcionista).
 
-### UC44 - Alterar Minha Senha
+### UC44 - Alterar Senha
 
 **Summary**
 Permite que o usuário autenticado troque a própria senha, informando a senha atual e digitando a nova senha duas vezes para confirmação (RF01, RN19). Disponível para Cliente, Técnico, Recepcionista e, por herança, Admin.
@@ -179,7 +183,7 @@ Usuário autenticado (UC01) com perfil Cliente, Técnico, Recepcionista ou Admin
 Senha do usuário alterada. O próximo login (UC01) passa a exigir a nova senha.
 
 **Base Sequence**
-1. O usuário seleciona a opção "Alterar Minha Senha" no menu principal.
+1. O usuário seleciona a opção "Alterar Senha" no menu principal.
 2. O sistema solicita a senha atual, a nova senha e a confirmação da nova senha.
 3. O usuário informa a senha atual, a nova senha e a confirmação.
 4. O sistema confere a senha atual com o hash armazenado (RNF10).
@@ -190,6 +194,8 @@ Senha do usuário alterada. O próximo login (UC01) passa a exigir a nova senha.
 
 **Branch Sequence**
 5a: Confirmação diferente da nova senha. O sistema informa que as senhas não conferem e solicita novamente a nova senha e a confirmação. Retorna ao passo 3.
+
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 3a: Nova senha vazia. O sistema impede o avanço, pois a senha é obrigatória (RNF09). O caso de uso é encerrado.
@@ -233,7 +239,7 @@ Novo administrador cadastrado, apto a autenticar-se (UC01).
 7. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
@@ -274,6 +280,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Nenhum registro encontrado. O sistema informa que não há administradores para o filtro informado. Retorna ao passo 2.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 Não se aplica.
 
@@ -313,7 +321,7 @@ Cadastro do administrador atualizado.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 6a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
@@ -355,7 +363,7 @@ Administrador inativo. Não pode mais autenticar-se (RN12) nem ser vinculado a u
 10. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: Admin seleciona o próprio cadastro. O sistema impede a inativação, pois é necessário manter pelo menos um Admin ativo para configurar o sistema (RN17, RI17). O caso de uso é encerrado.
@@ -401,7 +409,7 @@ Novo recepcionista cadastrado, apto a autenticar-se (UC01) e a abrir OS (RF04).
 7. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
@@ -442,6 +450,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Nenhum registro encontrado. O sistema informa que não há recepcionistas para o filtro informado. Retorna ao passo 2.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 Não se aplica.
 
@@ -481,7 +491,7 @@ Cadastro do recepcionista atualizado.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 6a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
@@ -522,7 +532,7 @@ Recepcionista inativo. Não pode mais autenticar-se (RN12) nem abrir novas OS.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: OS em andamento atendida por ele. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
@@ -566,7 +576,7 @@ Novo técnico cadastrado, apto a autenticar-se (UC01) e a ser atribuído a uma O
 7. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: E-mail já cadastrado. O sistema rejeita o cadastro, pois o e-mail já pertence a outro usuário (RN13, RI13). O caso de uso é encerrado.
@@ -607,6 +617,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Nenhum registro encontrado. O sistema informa que não há técnicos para o filtro informado. Retorna ao passo 2.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 Não se aplica.
 
@@ -646,7 +658,7 @@ Cadastro do técnico atualizado.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 6a: E-mail já utilizado. O sistema rejeita a alteração, pois o novo e-mail já é usado por outro usuário (RN13, RI13). O caso de uso é encerrado.
@@ -687,7 +699,7 @@ Técnico inativo. Não pode mais autenticar-se (RN12) nem ser atribuído a novas
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: OS em andamento atribuída a ele. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
@@ -732,7 +744,7 @@ Cliente cadastrado, apto a ter equipamentos vinculados (RF03) e OS abertas (RF04
 7. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: E-mail ou CPF já cadastrados. O sistema rejeita o cadastro (RN13, RI13). O caso de uso é encerrado.
@@ -774,6 +786,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Nenhum registro encontrado. O sistema informa que não há clientes para o filtro informado. Retorna ao passo 2.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4b: Cliente fora do escopo do Técnico. O Técnico tenta consultar um cliente de uma OS não atribuída a ele e o sistema nega o acesso (RN10). O caso de uso é encerrado.
 
@@ -814,7 +828,7 @@ Cadastro do cliente atualizado.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 6a: E-mail ou CPF já utilizados. O sistema rejeita a alteração (RN13, RI13). O caso de uso é encerrado.
@@ -856,7 +870,7 @@ Cliente inativo. Não pode mais autenticar-se (RN12), ter novos equipamentos vin
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: OS em andamento vinculada. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
@@ -907,6 +921,8 @@ Equipamento cadastrado, apto a receber uma OS (RF04).
 **Branch Sequence**
 6a: Equipamento de software. O atendente informa a chave de licença no lugar do número de série. Retorna ao passo 7.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4a: Cliente inativo. O sistema impede o cadastro do equipamento (RN14). O caso de uso é encerrado.
 
@@ -946,6 +962,8 @@ Nenhuma alteração de estado. Consulta apenas.
 
 **Branch Sequence**
 4a: Nenhum registro encontrado. O sistema informa que não há equipamentos para o filtro informado. Retorna ao passo 2.
+
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4b: Cliente consulta equipamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
@@ -989,7 +1007,7 @@ Cadastro do equipamento atualizado.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 6a: Campo obrigatório removido/vazio. O sistema impede o avanço (RNF09). O caso de uso é encerrado.
@@ -1031,7 +1049,7 @@ Equipamento inativo. Não pode mais receber uma nova OS.
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: OS em andamento vinculada. O sistema impede a inativação (RN14, RI14). O caso de uso é encerrado.
@@ -1082,7 +1100,7 @@ OS registrada com status "aberta", pronta para a vistoria (UC31/UC32).
 12. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: Cliente sem cadastro. O sistema informa que o cliente e o equipamento precisam ser cadastrados antes da abertura da OS (UC16, UC20) e não abre a OS (RN01, RI02). O caso de uso é encerrado.
@@ -1128,6 +1146,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Nenhuma OS encontrada. O sistema informa que não há OS para o filtro informado. Retorna ao passo 2.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4b: Cliente consulta OS de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
 
@@ -1169,7 +1189,7 @@ Dados administrativos da OS atualizados.
 10. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: OS finalizada. O sistema impede a alteração, exceto pelo Admin (RN08, RI09). O caso de uso é encerrado.
@@ -1213,7 +1233,7 @@ OS cancelada, mantida no histórico (não pode ser excluída fisicamente, RI11).
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: OS já finalizada. O sistema impede o cancelamento (RN08). O caso de uso é encerrado.
@@ -1260,6 +1280,8 @@ OS com um ou mais técnicos atribuídos, pronta para a vistoria (UC31/UC32).
 **Branch Sequence**
 8a: Mais de um técnico necessário. O atendente escolhe atribuir outro técnico à mesma OS; cada técnico gera uma linha própria em `tecnico_os` (RN04). Retorna ao passo 4.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 6a: Técnico inativo. O sistema impede a atribuição (RN14). O caso de uso é encerrado.
 
@@ -1305,6 +1327,8 @@ Pagamento registrado, OS pronta para o feedback do cliente (UC30).
 **Branch Sequence**
 7a: Valor pago divergente. O sistema alerta que o valor não corresponde ao orçamento aprovado (RNF09). O atendente corrige ou confirma o valor. Retorna ao passo 8.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4a: OS sem teste aprovado. O sistema impede o registro da entrega (RF08). O caso de uso é encerrado.
 
@@ -1346,6 +1370,8 @@ OS finalizada com pagamento e feedback registrados, ou reaberta para novo reparo
 
 **Branch Sequence**
 5a: Cliente não satisfeito. O sistema registra o feedback e o erro relatado e retorna a OS para execução de manutenção (UC33). O caso de uso é encerrado.
+
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 Não se aplica.
@@ -1395,6 +1421,8 @@ Observação técnica registrada (opcional, editável), servindo de apoio ao dia
 
 8a: Edição da observação. O técnico edita a observação enquanto a vistoria continua. Retorna ao passo 7.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4a: OS não atribuída ao técnico. O sistema impede o início da vistoria (RN10). O caso de uso é encerrado.
 
@@ -1437,6 +1465,8 @@ OS com diagnóstico técnico registrado, pronta para orçamento (UC36).
 
 **Branch Sequence**
 5a: Nenhuma falha identificada. O técnico registra o diagnóstico final indicando equipamento sem defeito encontrado e nenhum serviço necessário (RN18). Retorna ao passo 7.
+
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: Nenhuma observação técnica preenchida. O sistema alerta antes de permitir o fechamento do diagnóstico (RNF09). O caso de uso é encerrado.
@@ -1484,6 +1514,8 @@ OS com reparo concluído, pronta para teste (UC34).
 
 6a: Reparo não funciona. O técnico registra o problema. Retorna ao passo 5.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4a: OS sem orçamento aprovado. O sistema impede o início da execução (RF06). O caso de uso é encerrado.
 
@@ -1529,6 +1561,8 @@ OS aprovada internamente (pronta para UC35) ou reencaminhada para novo reparo.
 
 7a: Desempenho insatisfatório. O técnico verifica o problema e o sistema registra o teste como "reprovado". A OS retorna a UC33 para novo reparo. O caso de uso é encerrado.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4a: Reparo não concluído. O sistema impede o início do teste (RF07). O caso de uso é encerrado.
 
@@ -1566,7 +1600,7 @@ Cliente informado, OS pronta para entrega e pagamento (UC29).
 6. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 3a: OS sem aprovação interna do teste. O sistema impede o aviso de conclusão (RF08). O caso de uso é encerrado.
@@ -1615,6 +1649,8 @@ Orçamento enviado, aguardando aprovação do cliente (UC39/UC40).
 **Branch Sequence**
 6a: Diagnóstico sem defeito. O atendente registra o orçamento com valor zero (R$ 0,00), informando na proposta que nenhum reparo é necessário (RN18). Retorna ao passo 7.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4a: Sem diagnóstico registrado. O sistema impede o início do orçamento (RF05). O caso de uso é encerrado.
 
@@ -1656,7 +1692,7 @@ Orçamento atualizado, aguardando nova resposta do cliente.
 10. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: Orçamento sem recusa registrada. O sistema não permite a renegociação (pré-condição não satisfeita). O caso de uso é encerrado.
@@ -1695,6 +1731,8 @@ Nenhuma alteração de estado. Consulta apenas.
 
 **Branch Sequence**
 4a: OS sem orçamento. O sistema informa que a OS ainda não tem orçamento registrado. Retorna ao passo 2.
+
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4b: Cliente consulta orçamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
@@ -1738,7 +1776,7 @@ OS com orçamento aprovado, pronta para execução.
 11. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 2a: Nenhum orçamento pendente. O sistema informa que não há orçamentos aguardando resposta. O caso de uso é encerrado.
@@ -1786,6 +1824,8 @@ OS aguardando renegociação (UC37) ou arquivamento (UC41), conforme o resultado
 **Branch Sequence**
 9a: Recusa após renegociação. Se a proposta recusada já era a renegociada, o sistema encaminha a OS para arquivamento (UC41). O caso de uso é encerrado.
 
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 2a: Nenhum orçamento pendente. O sistema informa que não há orçamentos aguardando resposta. O caso de uso é encerrado.
 
@@ -1828,7 +1868,7 @@ OS arquivada. Preservada no histórico, sem seguir para execução (RI11, não p
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-Não se aplica.
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 4a: Proposta renegociada ainda sem recusa. O sistema não permite o arquivamento (pré-condição não satisfeita). O caso de uso é encerrado.
@@ -1874,6 +1914,8 @@ Nenhuma alteração de estado. Consulta apenas.
 **Branch Sequence**
 4a: Equipamento sem OS. O sistema informa que o equipamento ainda não tem histórico de atendimento. Retorna ao passo 2.
 
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
+
 **Exception Sequence**
 4b: Cliente consulta equipamento de outro cliente. O sistema nega o acesso (RI10). O caso de uso é encerrado.
 
@@ -1910,6 +1952,8 @@ Nenhuma alteração de estado. Consulta apenas.
 
 **Branch Sequence**
 4a: Nenhum dado no período. O sistema informa que não há registros para o período escolhido. Retorna ao passo 2.
+
+*a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
 Não se aplica.
