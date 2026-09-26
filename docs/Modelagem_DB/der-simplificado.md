@@ -215,7 +215,7 @@ erDiagram
 | | `nome` | Comum a todos os perfis. |
 | | `senha` | Armazenada como hash, nunca em texto plano (RNF10). |
 | | `email` | Login de acesso (RF01); único por usuário (RN13). |
-| | `telefone` | Contato do cliente ou da equipe; usado na notificação de entrega (RF09). |
+| | `telefone` | Contato do cliente ou da equipe; exibido na lista de OS prontas para entrega (UC35, RF09). |
 | | `perfil` | `admin` \| `recepcionista` \| `tecnico` \| `cliente`. |
 | | `cpf` | Preenchido quando `perfil = cliente`; único por cliente (RN13). |
 | | `especialidade` | Preenchido quando `perfil = tecnico`. |
@@ -231,7 +231,7 @@ erDiagram
 | `os` | `id_os` | Chave primária. |
 | | `id_equipamento` | Chave estrangeira para `equipamento.id_equipamento` (RN02). |
 | | `id_atendente` | Chave estrangeira para `usuario.id_usuario`, normalmente um Recepcionista; o Administrador substitui na ausência (RN11). Sem trigger de papel: essa substituição é comportamento previsto, não uma inconsistência a ser bloqueada. |
-| | `status` | Ciclo da OS, com 4 estados: `aberta` \| `em_andamento` \| `finalizada` \| `cancelada`; distinto do `status` ativo/inativo de `usuario`/`equipamento`. As etapas intermediárias (diagnóstico realizado, orçamento enviado, aprovação recebida) são deriváveis do preenchimento de `diagnostico`/`orcamento`/`resultado_resposta_cliente`, sem exigir um estado próprio para cada uma. "Arquivada" (RN09) não é um estado à parte: é o nome de negócio para uma OS `cancelada` - toda OS cancelada já fica preservada no histórico, seja por decisão administrativa (UC27) ou por recusa do orçamento renegociado (UC41). |
+| | `status` | Ciclo da OS, com 4 estados: `aberta` \| `em_andamento` \| `finalizada` \| `cancelada`; distinto do `status` ativo/inativo de `usuario`/`equipamento`. As etapas intermediárias (diagnóstico realizado, orçamento enviado, aprovação recebida) são deriváveis do preenchimento de `diagnostico`/`orcamento`/`resultado_resposta_cliente`, sem exigir um estado próprio para cada uma. "Arquivada" (RN09) não é um estado à parte: é o nome de negócio para uma OS `cancelada` - toda OS cancelada já fica preservada no histórico, seja por decisão administrativa (UC27) ou por recusa do orçamento sem acordo na negociação (UC41). |
 | | `data_abertura`, `problema_relatado`, `diagnostico`, `orcamento`, `resultado_resposta_cliente`, `data_entrega` | Acompanham a OS da abertura à entrega; datas de negócio, preenchidas pelo atendente ou pelo técnico. `resultado_resposta_cliente` aceita só `aprovado` \| `recusado` (vazio enquanto o cliente não responde ao orçamento vigente). |
 | | `resultado_teste` | `aprovado` \| `reprovado`, de preenchimento opcional; registrado pelo técnico no teste pós-reparo (RF08). |
 | | `valor_pago` | Decimal, de preenchimento opcional; valor efetivamente recebido na entrega (RF09), usado para identificar divergência em relação a `orcamento`. |

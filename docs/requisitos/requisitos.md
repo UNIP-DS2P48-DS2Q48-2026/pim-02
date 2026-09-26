@@ -24,7 +24,7 @@ Itens deliberadamente fora do sistema - decisão tomada, não uma lacuna:
 
 - **Controle de estoque de peças.** Peças usadas ficam registradas como texto/observação na OS (RF07), sem controle de quantidade, entrada/saída ou fornecedores.
 - **Agendamento e manutenção preventiva.** O atendimento é sempre sob demanda: o processo começa quando o cliente traz um problema (RF04); não há agenda de visitas, monitoramento remoto ou lembretes automáticos.
-- **Envio automático de notificações.** O sistema registra que o cliente foi notificado (RF09), mas não se integra a e-mail, SMS ou aplicativos de mensagem.
+- **Envio automático de notificações.** O aviso de conclusão é a própria etapa da OS, visível na consulta do cliente (RF09); o sistema não se integra a e-mail, SMS ou aplicativos de mensagem.
 - **Processamento de pagamento.** O sistema registra o valor recebido (RF09), mas não se integra a gateways de pagamento (cartão, Pix, boleto).
 - **Centro de custos e relatórios financeiros/gerenciais.** Fora do escopo desta versão (ver [DER Simplificado](../Modelagem_DB/der-simplificado.md)).
 - **Gestão de fornecedores.** Decorre diretamente da ausência de controle de estoque.
@@ -114,7 +114,7 @@ O sistema deverá permitir registrar os testes realizados após o reparo e sua a
 
 **RF09: Registrar entrega, pagamento e feedback**
 
-O sistema deverá permitir registrar a notificação ao cliente, o pagamento recebido e o feedback de satisfação sobre o serviço prestado.
+O sistema deverá indicar ao cliente que o serviço foi concluído (a OS passa a constar como pronta para entrega na consulta dele) e permitir registrar o pagamento recebido e o feedback de satisfação sobre o serviço prestado.
 
 **RF10: Consultar informações e histórico**
 
