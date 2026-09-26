@@ -1455,7 +1455,7 @@ OS com diagnóstico técnico registrado, pronta para orçamento (UC36).
 1. O técnico seleciona a opção "Manutenção > Registrar Diagnóstico" no menu.
 2. O sistema exibe as OS atribuídas ao técnico.
 3. O técnico seleciona a OS.
-4. O sistema exibe as observações técnicas registradas (UC31).
+4. O sistema exibe as observações técnicas registradas (UC31), se houver.
 5. O técnico consolida as observações em um diagnóstico final.
 6. O técnico registra a situação do equipamento e o serviço necessário para o reparo.
 7. O sistema grava o diagnóstico.
@@ -1464,12 +1464,14 @@ OS com diagnóstico técnico registrado, pronta para orçamento (UC36).
 10. O caso de uso é encerrado.
 
 **Branch Sequence**
+4a: Nenhuma observação técnica preenchida. O sistema avisa que não há observação registrada, que é opcional (RF05), e pergunta se o técnico deseja continuar. O técnico confirma. Retorna ao passo 5.
+
 5a: Nenhuma falha identificada. O técnico registra o diagnóstico final indicando equipamento sem defeito encontrado e nenhum serviço necessário (RN18). Retorna ao passo 7.
 
 *a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
-4a: Nenhuma observação técnica preenchida. O sistema alerta antes de permitir o fechamento do diagnóstico (RNF09). O caso de uso é encerrado.
+4b: Técnico desiste após o aviso de que não há observação técnica. O sistema não grava nada. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1478,7 +1480,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Técnico, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF05; RI03 - Recepcionista e Cliente não registram diagnóstico; RN07 - campo técnico, do Técnico.
 Dados: atualiza `os.diagnostico`.
-Observação: com o diagnóstico preenchido, a OS fica liberada para o orçamento (UC36). Mesmo sem defeito encontrado (5a), a OS segue o fluxo normal, com orçamento de valor zero (RN18): orçamento, aprovação, execução sem reparo, teste e entrega.
+Observação: o diagnóstico final é obrigatório; a observação técnica (UC31) é opcional (RF05), por isso a falta dela gera só um aviso (4a). Com o diagnóstico preenchido, a OS fica liberada para o orçamento (UC36). Mesmo sem defeito encontrado (5a), a OS segue o fluxo normal, com orçamento de valor zero (RN18): orçamento, aprovação, execução sem reparo, teste e entrega.
 
 ### UC33 - Executar Manutenção
 
@@ -1494,7 +1496,7 @@ Usuário autenticado (UC01) com perfil Técnico ou Admin.
 Orçamento aprovado pelo cliente (UC39).
 
 **Postcondition**
-OS com reparo concluído, pronta para teste (UC34).
+Ações de reparo registradas na OS. Terminado o reparo, o técnico segue para o teste (UC34).
 
 **Base Sequence**
 1. O técnico seleciona a opção "Manutenção > Executar Manutenção" no menu.
@@ -1503,7 +1505,7 @@ OS com reparo concluído, pronta para teste (UC34).
 4. O sistema verifica se o orçamento da OS foi aprovado (RF06).
 5. O(s) técnico(s) separam peças e realizam o reparo.
 6. O técnico registra as ações realizadas.
-7. O sistema grava as ações e atualiza o status da OS.
+7. O sistema grava as ações na OS.
 8. O sistema informa que o reparo foi registrado.
 9. O caso de uso é encerrado.
 
@@ -1525,8 +1527,8 @@ Não se aplica.
 **Note**
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Técnico, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF07; RN04 - mais de um técnico por OS; RN18 - OS sem defeito segue o fluxo com orçamento zero; RI05 - Recepcionista e Cliente não executam o reparo.
-Dados: atualiza `os.status` para "em_andamento" e registra as ações em `tecnico_os.observacoes_tecnicas`.
-Observação: as ações realizadas no reparo ficam no mesmo campo das observações da vistoria (`tecnico_os.observacoes_tecnicas`), sem campo próprio. Controle de peças e estoque está fora do escopo.
+Dados: registra as ações em `tecnico_os.observacoes_tecnicas`. O `os.status` já está "em_andamento" desde a atribuição do técnico (UC28).
+Observação: as ações realizadas no reparo ficam no mesmo campo das observações da vistoria (`tecnico_os.observacoes_tecnicas`), sem campo próprio. Não existe campo de "reparo concluído": o fim do reparo é marcado pelo teste aprovado (UC34). Controle de peças e estoque está fora do escopo.
 
 ### UC34 - Registrar Teste de Funcionamento
 
@@ -1539,16 +1541,16 @@ Admin: por generalização (herda de Técnico, RN11). Não aparece vinculado nes
 
 **Precondition**
 Usuário autenticado (UC01) com perfil Técnico ou Admin.
-Reparo concluído (UC33).
+Orçamento aprovado pelo cliente (UC39) e ações de reparo registradas (UC33).
 
 **Postcondition**
 OS aprovada internamente (pronta para UC35) ou reencaminhada para novo reparo.
 
 **Base Sequence**
 1. O técnico seleciona a opção "Manutenção > Registrar Teste" no menu.
-2. O sistema exibe as OS atribuídas ao técnico com reparo registrado.
+2. O sistema exibe as OS atribuídas ao técnico com orçamento aprovado e ainda sem teste aprovado.
 3. O técnico seleciona a OS.
-4. O sistema verifica se o reparo foi concluído (RF07).
+4. O sistema verifica se o orçamento da OS foi aprovado (RF06).
 5. O técnico realiza o teste pós-reparo.
 6. O técnico informa se os testes funcionaram.
 7. O técnico verifica o desempenho do equipamento.
@@ -1564,7 +1566,7 @@ OS aprovada internamente (pronta para UC35) ou reencaminhada para novo reparo.
 *a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
-4a: Reparo não concluído. O sistema impede o início do teste (RF07). O caso de uso é encerrado.
+4a: OS sem orçamento aprovado. O sistema impede o registro do teste (RF06). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1573,12 +1575,12 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Técnico, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF08; RI06 - Recepcionista e Cliente não registram o teste.
 Dados: atualiza `os.resultado_teste` ("aprovado" | "reprovado").
-Observação: só com "aprovado" a OS segue para o UC35 e o UC29. Com "reprovado", volta para o UC33.
+Observação: o técnico registra o teste quando considera o reparo terminado; não há campo de "reparo concluído". Só com "aprovado" a OS segue para o UC35 e o UC29. Com "reprovado", volta para o UC33.
 
 ### UC35 - Informar Conclusão ao Cliente
 
 **Summary**
-Permite que o Recepcionista avise o cliente de que o serviço foi concluído (RF09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: ponte entre Teste de Funcionamento e Entrega ao Cliente.
+Lista as OS com teste aprovado que aguardam entrega, com o contato do cliente (RF09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: ponte entre Teste de Funcionamento e Entrega ao Cliente.
 
 **Actor**
 Recepcionista.
@@ -1589,21 +1591,21 @@ Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
 Teste de funcionamento aprovado (UC34).
 
 **Postcondition**
-Cliente informado, OS pronta para entrega e pagamento (UC29).
+OS identificada como pronta para entrega e pagamento (UC29).
 
 **Base Sequence**
 1. O atendente seleciona a opção "Manutenção > OS Prontas para Entrega" no menu.
 2. O sistema exibe as OS com teste aprovado que ainda não foram entregues.
 3. O atendente seleciona a OS.
 4. O sistema exibe os dados de contato do cliente, obtidos pelo equipamento da OS.
-5. O atendente informa o cliente de que o serviço foi concluído.
+5. O atendente consulta o contato do cliente, caso queira combinar a retirada.
 6. O caso de uso é encerrado.
 
 **Branch Sequence**
 *a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
-3a: OS sem aprovação interna do teste. O sistema impede o aviso de conclusão (RF08). O caso de uso é encerrado.
+3a: OS sem aprovação interna do teste. O sistema não a exibe entre as OS prontas para entrega (RF08). O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
@@ -1612,7 +1614,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF09; RF08 - só OS com teste aprovado.
 Dados: não altera registros; lista as OS com `resultado_teste` = "aprovado" ainda sem `data_entrega`.
-Observação: o aviso ao cliente acontece fora do sistema (telefone ou presencial), porque o sistema é só de terminal (RNF02).
+Observação: o aviso ao cliente é a própria mudança de etapa da OS: com o teste aprovado, ela aparece como pronta para entrega na consulta do cliente (UC25). Não há campo de notificação. Um contato por telefone, se houver, acontece fora do sistema (RNF02).
 
 ---
 
@@ -1795,7 +1797,7 @@ Observação: o próprio Cliente registra a resposta pelo sistema, ou o Recepcio
 ### UC40 - Registrar Recusa do Orçamento
 
 **Summary**
-Permite que o Cliente recuse o orçamento recebido, abrindo uma rodada de negociação (RF06). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? > Não > Negociar", em Aprovação do Cliente.
+Permite que o Cliente recuse o orçamento recebido. A OS fica disponível para renegociação (UC37) ou arquivamento (UC41) (RF06). Disponível para Cliente, Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? > Não > Negociar", em Aprovação do Cliente.
 
 **Actor**
 Cliente, Recepcionista.
@@ -1806,7 +1808,7 @@ Usuário autenticado (UC01) com perfil Cliente, Recepcionista ou Admin.
 Orçamento enviado ao cliente e aguardando resposta (UC36 ou UC37).
 
 **Postcondition**
-OS aguardando renegociação (UC37) ou arquivamento (UC41), conforme o resultado da negociação.
+OS com orçamento recusado, aguardando renegociação (UC37) ou arquivamento (UC41), a critério do atendente.
 
 **Base Sequence**
 1. O ator seleciona a opção "Orçamentos > Recusar" no menu.
@@ -1817,13 +1819,11 @@ OS aguardando renegociação (UC37) ou arquivamento (UC41), conforme o resultado
 6. O sistema solicita a confirmação da recusa.
 7. O ator confirma a recusa.
 8. O sistema registra a resposta como "recusado".
-9. O sistema abre uma rodada de negociação (UC37).
+9. O sistema deixa a OS disponível para renegociação (UC37) ou arquivamento (UC41).
 10. O sistema informa que o orçamento foi recusado.
 11. O caso de uso é encerrado.
 
 **Branch Sequence**
-9a: Recusa após renegociação. Se a proposta recusada já era a renegociada, o sistema encaminha a OS para arquivamento (UC41). O caso de uso é encerrado.
-
 *a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
@@ -1838,12 +1838,12 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF06; RN10 - o Cliente só responde orçamentos das próprias OS.
 Dados: atualiza `os.resultado_resposta_cliente` para "recusado" (valores aceitos pelo banco: "aprovado" | "recusado").
-Observação: o próprio Cliente registra a resposta, ou o Recepcionista registra por ele. A primeira recusa leva à renegociação (UC37); a recusa da proposta renegociada leva ao arquivamento (UC41).
+Observação: o próprio Cliente registra a resposta, ou o Recepcionista registra por ele. Depois de qualquer recusa, o atendente decide com o cliente se renegocia (UC37) ou arquiva a OS (UC41). Não há limite de rodadas nem arquivamento automático (RF06: "repetir o ciclo de negociação até a aprovação ou o arquivamento"), por isso não é preciso guardar se a proposta já foi renegociada.
 
 ### UC41 - Arquivar Orçamento
 
 **Summary**
-Arquiva a OS quando o cliente recusa também a proposta renegociada, preservando o histórico (RN09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Cliente aprova? (negociado) > Não > Arquivar OS", em Aprovação do Cliente.
+Arquiva a OS quando o cliente recusa o orçamento e não há acordo na negociação, preservando o histórico (RN09). Disponível para Recepcionista e, por herança, Admin. Fluxograma: "Arquivar OS", em Aprovação do Cliente.
 
 **Actor**
 Recepcionista.
@@ -1851,16 +1851,16 @@ Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculad
 
 **Precondition**
 Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
-Orçamento renegociado (UC37) e recusado novamente pelo cliente (UC40).
+Orçamento recusado pelo cliente (UC40).
 
 **Postcondition**
 OS arquivada. Preservada no histórico, sem seguir para execução (RI11, não pode ser excluída fisicamente).
 
 **Base Sequence**
 1. O atendente seleciona a opção "Orçamentos > Arquivar" no menu.
-2. O sistema exibe as OS cuja proposta renegociada foi recusada.
+2. O sistema exibe as OS com orçamento recusado.
 3. O atendente seleciona a OS.
-4. O sistema constata que a proposta negociada também foi recusada.
+4. O sistema verifica se o orçamento está recusado.
 5. O sistema solicita a confirmação do arquivamento.
 6. O atendente confirma o arquivamento.
 7. O sistema arquiva a OS, preservando o histórico (RN09).
@@ -1871,7 +1871,7 @@ OS arquivada. Preservada no histórico, sem seguir para execução (RI11, não p
 *a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
 **Exception Sequence**
-4a: Proposta renegociada ainda sem recusa. O sistema não permite o arquivamento (pré-condição não satisfeita). O caso de uso é encerrado.
+4a: Orçamento sem recusa registrada. O sistema não permite o arquivamento (pré-condição não satisfeita). O caso de uso é encerrado.
 
 6a: Atendente desiste do arquivamento. O sistema mantém a OS sem alteração. O caso de uso é encerrado.
 
@@ -1882,7 +1882,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RN09/RI11 - a OS arquivada permanece no histórico e não é excluída.
 Dados: atualiza `os.status` para "cancelada".
-Observação: "arquivada" não é um status próprio no banco: é o nome de negócio para uma OS cancelada por recusa do orçamento renegociado (ver der-simplificado.md).
+Observação: "arquivada" não é um status próprio no banco: é o nome de negócio para uma OS cancelada por recusa do orçamento sem acordo na negociação (ver der-simplificado.md). O arquivamento pode ser feito já na primeira recusa.
 
 ---
 
