@@ -6,32 +6,31 @@
 
 ## Sprint Goal
 
-Modelar o banco de dados inicial e produzir os diagramas de caso de uso e de classes.
+Reorganizar os casos de uso por módulo ("Gerenciar ...") e ajustar o modelo de dados de usuário.
 
 ## Product Backlog Items
 
-Trabalho de base para o que viria a ser o Etapa 3 (Engenharia de Software) e Etapa 4 (Banco de Dados) do PIM.
+Nenhum PBI de código - trabalho de modelagem.
 
 ## Tasks
 
-- Modelar o banco de dados inicial (10 entidades, `Modelagem_DB/*.brM3`).
-- Reorganizar a documentação e melhorar o escopo.
-- Criar os diagramas de caso de uso por ator/módulo (Astah).
-- Criar o diagrama de classes (Astah).
+- [x] Reorganizar os diagramas de casos de uso em pacotes por módulo (Gerenciar Admin, Cliente, Equipamento, Ordem de Serviço, Orçamento etc.) no Astah - 05/09.
+- [x] Atualizar a modelagem da entidade de usuário no brModelo - 05/09.
 
 ## Sprint Review
 
-Modelo de dados inicial e diagramas de caso de uso publicados no repositório.
+Casos de uso divididos por módulo publicados no repositório. Não houve entregas registradas entre 06/09 e 11/09.
 
 ## Retrospective
 
 ### Funcionou bem
 
-- Diagramas de caso de uso ficaram bem divididos por ator e por módulo.
+- Dividir os casos de uso por módulo deixou os diagramas menores e mais fáceis de ler.
 
 ### Problemas
 
-- O modelo de dados saiu maior do que o necessário: 10 entidades, com uma relação "SE" para cada perfil de usuário (Admin, Técnico, Recepcionista, Cliente).
+- Semana com pouca atividade registrada no repositório após o dia 05/09.
+- O modelo de dados continuava com uma tabela por perfil de usuário.
 
 ### Melhorias
 
