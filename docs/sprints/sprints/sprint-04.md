@@ -1,47 +1,43 @@
 # Sprint 04
 
-**Status:** Concluída - fechada em 18/09/2026.
+**Status:** Concluída - reconstruída a partir do histórico do Git.
 
-**Período:** 12/09/2026 a 18/09/2026 (mesma semana da Sprint 03, que segue em andamento à parte).
+**Período:** 19/09/2026 a 25/09/2026.
 
 ## Sprint Goal
 
-Confrontar os requisitos existentes com o recado do professor e com o fluxo real do processo (Miro), simplificar o modelo de dados e fechar as decisões de escopo pendentes.
+Transformar os requisitos reescritos em modelagem: fluxogramas do processo, casos de uso no Astah com descrição detalhada e modelo lógico do banco de dados.
 
 ## Product Backlog Items
 
-PBI01 a PBI12 (reescritos nesta sprint) - ver [product-backlog.md](../../product-backlog/product-backlog.md).
+Nenhum PBI de código - modelagem (Etapas de Engenharia de Software e Banco de Dados do PIM) que cobre os PBI01 a PBI12.
 
 ## Tasks
 
-- Ler e transcrever os 8 fluxogramas do board Miro (Atendimento → Cadastro → Diagnóstico → Orçamento → Aprovação → Execução → Teste → Entrega).
-- Comparar os requisitos atuais com o recado do professor (Minimundo, regras de negócio, RF/RNF sobrepostos, CRUD, "muitas tabelas").
-- Levantar o backlog mestre das 9 etapas do PIM II, cruzando com o Trello e a orientação recebida.
-- Decidir remover o controle de estoque do escopo.
-- Decidir o modelo de dados final: 4 tabelas (`users` com `role`, `equipamentos`, `os`, `tecnicos_rel`).
-- Decidir que uma OS pode ter um ou mais técnicos, e que o Administrador cobre a ausência de Recepcionista/Técnico (RN11).
-- Reescrever `requisitos.md`: RF, RNF, RN e Matriz de Permissões.
-- Reclassificar a validação de integridade dos dados de RF para RNF (RNF09), por ser uma preocupação transversal a todas as operações.
-- Separar os Casos de Uso Detalhados em arquivo próprio (`casos-de-uso.md`), com exceções específicas por etapa do fluxo (podendo haver mais de uma por caso de uso).
-- Criar o DER simplificado (`Modelagem_DB/der-simplificado.md`).
-- Sincronizar `product-backlog.md` e `levantamento-de-dados.md` com os novos requisitos.
-- Criar a planilha de requisitos (`requisitos.xlsx`), separada por módulo.
+- [x] Publicar os requisitos reescritos, a estrutura e as planilhas (Sprint 03) - 19/09.
+- [x] Publicar os 8 fluxogramas do processo (`docs/Fluxograma/`) - 19/09.
+- [x] Atualizar os diagramas de casos de uso no Astah e corrigir o fluxo, incluindo o cancelamento de OS - 19/09 e 20/09.
+- [x] Atualizar o modelo conceitual do banco de dados - 20/09.
+- [x] Criar o modelo lógico do banco de dados - 21/09.
+- [x] Realizar testes de estresse dos triggers (`2026-09-22-testes-estresse-triggers/testes.sql`) - 22/09.
+- [x] Revisar UML, RN e casos de uso - 25/09.
+- [x] Escrever as descrições dos 44 casos de uso no formato do Astah (`descricoes-astah.md`) e exportar um PNG por caso de uso - 25/09.
 
 ## Sprint Review
 
-Requisitos, backlog e modelo de dados totalmente reescritos e sincronizados entre si. Escopo de estoque fechado. Matriz de permissões única criada, eliminando as repetições identificadas. Planilha de requisitos publicada para facilitar a leitura pela equipe.
+Fluxogramas, diagramas de casos de uso (44 UCs, com descrição de fluxo principal, alternativo e de exceção), modelo lógico do banco e scripts de teste dos triggers publicados no repositório.
 
 ## Retrospective
 
 ### Funcionou bem
 
-- Usar o fluxo real do Miro como base para os RF evitou requisitos genéricos que não batiam com o processo de verdade.
-- Fechar decisões (estoque, tabelas, múltiplos técnicos) antes de reescrever o texto evitou retrabalho.
+- As descrições dos casos de uso ficaram correlacionadas com os fluxogramas, o que vai guiar a implementação função por função.
 
 ### Problemas
 
-- Passaram-se sprints de trabalho sem nenhuma documentada em tempo real - a defasagem só foi percebida nesta sprint.
+- Cada revisão dos diagramas virou uma nova pasta datada (`v2`, `v2` do dia seguinte...), deixando `docs/Modalagem_casos_de_uso/` com várias cópias quase iguais - o Git já guarda o histórico.
 
 ### Melhorias
 
-- A partir de agora, fechar Review + Retrospective + Planning toda sexta-feira, sem acumular.
+- Manter só a versão atual dos diagramas na pasta e deixar o histórico para o Git.
+- Iniciar a implementação em C na próxima sprint.
