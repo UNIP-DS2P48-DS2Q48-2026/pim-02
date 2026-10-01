@@ -36,14 +36,14 @@ A partir dessas necessidades levantadas junto ao proprietário, a equipe transfo
 PBI relacionado: PBI01
 
 Como equipe de desenvolvimento,
-quero uma estrutura de projeto organizada com persistência em arquivo,
+quero uma estrutura de projeto organizada com persistência em banco de dados SQL Server ou em arquivos de texto,
 para começar o desenvolvimento das funcionalidades do sistema.
 
 ### Critérios de aceitação
 
 * Projeto compila sem erros.
 * Estrutura de pastas definida.
-* Dados salvos em arquivo continuam disponíveis depois de reiniciar o programa.
+* Dados salvos (no banco ou nos arquivos `.txt`) continuam disponíveis depois de reiniciar o programa.
 
 ## US02 – Autenticação
 
@@ -73,7 +73,7 @@ para manter a equipe registrada e com acesso adequado ao sistema.
 * Permitir cadastrar, consultar, editar e ativar/inativar usuários com perfil admin, recepcionista ou técnico.
 * Registrar especialidade para usuários com perfil técnico.
 * Validar campos obrigatórios.
-* Persistir os dados em arquivo.
+* Persistir os dados no banco de dados ou em arquivos de texto.
 
 ## US04 – Gerenciar equipamentos (hardware e software)
 
