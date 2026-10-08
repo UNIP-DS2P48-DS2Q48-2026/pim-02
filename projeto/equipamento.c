@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-
-/* Funções utilitárias externas declaradas no main.c */
-extern void limparBuffer(void);
-extern void imprimirCabecalho(const char *subtitulo);
-
 /* Regrava o equipamento.txt inteiro com o que está no vetor */
 void salvarEquipamentos(void)
 {
@@ -58,166 +51,297 @@ void carregarEquipamentos(void)
     fclose(arquivo);
 }
 
+/* Posição no vetor do equipamento com este id (-1 se não existir) */
+int buscarEquipamentoPorId(int id)
+{
+    for (int i = 0; i < totalEquipamentos; i++)
+    {
+        if (equipamentos[i].id_equipamento == id)
+            return i;
+    }
+    return -1;
+}
+
+/* RN14: o equipamento tem alguma OS aberta ou em andamento? */
+int equipamentoTemOSEmAndamento(int idEquipamento)
+{
+    for (int i = 0; i < totalOrdens; i++)
+    {
+        if (ordens[i].id_equipamento == idEquipamento &&
+            (strcmp(ordens[i].status, "aberta") == 0 || strcmp(ordens[i].status, "em_andamento") == 0))
+            return 1;
+    }
+    return 0;
+}
+
+/* RN10/RI10: cliente só vê os próprios; técnico só os das OS atribuídas a ele; atendente vê todos */
+int podeVerEquipamento(int i)
+{
+    int idLogado = usuarios[usuarioLogado].id_usuario;
+
+    if (podeAtender())
+        return 1;
+    if (perfilLogado("cliente"))
+        return equipamentos[i].id_cliente == idLogado;
+    if (perfilLogado("tecnico"))
+    {
+        for (int j = 0; j < totalOrdens; j++)
+        {
+            if (ordens[j].id_equipamento != equipamentos[i].id_equipamento)
+                continue;
+            for (int k = 0; k < totalTecnicosOS; k++)
+            {
+                if (tecnicosOS[k].id_os == ordens[j].id_os && tecnicosOS[k].id_tecnico == idLogado)
+                    return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+/* Nome do dono do equipamento, para as listagens */
+const char *nomeCliente(int idCliente)
+{
+    int i = buscarUsuarioPorId(idCliente);
+    return i >= 0 ? usuarios[i].nome : "?";
+}
+
+/* Lista os equipamentos visíveis que batem com o filtro (cliente, tipo, marca ou número de série); devolve quantos mostrou */
+int listarEquipamentos(const char *filtro, int soAtivos)
+{
+    int mostrados = 0;
+
+    for (int i = 0; i < totalEquipamentos; i++)
+    {
+        Equipamento *e = &equipamentos[i];
+        const char *dono = nomeCliente(e->id_cliente);
+
+        if (!podeVerEquipamento(i) || (soAtivos && strcmp(e->status, "ativo") != 0))
+            continue;
+        if (!contemTexto(dono, filtro) && !contemTexto(e->tipo, filtro) && !contemTexto(e->marca, filtro) &&
+            !contemTexto(e->modelo_numero_serie, filtro))
+            continue;
+
+        if (mostrados == 0)
+        {
+            printf("\n  %-4s %-14s %-8s %-14s %-10s %-15s %s\n", "ID", "Cliente", "Categ.", "Tipo", "Marca",
+                   "Modelo/Serie", "Status");
+            printf("  ----------------------------------------------------------------------------\n");
+        }
+        printf("  %-4d %-14.14s %-8s %-14.14s %-10.10s %-15.15s %s\n", e->id_equipamento, dono, e->categoria,
+               e->tipo, e->marca, e->modelo_numero_serie, e->status);
+        mostrados++;
+    }
+    return mostrados;
+}
+
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
+int selecionarEquipamento(int soAtivos)
+{
+    char filtro[60];
+    int id, i;
+
+    lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+    if (strcmp(filtro, "0") == 0)
+        return -1;
+
+    if (listarEquipamentos(filtro, soAtivos) == 0)
+    {
+        printf("\n[!] Nenhum equipamento encontrado para o filtro informado.");
+        pausar();
+        return -1;
+    }
+
+    id = lerInteiro("\nID do equipamento (0 para voltar): ");
+    if (id <= 0)
+        return -1;
+    i = buscarEquipamentoPorId(id);
+    if (i < 0 || !podeVerEquipamento(i) || (soAtivos && strcmp(equipamentos[i].status, "ativo") != 0))
+    {
+        printf("\n[!] ID %d nao esta na lista.", id);
+        pausar();
+        return -1;
+    }
+    return i;
+}
+
 /* UC20 - Cadastrar Equipamento: cadastra um hardware ou software de um cliente */
 void cadastrarEquipamento(void)
 {
-    char cliente_busca[50];
-    int categoria_opcao;
-    char tipo[50], marca[50], modelo_serie[100];
+    Equipamento novo;
+    int iCliente, categoria, maiorId = 0;
 
+    memset(&novo, 0, sizeof(novo));
     imprimirCabecalho("Equipamentos > Cadastrar");
 
+    if (!podeAtender())
+    {
+        printf("\n[!] Seu perfil nao pode cadastrar equipamentos (RN10).");
+        pausar();
+        return;
+    }
+
     /* Vinculação do equipamento a um cliente (RN01) */
-    printf("Informe o CPF ou Nome do cliente proprietario: ");
-    fgets(cliente_busca, sizeof(cliente_busca), stdin);
-    cliente_busca[strcspn(cliente_busca, "\n")] = '\0';
+    printf("\nCliente proprietario:");
+    iCliente = selecionarUsuario("cliente", 0);
+    if (iCliente < 0)
+        return;
+    if (strcmp(usuarios[iCliente].status, "ativo") != 0)
+    {
+        printf("\n[!] O cliente %s esta inativo e nao pode receber equipamentos (RN14).", usuarios[iCliente].nome);
+        pausar();
+        return;
+    }
 
-    printf("\n[+] Buscando cliente e validando status...\n");
-    printf("[+] (Verificando se o cliente possui status 'ativo')\n");
-    printf("[+] (Verificando se o usuario tem perfil 'cliente')\n\n");
-
-    printf("Selecione a Categoria do Equipamento:\n");
+    printf("\nSelecione a Categoria do Equipamento:\n");
     printf("1 - Hardware\n");
     printf("2 - Software\n");
-    printf("Opcao: ");
-    if (scanf("%d", &categoria_opcao) != 1)
+    categoria = lerInteiro("Opcao: ");
+    if (categoria != 1 && categoria != 2)
     {
-        limparBuffer();
-        printf("[!] Erro na leitura da categoria.\n");
+        printf("\n[!] Categoria invalida. Nada foi gravado.");
+        pausar();
         return;
     }
-    limparBuffer();
+    strcpy(novo.categoria, categoria == 1 ? "hardware" : "software");
 
-    printf("Tipo (ex: Notebook, Sistema Operacional): ");
-    fgets(tipo, sizeof(tipo), stdin);
-    tipo[strcspn(tipo, "\n")] = '\0';
-
-    printf("Marca: ");
-    fgets(marca, sizeof(marca), stdin);
-    marca[strcspn(marca, "\n")] = '\0';
-
-    if (categoria_opcao == 2)
-    {
-        printf("Chave de Licenca: ");
-    }
-    else
-    {
-        printf("Modelo / Numero de Serie: ");
-    }
-    fgets(modelo_serie, sizeof(modelo_serie), stdin);
-    modelo_serie[strcspn(modelo_serie, "\n")] = '\0';
+    lerTexto("Tipo (ex: Notebook, Sistema Operacional): ", novo.tipo, sizeof(novo.tipo));
+    lerTexto("Marca: ", novo.marca, sizeof(novo.marca));
+    lerTexto(categoria == 2 ? "Chave de Licenca: " : "Modelo / Numero de Serie: ",
+             novo.modelo_numero_serie, sizeof(novo.modelo_numero_serie));
 
     /* Validação de campos obrigatórios (RNF09) */
-    if (strlen(tipo) == 0 || strlen(marca) == 0 || strlen(modelo_serie) == 0)
+    if (!campoPreenchido(novo.tipo, "Tipo") || !campoPreenchido(novo.marca, "Marca") ||
+        !campoPreenchido(novo.modelo_numero_serie, categoria == 2 ? "Chave de Licenca" : "Modelo / Numero de Serie"))
+        return;
+    if (totalEquipamentos >= MAX_EQUIPAMENTOS)
     {
-        printf("\n[!] Erro: Todos os campos (tipo, marca, modelo/serie) sao obrigatorios (RNF09).\n");
+        printf("\n[!] Limite de %d equipamentos atingido. Nada foi gravado.", MAX_EQUIPAMENTOS);
+        pausar();
         return;
     }
 
-    printf("\n[+] Gravando o cadastro no sistema com status 'ativo'...\n");
-    printf("[+] Equipamento cadastrado com sucesso e vinculado ao cliente!\n");
+    for (int i = 0; i < totalEquipamentos; i++)
+    {
+        if (equipamentos[i].id_equipamento > maiorId)
+            maiorId = equipamentos[i].id_equipamento;
+    }
+    novo.id_equipamento = maiorId + 1;
+    novo.id_cliente = usuarios[iCliente].id_usuario;
+    strcpy(novo.status, "ativo");
+    dataHoraAgora(novo.criado_em);
+    strcpy(novo.atualizado_em, novo.criado_em);
+
+    equipamentos[totalEquipamentos++] = novo;
+    salvarEquipamentos();
+
+    printf("\n[+] Equipamento cadastrado e vinculado a %s! ID: %d", usuarios[iCliente].nome, novo.id_equipamento);
+    pausar();
 }
 
 /* UC21 - Consultar Equipamento: lista e busca os equipamentos que o perfil pode ver */
 void consultarEquipamento(void)
 {
-    char filtro[50];
+    char filtro[60];
 
     imprimirCabecalho("Equipamentos > Consultar");
 
-    printf("Informe um filtro (cliente, tipo ou numero de serie) ou ENTER para listar todos: ");
-    fgets(filtro, sizeof(filtro), stdin);
-    filtro[strcspn(filtro, "\n")] = '\0';
-
-    printf("\n--- Resultados da Busca ---\n");
-
-    /* Regra de restrição de visibilidade (RN10, RI10) */
-    printf("[+] Verificando escopo do perfil logado...\n");
-    printf("    - Cliente: so ve os proprios equipamentos.\n");
-    printf("    - Tecnico: so ve os equipamentos das OS atribuidas a ele.\n");
-    printf("    - Recepcionista/Admin: ve todos.\n\n");
-
-    if (strlen(filtro) > 0)
+    while (1)
     {
-        printf("Buscando equipamentos ativos e inativos para o filtro: '%s'...\n", filtro);
+        lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+        if (strcmp(filtro, "0") == 0)
+            return;
+        /* Ativos e inativos aparecem, com o status, para preservar o histórico */
+        if (listarEquipamentos(filtro, 0) > 0)
+            break;
+        printf("\n[!] Nenhum equipamento encontrado para o filtro informado.\n");
+        if (strlen(filtro) == 0)
+        {
+            pausar();
+            return;
+        }
     }
-    else
-    {
-        printf("Listando todos os equipamentos permitidos ao seu perfil...\n");
-    }
-
-    /* Simulação de exibição dos registros (incluindo status) */
-    printf("\n[+] Consulta finalizada.\n");
+    pausar();
 }
 
 /* UC22 - Editar Equipamento: altera tipo, marca e modelo/numero de serie */
 void editarEquipamento(void)
 {
-    int id_alvo;
-    char tipo[50], marca[50], modelo_serie[100];
+    Equipamento editado;
+    int i;
 
     imprimirCabecalho("Equipamentos > Editar");
 
-    printf("Digite o ID do equipamento que deseja alterar (ou 0 para voltar): ");
-    if (scanf("%d", &id_alvo) != 1 || id_alvo == 0)
+    if (!podeAtender())
     {
-        limparBuffer();
+        printf("\n[!] Seu perfil nao pode editar equipamentos (RN10).");
+        pausar();
         return;
     }
-    limparBuffer();
 
-    printf("\nEditando o Equipamento ID: %d\n", id_alvo);
-    printf("Insira os novos dados (ou pressione ENTER para manter o atual).\n\n");
+    i = selecionarEquipamento(0);
+    if (i < 0)
+        return;
 
-    printf("Novo Tipo: ");
-    fgets(tipo, sizeof(tipo), stdin);
-    tipo[strcspn(tipo, "\n")] = '\0';
+    editado = equipamentos[i]; /* trabalha numa cópia: se algo falhar, nada muda */
+    printf("\nEquipamento de %s (%s). Deixe em branco para manter o valor atual.\n\n",
+           nomeCliente(editado.id_cliente), editado.categoria);
+    lerOuManter("Tipo", editado.tipo, sizeof(editado.tipo));
+    lerOuManter("Marca", editado.marca, sizeof(editado.marca));
+    lerOuManter(strcmp(editado.categoria, "software") == 0 ? "Chave de Licenca" : "Modelo / Numero de Serie",
+                editado.modelo_numero_serie, sizeof(editado.modelo_numero_serie));
 
-    printf("Nova Marca: ");
-    fgets(marca, sizeof(marca), stdin);
-    marca[strcspn(marca, "\n")] = '\0';
+    dataHoraAgora(editado.atualizado_em);
+    equipamentos[i] = editado;
+    salvarEquipamentos();
 
-    printf("Novo Modelo / Numero de Serie (ou Chave de Licenca): ");
-    fgets(modelo_serie, sizeof(modelo_serie), stdin);
-    modelo_serie[strcspn(modelo_serie, "\n")] = '\0';
-
-    /* Validação de campos obrigatórios (RNF09) */
-    printf("\n[+] Verificando preenchimento de campos obrigatorios (RNF09)...\n");
-
-    printf("\n[+] Equipamento atualizado com sucesso (data de 'atualizado_em' modificada)!\n");
+    printf("\n[+] Equipamento ID %d atualizado com sucesso!", editado.id_equipamento);
+    pausar();
 }
 
 /* UC23 - Inativar Equipamento: inativa um equipamento sem OS em andamento */
 void inativarEquipamento(void)
 {
-    int id_alvo;
-    char confirmacao;
+    char pergunta[150];
+    int i;
 
     imprimirCabecalho("Equipamentos > Inativar");
 
-    printf("Digite o ID do equipamento para inativar (ou 0 para voltar): ");
-    if (scanf("%d", &id_alvo) != 1 || id_alvo == 0)
+    if (!podeAtender())
     {
-        limparBuffer();
+        printf("\n[!] Seu perfil nao pode inativar equipamentos (RN10).");
+        pausar();
         return;
     }
-    limparBuffer();
 
-    /* Validação de bloqueio caso o equipamento tenha OS "aberta" ou "em andamento" (RN14) */
-    printf("\n[+] Verificando se existem Ordens de Servico em andamento para o equipamento ID %d...\n", id_alvo);
+    i = selecionarEquipamento(1);
+    if (i < 0)
+        return;
 
-    printf("Tem certeza que deseja inativar o equipamento ID %d? (S/N): ", id_alvo);
-    scanf(" %c", &confirmacao);
-    limparBuffer();
-
-    if (confirmacao == 'S' || confirmacao == 's')
+    /* Bloqueio caso o equipamento tenha OS "aberta" ou "em andamento" (RN14) */
+    if (equipamentoTemOSEmAndamento(equipamentos[i].id_equipamento))
     {
-        /* Simulação de inativação preservando histórico (RN12) */
-        printf("\n[+] Equipamento inativado com sucesso (status = 'inativo').\n");
-        printf("[+] Historico preservado. Este equipamento nao podera receber novas OS.\n");
+        printf("\n[!] O equipamento ID %d tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).",
+               equipamentos[i].id_equipamento);
+        pausar();
+        return;
     }
-    else
+
+    sprintf(pergunta, "\nTem certeza que deseja inativar o equipamento ID %d (%s %s)?", equipamentos[i].id_equipamento,
+            equipamentos[i].tipo, equipamentos[i].marca);
+    if (!confirmar(pergunta))
     {
-        printf("\nOperacao de inativacao cancelada pelo usuario.\n");
+        printf("\nOperacao de inativacao cancelada pelo usuario.");
+        pausar();
+        return;
     }
+
+    /* Inativação preservando o histórico (RN12) */
+    strcpy(equipamentos[i].status, "inativo");
+    dataHoraAgora(equipamentos[i].atualizado_em);
+    salvarEquipamentos();
+
+    printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
+    pausar();
 }
+
