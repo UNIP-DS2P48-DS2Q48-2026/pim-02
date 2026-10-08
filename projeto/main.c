@@ -300,44 +300,201 @@ void imprimirCabecalho(const char *subtitulo)
     }
 }
 
-void menuPerfis(void)
+/* Uma opção de menu: o texto mostrado e a função que ela chama */
+typedef struct
+{
+    const char *texto;
+    void (*executar)(void);
+} OpcaoMenu;
+
+#define MAX_OPCOES 12
+
+/* Mostra as opções numeradas a partir de 1 e chama a escolhida, até o usuário digitar 0 */
+void mostrarMenu(const char *titulo, OpcaoMenu opcoes[], int total, const char *textoSair)
 {
     int opcao = -1;
 
-    while (opcao != 0)
+    while (opcao != 0 && usuarioLogado >= 0)
     {
-        Usuario *u = &usuarios[usuarioLogado];
-
-        imprimirCabecalho(nomePerfil(u->perfil));
-
-        printf("\n  Bem-vindo(a), %s!\n\n", u->nome);
-        printf("  1 - Meus Dados\n");
-        printf("  2 - Alterar Senha\n");
-        printf("  0 - Sair (Fazer Logout)\n");
+        imprimirCabecalho(titulo);
+        printf("\n");
+        for (int i = 0; i < total; i++)
+        {
+            printf("  %d - %s\n", i + 1, opcoes[i].texto);
+        }
+        printf("  0 - %s\n", textoSair);
 
         /* Espaçamento para o prompt */
-        for (int i = 0; i < 9; i++)
+        for (int i = total; i < 13; i++)
             printf("\n");
 
         opcao = lerInteiro("Opcao: ");
 
-        if (opcao == 1)
+        if (opcao >= 1 && opcao <= total)
         {
-            consultarMeusDados();
+            opcoes[opcao - 1].executar();
         }
-        else if (opcao == 2)
+        else if (opcao != 0)
         {
-            alterarSenha();
-        }
-        else if (opcao == 0)
-        {
-            fazerLogout();
-        }
-        else
-        {
-            printf("\n[!] Opcao invalida!\n");
+            printf("\n[!] Opcao invalida!");
             pausar();
         }
+    }
+}
+
+/* Cada menu de área só inclui as opções que o perfil logado pode usar (Matriz de Permissões, RN10) */
+
+void menuAdministradores(void)
+{
+    OpcaoMenu op[] = {{"Cadastrar", cadastrarAdmin}, {"Consultar", consultarAdmin},
+                      {"Editar", editarAdmin}, {"Inativar", inativarAdmin}};
+    mostrarMenu("Administradores", op, 4, "Voltar");
+}
+
+void menuRecepcionistas(void)
+{
+    OpcaoMenu op[] = {{"Cadastrar", cadastrarRecepcionista}, {"Consultar", consultarRecepcionista},
+                      {"Editar", editarRecepcionista}, {"Inativar", inativarRecepcionista}};
+    mostrarMenu("Recepcionistas", op, 4, "Voltar");
+}
+
+void menuTecnicos(void)
+{
+    OpcaoMenu op[] = {{"Cadastrar", cadastrarTecnico}, {"Consultar", consultarTecnico},
+                      {"Editar", editarTecnico}, {"Inativar", inativarTecnico}};
+    mostrarMenu("Tecnicos", op, 4, "Voltar");
+}
+
+void menuClientes(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    int n = 0;
+
+    if (podeAtender())
+        op[n++] = (OpcaoMenu){"Cadastrar", cadastrarCliente};
+    op[n++] = (OpcaoMenu){"Consultar", consultarCliente};
+    if (podeAtender())
+    {
+        op[n++] = (OpcaoMenu){"Editar", editarCliente};
+        op[n++] = (OpcaoMenu){"Inativar", inativarCliente};
+    }
+    mostrarMenu("Clientes", op, n, "Voltar");
+}
+
+void menuEquipamentos(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    int n = 0;
+
+    if (podeAtender())
+        op[n++] = (OpcaoMenu){"Cadastrar", cadastrarEquipamento};
+    op[n++] = (OpcaoMenu){"Consultar", consultarEquipamento};
+    if (podeAtender())
+    {
+        op[n++] = (OpcaoMenu){"Editar", editarEquipamento};
+        op[n++] = (OpcaoMenu){"Inativar", inativarEquipamento};
+    }
+    mostrarMenu("Equipamentos", op, n, "Voltar");
+}
+
+void menuOrdensServico(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    int n = 0;
+
+    if (podeAtender())
+        op[n++] = (OpcaoMenu){"Criar", criarOrdemServico};
+    op[n++] = (OpcaoMenu){"Consultar", consultarOS};
+    if (podeAtender())
+    {
+        op[n++] = (OpcaoMenu){"Editar", editarOS};
+        op[n++] = (OpcaoMenu){"Cancelar", cancelarOS};
+        op[n++] = (OpcaoMenu){"Atribuir Tecnico", atribuirTecnico};
+        op[n++] = (OpcaoMenu){"Registrar Entrega", registrarEntrega};
+    }
+    if (podeAtender() || perfilLogado("cliente"))
+        op[n++] = (OpcaoMenu){"Registrar Feedback", registrarFeedback};
+    mostrarMenu("Ordens de Servico", op, n, "Voltar");
+}
+
+void menuManutencao(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    int n = 0;
+
+    if (podeAtuarComoTecnico())
+    {
+        op[n++] = (OpcaoMenu){"Registrar Observacao Tecnica", registrarObservacao};
+        op[n++] = (OpcaoMenu){"Registrar Diagnostico", registrarDiagnostico};
+        op[n++] = (OpcaoMenu){"Executar Manutencao", executarManutencao};
+        op[n++] = (OpcaoMenu){"Registrar Teste", registrarTeste};
+    }
+    if (podeAtender())
+        op[n++] = (OpcaoMenu){"OS Prontas para Entrega", osProntasEntrega};
+    mostrarMenu("Manutencao", op, n, "Voltar");
+}
+
+void menuOrcamentos(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    int n = 0;
+
+    if (podeAtender())
+    {
+        op[n++] = (OpcaoMenu){"Registrar", registrarOrcamento};
+        op[n++] = (OpcaoMenu){"Editar", editarOrcamento};
+    }
+    op[n++] = (OpcaoMenu){"Consultar", consultarOrcamento};
+    op[n++] = (OpcaoMenu){"Aprovar", aprovarOrcamento};
+    op[n++] = (OpcaoMenu){"Recusar", recusarOrcamento};
+    if (podeAtender())
+        op[n++] = (OpcaoMenu){"Arquivar", arquivarOrcamento};
+    mostrarMenu("Orcamentos", op, n, "Voltar");
+}
+
+void menuHistoricoRelatorios(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    int n = 0;
+
+    op[n++] = (OpcaoMenu){"Historico de Equipamento", historicoEquipamento};
+    if (perfilLogado("admin"))
+        op[n++] = (OpcaoMenu){"Relatorios", consultarRelatorios};
+    mostrarMenu("Historico e Relatorios", op, n, "Voltar");
+}
+
+/* Menu principal do perfil: só as áreas que ele pode acessar, conforme a Matriz de Permissões */
+void menuPerfis(void)
+{
+    OpcaoMenu op[MAX_OPCOES];
+    char titulo[100];
+    int n = 0;
+
+    if (perfilLogado("admin"))
+    {
+        op[n++] = (OpcaoMenu){"Administradores", menuAdministradores};
+        op[n++] = (OpcaoMenu){"Recepcionistas", menuRecepcionistas};
+        op[n++] = (OpcaoMenu){"Tecnicos", menuTecnicos};
+    }
+    if (!perfilLogado("cliente"))
+        op[n++] = (OpcaoMenu){"Clientes", menuClientes};
+    op[n++] = (OpcaoMenu){"Equipamentos", menuEquipamentos};
+    op[n++] = (OpcaoMenu){"Ordens de Servico", menuOrdensServico};
+    if (!perfilLogado("cliente"))
+        op[n++] = (OpcaoMenu){"Manutencao", menuManutencao};
+    if (!perfilLogado("tecnico"))
+        op[n++] = (OpcaoMenu){"Orcamentos", menuOrcamentos};
+    op[n++] = (OpcaoMenu){"Historico e Relatorios", menuHistoricoRelatorios};
+    op[n++] = (OpcaoMenu){"Meus Dados", consultarMeusDados};
+    op[n++] = (OpcaoMenu){"Alterar Senha", alterarSenha};
+
+    sprintf(titulo, "%s - Bem-vindo(a), %s!", nomePerfil(usuarios[usuarioLogado].perfil),
+            usuarios[usuarioLogado].nome);
+    mostrarMenu(titulo, op, n, "Sair (Fazer Logout)");
+
+    if (usuarioLogado >= 0)
+    {
+        fazerLogout();
     }
 }
 
