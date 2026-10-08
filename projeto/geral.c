@@ -118,6 +118,445 @@ void carregarUsuarios(void)
     fclose(arquivo);
 }
 
+/* ---------- Funções comuns aos cadastros de usuário (UC04 a UC19) ---------- */
+
+/* Nome do perfil no plural, para os títulos das telas */
+const char *pluralPerfil(const char *perfil)
+{
+    if (strcmp(perfil, "admin") == 0)
+        return "Administradores";
+    if (strcmp(perfil, "recepcionista") == 0)
+        return "Recepcionistas";
+    if (strcmp(perfil, "tecnico") == 0)
+        return "Tecnicos";
+    return "Clientes";
+}
+
+/* Posição no vetor do usuário com este id (-1 se não existir) */
+int buscarUsuarioPorId(int id)
+{
+    for (int i = 0; i < totalUsuarios; i++)
+    {
+        if (usuarios[i].id_usuario == id)
+            return i;
+    }
+    return -1;
+}
+
+/* RN13: e-mail já usado por outro usuário? ignorar = posição que está sendo editada (-1 no cadastro) */
+int emailEmUso(const char *email, int ignorar)
+{
+    for (int i = 0; i < totalUsuarios; i++)
+    {
+        if (i != ignorar && contemTexto(usuarios[i].email, email) && strlen(usuarios[i].email) == strlen(email))
+            return 1;
+    }
+    return 0;
+}
+
+/* RN13: CPF já usado por outro cliente? */
+int cpfEmUso(const char *cpf, int ignorar)
+{
+    for (int i = 0; i < totalUsuarios; i++)
+    {
+        if (i != ignorar && strcmp(usuarios[i].cpf, cpf) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+int emailValido(const char *email)
+{
+    const char *arroba = strchr(email, '@');
+    return arroba != NULL && arroba != email && strchr(arroba, '.') != NULL;
+}
+
+/* RNF09: avisa qual campo obrigatório ficou vazio */
+int campoPreenchido(const char *valor, const char *nomeCampo)
+{
+    if (strlen(valor) == 0)
+    {
+        printf("\n[!] O campo %s e obrigatorio (RNF09). Nada foi gravado.", nomeCampo);
+        pausar();
+        return 0;
+    }
+    return 1;
+}
+
+/* RN14: o usuário está em alguma OS aberta ou em andamento, como atendente, técnico ou cliente? */
+int temOSEmAndamento(int idUsuario)
+{
+    for (int i = 0; i < totalOrdens; i++)
+    {
+        OrdemServico *o = &ordens[i];
+
+        if (strcmp(o->status, "aberta") != 0 && strcmp(o->status, "em_andamento") != 0)
+            continue;
+        if (o->id_atendente == idUsuario)
+            return 1;
+        for (int j = 0; j < totalEquipamentos; j++)
+        {
+            if (equipamentos[j].id_equipamento == o->id_equipamento && equipamentos[j].id_cliente == idUsuario)
+                return 1;
+        }
+        for (int j = 0; j < totalTecnicosOS; j++)
+        {
+            if (tecnicosOS[j].id_os == o->id_os && tecnicosOS[j].id_tecnico == idUsuario)
+                return 1;
+        }
+    }
+    return 0;
+}
+
+/* RN10: o técnico tem alguma OS atribuída a ele com equipamento deste cliente? */
+int tecnicoAtendeCliente(int idTecnico, int idCliente)
+{
+    for (int i = 0; i < totalTecnicosOS; i++)
+    {
+        if (tecnicosOS[i].id_tecnico != idTecnico)
+            continue;
+        for (int j = 0; j < totalOrdens; j++)
+        {
+            if (ordens[j].id_os != tecnicosOS[i].id_os)
+                continue;
+            for (int k = 0; k < totalEquipamentos; k++)
+            {
+                if (equipamentos[k].id_equipamento == ordens[j].id_equipamento && equipamentos[k].id_cliente == idCliente)
+                    return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+/* RN05: só o Admin cadastra, edita e inativa a equipe; clientes também pela Recepcionista */
+int podeGerenciar(const char *perfil)
+{
+    if (strcmp(perfil, "cliente") == 0)
+        return podeAtender();
+    return perfilLogado("admin");
+}
+
+/* RN10: o usuário logado pode ver este cadastro? (técnico só vê clientes das OS dele) */
+int podeVerUsuario(int i, const char *perfil)
+{
+    if (strcmp(usuarios[i].perfil, perfil) != 0)
+        return 0;
+    if (podeGerenciar(perfil))
+        return 1;
+    if (strcmp(perfil, "cliente") == 0 && perfilLogado("tecnico"))
+        return tecnicoAtendeCliente(usuarios[usuarioLogado].id_usuario, usuarios[i].id_usuario);
+    return 0;
+}
+
+/* Lista os usuários do perfil que batem com o filtro (nome, e-mail ou CPF); devolve quantos mostrou */
+int listarUsuarios(const char *perfil, const char *filtro, int soAtivos)
+{
+    int mostrados = 0;
+    int temExtra = strcmp(perfil, "cliente") == 0 || strcmp(perfil, "tecnico") == 0;
+
+    for (int i = 0; i < totalUsuarios; i++)
+    {
+        Usuario *u = &usuarios[i];
+
+        if (!podeVerUsuario(i, perfil) || (soAtivos && strcmp(u->status, "ativo") != 0))
+            continue;
+        if (!contemTexto(u->nome, filtro) && !contemTexto(u->email, filtro) && !contemTexto(u->cpf, filtro))
+            continue;
+
+        if (mostrados == 0)
+        {
+            printf("\n  %-4s %-22s %-26s %-15s %s\n", "ID", "Nome", "E-mail",
+                   strcmp(perfil, "cliente") == 0 ? "CPF" : (temExtra ? "Especialidade" : ""), "Status");
+            printf("  ---------------------------------------------------------------------------\n");
+        }
+        printf("  %-4d %-22.22s %-26.26s %-15.15s %s\n", u->id_usuario, u->nome, u->email,
+               strcmp(perfil, "cliente") == 0 ? u->cpf : u->especialidade, u->status);
+        if (strcmp(perfil, "cliente") == 0 && strlen(u->telefone) > 0)
+        {
+            printf("       Telefone: %s\n", u->telefone);
+        }
+        mostrados++;
+    }
+    return mostrados;
+}
+
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
+int selecionarUsuario(const char *perfil, int soAtivos)
+{
+    char filtro[60];
+    int id, i;
+
+    lerTexto("\nFiltro (nome, e-mail ou CPF), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+    if (strcmp(filtro, "0") == 0)
+        return -1;
+
+    if (listarUsuarios(perfil, filtro, soAtivos) == 0)
+    {
+        printf("\n[!] Nenhum cadastro encontrado para o filtro informado.");
+        pausar();
+        return -1;
+    }
+
+    id = lerInteiro("\nID (0 para voltar): ");
+    if (id <= 0)
+        return -1;
+    i = buscarUsuarioPorId(id);
+    if (i < 0 || !podeVerUsuario(i, perfil) || (soAtivos && strcmp(usuarios[i].status, "ativo") != 0))
+    {
+        printf("\n[!] ID %d nao esta na lista.", id);
+        pausar();
+        return -1;
+    }
+    return i;
+}
+
+/* Mostra o valor atual entre colchetes; ENTER mantém, qualquer texto substitui */
+void lerOuManter(const char *rotulo, char *campo, int tamanho)
+{
+    char texto[200];
+    char pergunta[300];
+
+    sprintf(pergunta, "%s [%s]: ", rotulo, campo);
+    lerTexto(pergunta, texto, tamanho < (int)sizeof(texto) ? tamanho : (int)sizeof(texto));
+    if (strlen(texto) > 0)
+    {
+        strcpy(campo, texto);
+    }
+}
+
+/* Cadastrar (UC04, UC08, UC12, UC16): nome, e-mail e senha; cliente com telefone e CPF; técnico com especialidade */
+void cadastrarUsuario(const char *perfil)
+{
+    Usuario novo;
+    char senha[50], titulo[60];
+    int maiorId = 0;
+
+    memset(&novo, 0, sizeof(novo));
+    sprintf(titulo, "%s > Cadastrar", pluralPerfil(perfil));
+    imprimirCabecalho(titulo);
+
+    if (!podeGerenciar(perfil))
+    {
+        printf("\n[!] Seu perfil nao pode cadastrar %s (RN05).", pluralPerfil(perfil));
+        pausar();
+        return;
+    }
+
+    lerTexto("\nNome (ENTER para voltar): ", novo.nome, sizeof(novo.nome));
+    if (strlen(novo.nome) == 0)
+        return;
+    lerTexto("E-mail: ", novo.email, sizeof(novo.email));
+    if (strcmp(perfil, "cliente") == 0)
+    {
+        lerTexto("Telefone: ", novo.telefone, sizeof(novo.telefone));
+        lerTexto("CPF: ", novo.cpf, sizeof(novo.cpf));
+    }
+    if (strcmp(perfil, "tecnico") == 0)
+    {
+        lerTexto("Especialidade: ", novo.especialidade, sizeof(novo.especialidade));
+    }
+    lerTexto("Senha: ", senha, sizeof(senha));
+
+    /* Validações antes de gravar (RNF09, RN13) */
+    if (!campoPreenchido(novo.email, "E-mail") || !campoPreenchido(senha, "Senha"))
+        return;
+    if (strcmp(perfil, "cliente") == 0 && !campoPreenchido(novo.cpf, "CPF"))
+        return;
+    if (strcmp(perfil, "tecnico") == 0 && !campoPreenchido(novo.especialidade, "Especialidade"))
+        return;
+    if (!emailValido(novo.email))
+    {
+        printf("\n[!] E-mail invalido. Nada foi gravado.");
+        pausar();
+        return;
+    }
+    if (emailEmUso(novo.email, -1))
+    {
+        printf("\n[!] Este e-mail ja pertence a outro usuario (RN13). Nada foi gravado.");
+        pausar();
+        return;
+    }
+    if (strcmp(perfil, "cliente") == 0 && cpfEmUso(novo.cpf, -1))
+    {
+        printf("\n[!] Este CPF ja esta cadastrado (RN13). Nada foi gravado.");
+        pausar();
+        return;
+    }
+    if (totalUsuarios >= MAX_USUARIOS)
+    {
+        printf("\n[!] Limite de %d usuarios atingido. Nada foi gravado.", MAX_USUARIOS);
+        pausar();
+        return;
+    }
+
+    for (int i = 0; i < totalUsuarios; i++)
+    {
+        if (usuarios[i].id_usuario > maiorId)
+            maiorId = usuarios[i].id_usuario;
+    }
+    novo.id_usuario = maiorId + 1;
+    strcpy(novo.perfil, perfil);
+    strcpy(novo.status, "ativo");
+    gerarHash(senha, novo.senha);
+    dataHoraAgora(novo.criado_em);
+    strcpy(novo.atualizado_em, novo.criado_em);
+
+    usuarios[totalUsuarios++] = novo;
+    salvarUsuarios();
+
+    printf("\n[+] %s cadastrado(a) com sucesso! ID: %d", nomePerfil(perfil), novo.id_usuario);
+    pausar();
+}
+
+/* Consultar (UC05, UC09, UC13, UC17): lista com o status; o técnico só vê clientes das OS dele (RN10) */
+void consultarUsuarios(const char *perfil)
+{
+    char filtro[60], titulo[60];
+
+    sprintf(titulo, "%s > Consultar", pluralPerfil(perfil));
+    imprimirCabecalho(titulo);
+
+    if (!podeGerenciar(perfil) && !(strcmp(perfil, "cliente") == 0 && perfilLogado("tecnico")))
+    {
+        printf("\n[!] Seu perfil nao pode consultar %s (RN10).", pluralPerfil(perfil));
+        pausar();
+        return;
+    }
+
+    while (1)
+    {
+        lerTexto("\nFiltro (nome, e-mail ou CPF), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+        if (strcmp(filtro, "0") == 0)
+            return;
+        if (listarUsuarios(perfil, filtro, 0) > 0)
+            break;
+        printf("\n[!] Nenhum cadastro encontrado para o filtro informado.\n");
+        if (strlen(filtro) == 0)
+        {
+            pausar();
+            return;
+        }
+    }
+    pausar();
+}
+
+/* Editar (UC06, UC10, UC14, UC18): ENTER mantém o valor atual; o status só muda pelo Inativar */
+void editarUsuario(const char *perfil)
+{
+    Usuario editado;
+    char senha[50], titulo[60];
+    int i;
+
+    sprintf(titulo, "%s > Editar", pluralPerfil(perfil));
+    imprimirCabecalho(titulo);
+
+    if (!podeGerenciar(perfil))
+    {
+        printf("\n[!] Seu perfil nao pode editar %s (RN05).", pluralPerfil(perfil));
+        pausar();
+        return;
+    }
+
+    i = selecionarUsuario(perfil, 0);
+    if (i < 0)
+        return;
+
+    editado = usuarios[i]; /* trabalha numa cópia: se algo falhar, nada muda */
+    printf("\nDeixe em branco para manter o valor atual.\n\n");
+    lerOuManter("Nome", editado.nome, sizeof(editado.nome));
+    lerOuManter("E-mail", editado.email, sizeof(editado.email));
+    if (strcmp(perfil, "cliente") == 0)
+    {
+        lerOuManter("Telefone", editado.telefone, sizeof(editado.telefone));
+        lerOuManter("CPF", editado.cpf, sizeof(editado.cpf));
+    }
+    if (strcmp(perfil, "tecnico") == 0)
+    {
+        lerOuManter("Especialidade", editado.especialidade, sizeof(editado.especialidade));
+    }
+    lerTexto("Nova senha [manter]: ", senha, sizeof(senha));
+
+    if (!emailValido(editado.email))
+    {
+        printf("\n[!] E-mail invalido. Nada foi alterado.");
+        pausar();
+        return;
+    }
+    if (emailEmUso(editado.email, i))
+    {
+        printf("\n[!] Este e-mail ja pertence a outro usuario (RN13). Nada foi alterado.");
+        pausar();
+        return;
+    }
+    if (strcmp(perfil, "cliente") == 0 && cpfEmUso(editado.cpf, i))
+    {
+        printf("\n[!] Este CPF ja pertence a outro cliente (RN13). Nada foi alterado.");
+        pausar();
+        return;
+    }
+
+    if (strlen(senha) > 0)
+    {
+        gerarHash(senha, editado.senha);
+    }
+    dataHoraAgora(editado.atualizado_em);
+    usuarios[i] = editado;
+    salvarUsuarios();
+
+    printf("\n[+] Cadastro de %s atualizado com sucesso!", editado.nome);
+    pausar();
+}
+
+/* Inativar (UC07, UC11, UC15, UC19): nunca apaga (RN12); bloqueia a si mesmo (RN17) e quem tem OS em andamento (RN14) */
+void inativarUsuario(const char *perfil)
+{
+    char titulo[60], pergunta[120];
+    int i;
+
+    sprintf(titulo, "%s > Inativar", pluralPerfil(perfil));
+    imprimirCabecalho(titulo);
+
+    if (!podeGerenciar(perfil))
+    {
+        printf("\n[!] Seu perfil nao pode inativar %s (RN05).", pluralPerfil(perfil));
+        pausar();
+        return;
+    }
+
+    i = selecionarUsuario(perfil, 1);
+    if (i < 0)
+        return;
+
+    if (i == usuarioLogado)
+    {
+        printf("\n[!] Voce nao pode inativar o proprio cadastro (RN17).");
+        pausar();
+        return;
+    }
+    if (temOSEmAndamento(usuarios[i].id_usuario))
+    {
+        printf("\n[!] %s tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).", usuarios[i].nome);
+        pausar();
+        return;
+    }
+
+    sprintf(pergunta, "\nTem certeza que deseja inativar %s?", usuarios[i].nome);
+    if (!confirmar(pergunta))
+    {
+        printf("\nOperacao de inativacao cancelada pelo usuario.");
+        pausar();
+        return;
+    }
+
+    strcpy(usuarios[i].status, "inativo");
+    dataHoraAgora(usuarios[i].atualizado_em);
+    salvarUsuarios();
+
+    printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado (RN12).", usuarios[i].nome);
+    pausar();
+}
+
 /* UC01 - Realizar Login: autentica por e-mail e senha e abre o menu do perfil */
 int realizarLogin()
 {
