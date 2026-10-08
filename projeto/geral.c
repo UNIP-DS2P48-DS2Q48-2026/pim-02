@@ -12,6 +12,24 @@ const char *nomePerfil(const char *perfil)
     return perfil;
 }
 
+/* Matriz de Permissões (RN10): o perfil do usuário logado é este? */
+int perfilLogado(const char *perfil)
+{
+    return usuarioLogado >= 0 && strcmp(usuarios[usuarioLogado].perfil, perfil) == 0;
+}
+
+/* Funções de recepcionista: o Admin também pode, na ausência dela (RN11) */
+int podeAtender(void)
+{
+    return perfilLogado("recepcionista") || perfilLogado("admin");
+}
+
+/* Funções de técnico: o Admin também pode, na ausência dele (RN11) */
+int podeAtuarComoTecnico(void)
+{
+    return perfilLogado("tecnico") || perfilLogado("admin");
+}
+
 /* Regrava o usuario.txt inteiro com o que está no vetor */
 void salvarUsuarios(void)
 {
