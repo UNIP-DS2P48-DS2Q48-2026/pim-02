@@ -11,24 +11,104 @@
 #include <sqlext.h>
 #endif
 
-#define NUM_USUARIOS 4
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
 
-/* Estrutura base de dados simulada para os utilizadores */
+/* Arquivos .txt: um por tabela, campos separados por ';' na ordem do schema_sqlserver.sql */
+#define PASTA_DADOS "dados"
+#define ARQ_USUARIO "dados/usuario.txt"
+#define ARQ_EQUIPAMENTO "dados/equipamento.txt"
+#define ARQ_OS "dados/os.txt"
+#define ARQ_TECNICO_OS "dados/tecnico_os.txt"
+
+#define MAX_USUARIOS 200
+#define MAX_EQUIPAMENTOS 300
+#define MAX_OS 500
+#define MAX_TECNICO_OS 1000
+
+/* Tamanhos de texto comuns */
+#define TAM_DATA 11      /* AAAA-MM-DD */
+#define TAM_DATAHORA 20  /* AAAA-MM-DD HH:MM:SS */
+#define TAM_HASH 17
+#define TAM_LINHA 1200
+
+/* Tabela usuario: todos os perfis (admin, recepcionista, tecnico, cliente) */
 typedef struct
 {
     int id_usuario;
-    char nome[50];
-    char email[50];
-    char senha[50];
-    char perfil[20];
+    char nome[60];
+    char email[60];
+    char telefone[20];
+    char senha[TAM_HASH]; /* hash, nunca o texto da senha (RNF10) */
+    char perfil[15];
+    char cpf[15];           /* só cliente */
+    char especialidade[40]; /* só tecnico */
+    char status[8];         /* ativo | inativo */
+    char criado_em[TAM_DATAHORA];
+    char atualizado_em[TAM_DATAHORA];
 } Usuario;
 
-/* Dados fornecidos na imagem de requisitos */
-Usuario usuarios[NUM_USUARIOS] = {
-    {1, "Ana", "ana@bytetech.com", "byte123", "Admin"},
-    {2, "Carla", "carla@bytetech.com", "byte123", "Recepcionista"},
-    {3, "Rafael", "rafael@bytetech.com", "byte123", "Técnico"},
-    {4, "João Pereira", "joao.pereira@email.com", "byte123", "Cliente"}};
+/* Tabela equipamento: hardware ou software de um cliente */
+typedef struct
+{
+    int id_equipamento;
+    int id_cliente;
+    char categoria[10]; /* hardware | software */
+    char tipo[40];
+    char marca[40];
+    char modelo_numero_serie[60]; /* ou chave de licença */
+    char status[8];
+    char criado_em[TAM_DATAHORA];
+    char atualizado_em[TAM_DATAHORA];
+} Equipamento;
+
+/* Tabela os: ordem de serviço. Valores em dinheiro < 0 significam "ainda não informado" (NULL no banco) */
+typedef struct
+{
+    int id_os;
+    int id_equipamento;
+    int id_atendente;
+    char data_abertura[TAM_DATA];
+    char problema_relatado[200];
+    char diagnostico[200];
+    double orcamento;
+    char status[15]; /* aberta | em_andamento | finalizada | cancelada */
+    char resultado_resposta_cliente[10]; /* aprovado | recusado */
+    char data_entrega[TAM_DATA];
+    char resultado_teste[10]; /* aprovado | reprovado */
+    double valor_pago;
+    char feedback_cliente[200];
+    char satisfeito[4]; /* sim | nao */
+    char criado_em[TAM_DATAHORA];
+    char atualizado_em[TAM_DATAHORA];
+} OrdemServico;
+
+/* Tabela tecnico_os: técnicos atribuídos a cada OS */
+typedef struct
+{
+    int id_tecnico_os;
+    int id_tecnico;
+    int id_os;
+    char data_atribuicao[TAM_DATA];
+    char observacoes_tecnicas[300];
+    char criado_em[TAM_DATAHORA];
+    char atualizado_em[TAM_DATAHORA];
+} TecnicoOS;
+
+Usuario usuarios[MAX_USUARIOS];
+int totalUsuarios = 0;
+Equipamento equipamentos[MAX_EQUIPAMENTOS];
+int totalEquipamentos = 0;
+OrdemServico ordens[MAX_OS];
+int totalOrdens = 0;
+TecnicoOS tecnicosOS[MAX_TECNICO_OS];
+int totalTecnicosOS = 0;
+
+/* Posição do usuário logado no vetor usuarios (-1 = ninguém logado) */
+int usuarioLogado = -1;
 
 void limparBuffer();
 void imprimirCabecalho(const char *subtitulo);
@@ -38,6 +118,11 @@ int confirmar(const char *pergunta);
 void pausar(void);
 void gerarHash(const char *senha, char *destino);
 void dataHoje(char *destino);
+void dataHoraAgora(char *destino);
+void lerCampo(char **cursor, char *destino, int tamanho);
+int lerCampoInt(char **cursor);
+double lerCampoValor(char **cursor);
+void gravarValor(FILE *arquivo, double valor);
 
 #if USAR_SQLSERVER
 #include "banco.c"
@@ -76,6 +161,15 @@ void lerTexto(const char *rotulo, char *destino, int tamanho)
         limparBuffer(); /* texto maior que o campo: descarta o resto da linha */
     }
     destino[strcspn(destino, "\n")] = '\0';
+
+    /* ';' separa os campos nos arquivos .txt, então não pode entrar no texto */
+    for (int i = 0; destino[i] != '\0'; i++)
+    {
+        if (destino[i] == ';')
+        {
+            destino[i] = ',';
+        }
+    }
 }
 
 /* Lê um número inteiro; devolve -1 se o que foi digitado não for número */
@@ -134,6 +228,60 @@ void dataHoje(char *destino)
     sprintf(destino, "%04d-%02d-%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 }
 
+/* Data e hora atuais para criado_em/atualizado_em. destino precisa de 20 posições */
+void dataHoraAgora(char *destino)
+{
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    sprintf(destino, "%04d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
+}
+
+/* Copia o próximo campo de uma linha do .txt (até o ';') e avança o cursor */
+void lerCampo(char **cursor, char *destino, int tamanho)
+{
+    int i = 0;
+
+    while (**cursor != '\0' && **cursor != ';' && **cursor != '\n' && **cursor != '\r')
+    {
+        if (i < tamanho - 1)
+        {
+            destino[i++] = **cursor;
+        }
+        (*cursor)++;
+    }
+    destino[i] = '\0';
+    if (**cursor == ';')
+    {
+        (*cursor)++;
+    }
+}
+
+int lerCampoInt(char **cursor)
+{
+    char texto[20];
+    lerCampo(cursor, texto, sizeof(texto));
+    return atoi(texto);
+}
+
+/* Campo de dinheiro: vazio vira -1 (ainda não informado) */
+double lerCampoValor(char **cursor)
+{
+    char texto[30];
+    lerCampo(cursor, texto, sizeof(texto));
+    return texto[0] == '\0' ? -1 : atof(texto);
+}
+
+/* Grava um campo de dinheiro; valor < 0 fica vazio. Não escreve o ';' */
+void gravarValor(FILE *arquivo, double valor)
+{
+    if (valor >= 0)
+    {
+        fprintf(arquivo, "%.2f", valor);
+    }
+}
+
 void imprimirCabecalho(const char *subtitulo)
 {
     time_t t = time(NULL);
@@ -152,37 +300,43 @@ void imprimirCabecalho(const char *subtitulo)
     }
 }
 
-void menuPerfis(Usuario u)
+void menuPerfis(void)
 {
     int opcao = -1;
 
     while (opcao != 0)
     {
-        imprimirCabecalho(u.perfil);
+        Usuario *u = &usuarios[usuarioLogado];
 
-        printf("\n  Bem-vindo(a), %s!\n", u.nome);
-        printf("  Este e o espaco restrito para as funcoes de: %s\n\n", u.perfil);
+        imprimirCabecalho(nomePerfil(u->perfil));
+
+        printf("\n  Bem-vindo(a), %s!\n\n", u->nome);
+        printf("  1 - Meus Dados\n");
+        printf("  2 - Alterar Senha\n");
         printf("  0 - Sair (Fazer Logout)\n");
 
         /* Espaçamento para o prompt */
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 9; i++)
             printf("\n");
 
-        printf("Opcao: ");
-        if (scanf("%d", &opcao) != 1)
-        {
-            limparBuffer();
-            opcao = -1;
-        }
+        opcao = lerInteiro("Opcao: ");
 
-        if (opcao == 0)
+        if (opcao == 1)
+        {
+            consultarMeusDados();
+        }
+        else if (opcao == 2)
+        {
+            alterarSenha();
+        }
+        else if (opcao == 0)
         {
             fazerLogout();
         }
         else
         {
-            printf("\nOpcao invalida!\n");
-            limparBuffer();
+            printf("\n[!] Opcao invalida!\n");
+            pausar();
         }
     }
 }
@@ -207,29 +361,16 @@ void menuPrincipal()
             printf("\n");
         }
 
-        printf("Opcao: ");
-
-        if (scanf("%d", &opcao) != 1)
-        {
-            limparBuffer();
-            opcao = -1;
-            continue;
-        }
+        opcao = lerInteiro("Opcao: ");
 
         if (opcao == 1)
         {
-            int indiceAtivo = realizarLogin();
+            usuarioLogado = realizarLogin();
 
-            if (indiceAtivo >= 0)
+            if (usuarioLogado >= 0)
             {
                 /* Sucesso: Encaminha para o submenu específico */
-                menuPerfis(usuarios[indiceAtivo]);
-            }
-            else
-            {
-                /* Falha na autenticação */
-                printf("\n[!] E-mail ou senha incorretos. Pressione ENTER para voltar.");
-                getchar();
+                menuPerfis();
             }
         }
         else if (opcao == 0)
@@ -238,15 +379,25 @@ void menuPrincipal()
         }
         else
         {
-            printf("\n[!] Opcao invalida! Pressione ENTER para voltar.");
-            limparBuffer();
-            getchar();
+            printf("\n[!] Opcao invalida!");
+            pausar();
         }
     }
 }
 
 int main()
 {
+    /* Cria a pasta dos arquivos .txt se ela ainda não existir */
+#ifdef _WIN32
+    _mkdir(PASTA_DADOS);
+#else
+    mkdir(PASTA_DADOS, 0777);
+#endif
+
+    carregarUsuarios();
+    carregarEquipamentos();
+    carregarOrdens();
+    carregarTecnicosOS();
 
     menuPrincipal();
     return 0;
