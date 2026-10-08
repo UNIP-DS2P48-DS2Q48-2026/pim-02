@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 #define USAR_SQLSERVER 0
 
@@ -123,6 +124,7 @@ void lerCampo(char **cursor, char *destino, int tamanho);
 int lerCampoInt(char **cursor);
 double lerCampoValor(char **cursor);
 void gravarValor(FILE *arquivo, double valor);
+int contemTexto(const char *texto, const char *filtro);
 
 #if USAR_SQLSERVER
 #include "banco.c"
@@ -271,6 +273,26 @@ double lerCampoValor(char **cursor)
     char texto[30];
     lerCampo(cursor, texto, sizeof(texto));
     return texto[0] == '\0' ? -1 : atof(texto);
+}
+
+/* Busca sem diferenciar maiúsculas: o filtro aparece dentro do texto? Filtro vazio aceita tudo */
+int contemTexto(const char *texto, const char *filtro)
+{
+    int i, j;
+
+    if (filtro[0] == '\0')
+        return 1;
+    for (i = 0; texto[i] != '\0'; i++)
+    {
+        for (j = 0; filtro[j] != '\0' && texto[i + j] != '\0'; j++)
+        {
+            if (tolower((unsigned char)texto[i + j]) != tolower((unsigned char)filtro[j]))
+                break;
+        }
+        if (filtro[j] == '\0')
+            return 1;
+    }
+    return 0;
 }
 
 /* Grava um campo de dinheiro; valor < 0 fica vazio. Não escreve o ';' */
