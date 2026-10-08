@@ -1,142 +1,159 @@
-/* Regrava o os.txt inteiro com o que está no vetor */
-void salvarOrdens(void)
+/* Regrava o os.txt inteiro com o que está no vetor. Dinheiro -1.00 = ainda não informado */
+int salvarOrdens()
 {
-    FILE *arquivo = fopen(ARQ_OS, "w");
+    FILE *arquivo;
     int i;
 
+    arquivo = fopen(ARQ_OS, "w");
     if (arquivo == NULL)
     {
         printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_OS);
-        return;
+        return 0;
     }
+    fprintf(arquivo, "id_os;id_equipamento;id_atendente;data_abertura;problema_relatado;diagnostico;orcamento;status;resultado_resposta_cliente;data_entrega;resultado_teste;valor_pago;feedback_cliente;satisfeito;criado_em;atualizado_em\n");
     for (i = 0; i < totalOrdens; i++)
     {
-        OrdemServico *o = &ordens[i];
-        fprintf(arquivo, "%d;%d;%d;%s;%s;%s;", o->id_os, o->id_equipamento, o->id_atendente,
-                o->data_abertura, o->problema_relatado, o->diagnostico);
-        gravarValor(arquivo, o->orcamento);
-        fprintf(arquivo, ";%s;%s;%s;%s;", o->status, o->resultado_resposta_cliente,
-                o->data_entrega, o->resultado_teste);
-        gravarValor(arquivo, o->valor_pago);
-        fprintf(arquivo, ";%s;%s;%s;%s\n", o->feedback_cliente, o->satisfeito,
-                o->criado_em, o->atualizado_em);
+        fprintf(arquivo, "%d;%d;%d;%s;%s;%s;%.2f;%s;%s;%s;%s;%.2f;%s;%s;%s;%s\n",
+                ordens[i].id_os, ordens[i].id_equipamento, ordens[i].id_atendente, ordens[i].data_abertura,
+                ordens[i].problema_relatado, ordens[i].diagnostico, ordens[i].orcamento, ordens[i].status,
+                ordens[i].resultado_resposta_cliente, ordens[i].data_entrega, ordens[i].resultado_teste,
+                ordens[i].valor_pago, ordens[i].feedback_cliente, ordens[i].satisfeito,
+                ordens[i].criado_em, ordens[i].atualizado_em);
     }
     fclose(arquivo);
+    return 1;
 }
 
 /* Lê o os.txt para o vetor (sem arquivo = nenhuma OS ainda) */
-void carregarOrdens(void)
+void carregarOrdens()
 {
-    FILE *arquivo = fopen(ARQ_OS, "r");
+    FILE *arquivo;
     char linha[TAM_LINHA];
+    char numero[30];
+    int n;
 
     totalOrdens = 0;
+    arquivo = fopen(ARQ_OS, "r");
     if (arquivo == NULL)
     {
         return;
     }
     while (totalOrdens < MAX_OS && fgets(linha, sizeof(linha), arquivo) != NULL)
     {
-        OrdemServico *o = &ordens[totalOrdens];
-        char *cursor = linha;
-
-        if (linha[0] == '\n' || linha[0] == '\r')
+        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
+        if (linha[0] < '0' || linha[0] > '9')
             continue;
-        o->id_os = lerCampoInt(&cursor);
-        o->id_equipamento = lerCampoInt(&cursor);
-        o->id_atendente = lerCampoInt(&cursor);
-        lerCampo(&cursor, o->data_abertura, sizeof(o->data_abertura));
-        lerCampo(&cursor, o->problema_relatado, sizeof(o->problema_relatado));
-        lerCampo(&cursor, o->diagnostico, sizeof(o->diagnostico));
-        o->orcamento = lerCampoValor(&cursor);
-        lerCampo(&cursor, o->status, sizeof(o->status));
-        lerCampo(&cursor, o->resultado_resposta_cliente, sizeof(o->resultado_resposta_cliente));
-        lerCampo(&cursor, o->data_entrega, sizeof(o->data_entrega));
-        lerCampo(&cursor, o->resultado_teste, sizeof(o->resultado_teste));
-        o->valor_pago = lerCampoValor(&cursor);
-        lerCampo(&cursor, o->feedback_cliente, sizeof(o->feedback_cliente));
-        lerCampo(&cursor, o->satisfeito, sizeof(o->satisfeito));
-        lerCampo(&cursor, o->criado_em, sizeof(o->criado_em));
-        lerCampo(&cursor, o->atualizado_em, sizeof(o->atualizado_em));
+
+        n = totalOrdens;
+        pegarCampo(linha, 0, numero, sizeof(numero));
+        ordens[n].id_os = atoi(numero);
+        pegarCampo(linha, 1, numero, sizeof(numero));
+        ordens[n].id_equipamento = atoi(numero);
+        pegarCampo(linha, 2, numero, sizeof(numero));
+        ordens[n].id_atendente = atoi(numero);
+        pegarCampo(linha, 3, ordens[n].data_abertura, sizeof(ordens[n].data_abertura));
+        pegarCampo(linha, 4, ordens[n].problema_relatado, sizeof(ordens[n].problema_relatado));
+        pegarCampo(linha, 5, ordens[n].diagnostico, sizeof(ordens[n].diagnostico));
+        pegarCampo(linha, 6, numero, sizeof(numero));
+        ordens[n].orcamento = atof(numero);
+        pegarCampo(linha, 7, ordens[n].status, sizeof(ordens[n].status));
+        pegarCampo(linha, 8, ordens[n].resultado_resposta_cliente, sizeof(ordens[n].resultado_resposta_cliente));
+        pegarCampo(linha, 9, ordens[n].data_entrega, sizeof(ordens[n].data_entrega));
+        pegarCampo(linha, 10, ordens[n].resultado_teste, sizeof(ordens[n].resultado_teste));
+        pegarCampo(linha, 11, numero, sizeof(numero));
+        ordens[n].valor_pago = atof(numero);
+        pegarCampo(linha, 12, ordens[n].feedback_cliente, sizeof(ordens[n].feedback_cliente));
+        pegarCampo(linha, 13, ordens[n].satisfeito, sizeof(ordens[n].satisfeito));
+        pegarCampo(linha, 14, ordens[n].criado_em, sizeof(ordens[n].criado_em));
+        pegarCampo(linha, 15, ordens[n].atualizado_em, sizeof(ordens[n].atualizado_em));
         totalOrdens++;
     }
     fclose(arquivo);
 }
 
 /* Regrava o tecnico_os.txt inteiro com o que está no vetor */
-void salvarTecnicosOS(void)
+int salvarTecnicosOS()
 {
-    FILE *arquivo = fopen(ARQ_TECNICO_OS, "w");
+    FILE *arquivo;
     int i;
 
+    arquivo = fopen(ARQ_TECNICO_OS, "w");
     if (arquivo == NULL)
     {
         printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_TECNICO_OS);
-        return;
+        return 0;
     }
+    fprintf(arquivo, "id_tecnico_os;id_tecnico;id_os;data_atribuicao;observacoes_tecnicas;criado_em;atualizado_em\n");
     for (i = 0; i < totalTecnicosOS; i++)
     {
-        TecnicoOS *t = &tecnicosOS[i];
-        fprintf(arquivo, "%d;%d;%d;%s;%s;%s;%s\n", t->id_tecnico_os, t->id_tecnico, t->id_os,
-                t->data_atribuicao, t->observacoes_tecnicas, t->criado_em, t->atualizado_em);
+        fprintf(arquivo, "%d;%d;%d;%s;%s;%s;%s\n", tecnicosOS[i].id_tecnico_os, tecnicosOS[i].id_tecnico,
+                tecnicosOS[i].id_os, tecnicosOS[i].data_atribuicao, tecnicosOS[i].observacoes_tecnicas,
+                tecnicosOS[i].criado_em, tecnicosOS[i].atualizado_em);
     }
     fclose(arquivo);
+    return 1;
 }
 
 /* Lê o tecnico_os.txt para o vetor (sem arquivo = nenhuma atribuição ainda) */
-void carregarTecnicosOS(void)
+void carregarTecnicosOS()
 {
-    FILE *arquivo = fopen(ARQ_TECNICO_OS, "r");
+    FILE *arquivo;
     char linha[TAM_LINHA];
+    char numero[20];
+    int n;
 
     totalTecnicosOS = 0;
+    arquivo = fopen(ARQ_TECNICO_OS, "r");
     if (arquivo == NULL)
     {
         return;
     }
     while (totalTecnicosOS < MAX_TECNICO_OS && fgets(linha, sizeof(linha), arquivo) != NULL)
     {
-        TecnicoOS *t = &tecnicosOS[totalTecnicosOS];
-        char *cursor = linha;
-
-        if (linha[0] == '\n' || linha[0] == '\r')
+        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
+        if (linha[0] < '0' || linha[0] > '9')
             continue;
-        t->id_tecnico_os = lerCampoInt(&cursor);
-        t->id_tecnico = lerCampoInt(&cursor);
-        t->id_os = lerCampoInt(&cursor);
-        lerCampo(&cursor, t->data_atribuicao, sizeof(t->data_atribuicao));
-        lerCampo(&cursor, t->observacoes_tecnicas, sizeof(t->observacoes_tecnicas));
-        lerCampo(&cursor, t->criado_em, sizeof(t->criado_em));
-        lerCampo(&cursor, t->atualizado_em, sizeof(t->atualizado_em));
+
+        n = totalTecnicosOS;
+        pegarCampo(linha, 0, numero, sizeof(numero));
+        tecnicosOS[n].id_tecnico_os = atoi(numero);
+        pegarCampo(linha, 1, numero, sizeof(numero));
+        tecnicosOS[n].id_tecnico = atoi(numero);
+        pegarCampo(linha, 2, numero, sizeof(numero));
+        tecnicosOS[n].id_os = atoi(numero);
+        pegarCampo(linha, 3, tecnicosOS[n].data_atribuicao, sizeof(tecnicosOS[n].data_atribuicao));
+        pegarCampo(linha, 4, tecnicosOS[n].observacoes_tecnicas, sizeof(tecnicosOS[n].observacoes_tecnicas));
+        pegarCampo(linha, 5, tecnicosOS[n].criado_em, sizeof(tecnicosOS[n].criado_em));
+        pegarCampo(linha, 6, tecnicosOS[n].atualizado_em, sizeof(tecnicosOS[n].atualizado_em));
         totalTecnicosOS++;
     }
     fclose(arquivo);
 }
 
 /* UC24 - Criar Ordem de Servico: abre uma OS para um equipamento do cliente */
-void criarOrdemServico(void) {
+void criarOrdemServico() {
 }
 
 /* UC25 - Consultar Ordem de Servico: lista e busca as OS por numero, CPF, status ou periodo */
-void consultarOS(void) {
+void consultarOS() {
 }
 
 /* UC26 - Editar Ordem de Servico: altera o problema relatado da OS */
-void editarOS(void) {
+void editarOS() {
 }
 
 /* UC27 - Cancelar Ordem de Servico: cancela a OS sem apagar */
-void cancelarOS(void) {
+void cancelarOS() {
 }
 
 /* UC28 - Atribuir Tecnico a Ordem de Servico: vincula um ou mais tecnicos a OS */
-void atribuirTecnico(void) {
+void atribuirTecnico() {
 }
 
 /* UC29 - Registrar Entrega e Pagamento: registra a data de entrega e o valor pago */
-void registrarEntrega(void) {
+void registrarEntrega() {
 }
 
 /* UC30 - Registrar Feedback do Cliente: finaliza a OS ou devolve para novo reparo */
-void registrarFeedback(void) {
+void registrarFeedback() {
 }

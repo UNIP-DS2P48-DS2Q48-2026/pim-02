@@ -1,23 +1,23 @@
 /* UC04 - Cadastrar Admin: cadastra um novo administrador */
-void cadastrarAdmin(void)
+void cadastrarAdmin()
 {
-    cadastrarUsuario("admin");
+    cadastrarUsuario("admin", "Administradores > Cadastrar");
 }
 
 /* UC05 - Consultar Admin: lista e busca os administradores */
-void consultarAdmin(void)
+void consultarAdmin()
 {
-    consultarUsuarios("admin");
+    consultarUsuarios("admin", "Administradores > Consultar");
 }
 
 /* UC06 - Editar Admin: altera os dados de um administrador */
-void editarAdmin(void)
+void editarAdmin()
 {
-    editarUsuario("admin");
+    editarUsuario("admin", "Administradores > Editar");
 }
 
 /* UC07 - Inativar Admin: inativa um administrador (nunca a si mesmo) */
-void inativarAdmin(void)
+void inativarAdmin()
 {
-    inativarUsuario("admin");
+    inativarUsuario("admin", "Administradores > Inativar");
 }

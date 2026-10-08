@@ -1,23 +1,23 @@
 /* UC08 - Cadastrar Recepcionista: cadastra uma nova recepcionista */
-void cadastrarRecepcionista(void)
+void cadastrarRecepcionista()
 {
-    cadastrarUsuario("recepcionista");
+    cadastrarUsuario("recepcionista", "Recepcionistas > Cadastrar");
 }
 
 /* UC09 - Consultar Recepcionista: lista e busca as recepcionistas */
-void consultarRecepcionista(void)
+void consultarRecepcionista()
 {
-    consultarUsuarios("recepcionista");
+    consultarUsuarios("recepcionista", "Recepcionistas > Consultar");
 }
 
 /* UC10 - Editar Recepcionista: altera os dados de uma recepcionista */
-void editarRecepcionista(void)
+void editarRecepcionista()
 {
-    editarUsuario("recepcionista");
+    editarUsuario("recepcionista", "Recepcionistas > Editar");
 }
 
 /* UC11 - Inativar Recepcionista: inativa uma recepcionista sem OS em andamento */
-void inativarRecepcionista(void)
+void inativarRecepcionista()
 {
-    inativarUsuario("recepcionista");
+    inativarUsuario("recepcionista", "Recepcionistas > Inativar");
 }
