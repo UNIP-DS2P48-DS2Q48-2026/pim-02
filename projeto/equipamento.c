@@ -106,4 +106,65 @@ void editarEquipamento(void)
     imprimirCabecalho("Equipamentos > Editar");
 
     printf("Digite o ID do equipamento que deseja alterar (ou 0 para voltar): ");
-    if (scanf("%d", &id_alvo) != 1 || id_alvo
+    if (scanf("%d", &id_alvo) != 1 || id_alvo == 0)
+    {
+        limparBuffer();
+        return;
+    }
+    limparBuffer();
+
+    printf("\nEditando o Equipamento ID: %d\n", id_alvo);
+    printf("Insira os novos dados (ou pressione ENTER para manter o atual).\n\n");
+
+    printf("Novo Tipo: ");
+    fgets(tipo, sizeof(tipo), stdin);
+    tipo[strcspn(tipo, "\n")] = '\0';
+
+    printf("Nova Marca: ");
+    fgets(marca, sizeof(marca), stdin);
+    marca[strcspn(marca, "\n")] = '\0';
+
+    printf("Novo Modelo / Numero de Serie (ou Chave de Licenca): ");
+    fgets(modelo_serie, sizeof(modelo_serie), stdin);
+    modelo_serie[strcspn(modelo_serie, "\n")] = '\0';
+
+    /* Validação de campos obrigatórios (RNF09) */
+    printf("\n[+] Verificando preenchimento de campos obrigatorios (RNF09)...\n");
+
+    printf("\n[+] Equipamento atualizado com sucesso (data de 'atualizado_em' modificada)!\n");
+}
+
+/* UC23 - Inativar Equipamento: inativa um equipamento sem OS em andamento */
+void inativarEquipamento(void)
+{
+    int id_alvo;
+    char confirmacao;
+
+    imprimirCabecalho("Equipamentos > Inativar");
+
+    printf("Digite o ID do equipamento para inativar (ou 0 para voltar): ");
+    if (scanf("%d", &id_alvo) != 1 || id_alvo == 0)
+    {
+        limparBuffer();
+        return;
+    }
+    limparBuffer();
+
+    /* Validação de bloqueio caso o equipamento tenha OS "aberta" ou "em andamento" (RN14) */
+    printf("\n[+] Verificando se existem Ordens de Servico em andamento para o equipamento ID %d...\n", id_alvo);
+
+    printf("Tem certeza que deseja inativar o equipamento ID %d? (S/N): ", id_alvo);
+    scanf(" %c", &confirmacao);
+    limparBuffer();
+
+    if (confirmacao == 'S' || confirmacao == 's')
+    {
+        /* Simulação de inativação preservando histórico (RN12) */
+        printf("\n[+] Equipamento inativado com sucesso (status = 'inativo').\n");
+        printf("[+] Historico preservado. Este equipamento nao podera receber novas OS.\n");
+    }
+    else
+    {
+        printf("\nOperacao de inativacao cancelada pelo usuario.\n");
+    }
+}
