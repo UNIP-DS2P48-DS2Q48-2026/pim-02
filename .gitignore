@@ -1,2 +1,5 @@
 # dados de teste de cada um (modo .txt)
-projeto/dados/*.txt
+# projeto/dados/*.txt
+
+# executavel gerado na compilacao
+projeto/output/
