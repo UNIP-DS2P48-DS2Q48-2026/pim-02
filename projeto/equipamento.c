@@ -5,6 +5,59 @@
 extern void limparBuffer(void);
 extern void imprimirCabecalho(const char *subtitulo);
 
+/* Regrava o equipamento.txt inteiro com o que está no vetor */
+void salvarEquipamentos(void)
+{
+    FILE *arquivo = fopen(ARQ_EQUIPAMENTO, "w");
+    int i;
+
+    if (arquivo == NULL)
+    {
+        printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_EQUIPAMENTO);
+        return;
+    }
+    for (i = 0; i < totalEquipamentos; i++)
+    {
+        Equipamento *e = &equipamentos[i];
+        fprintf(arquivo, "%d;%d;%s;%s;%s;%s;%s;%s;%s\n",
+                e->id_equipamento, e->id_cliente, e->categoria, e->tipo, e->marca,
+                e->modelo_numero_serie, e->status, e->criado_em, e->atualizado_em);
+    }
+    fclose(arquivo);
+}
+
+/* Lê o equipamento.txt para o vetor (sem arquivo = nenhum equipamento ainda) */
+void carregarEquipamentos(void)
+{
+    FILE *arquivo = fopen(ARQ_EQUIPAMENTO, "r");
+    char linha[TAM_LINHA];
+
+    totalEquipamentos = 0;
+    if (arquivo == NULL)
+    {
+        return;
+    }
+    while (totalEquipamentos < MAX_EQUIPAMENTOS && fgets(linha, sizeof(linha), arquivo) != NULL)
+    {
+        Equipamento *e = &equipamentos[totalEquipamentos];
+        char *cursor = linha;
+
+        if (linha[0] == '\n' || linha[0] == '\r')
+            continue;
+        e->id_equipamento = lerCampoInt(&cursor);
+        e->id_cliente = lerCampoInt(&cursor);
+        lerCampo(&cursor, e->categoria, sizeof(e->categoria));
+        lerCampo(&cursor, e->tipo, sizeof(e->tipo));
+        lerCampo(&cursor, e->marca, sizeof(e->marca));
+        lerCampo(&cursor, e->modelo_numero_serie, sizeof(e->modelo_numero_serie));
+        lerCampo(&cursor, e->status, sizeof(e->status));
+        lerCampo(&cursor, e->criado_em, sizeof(e->criado_em));
+        lerCampo(&cursor, e->atualizado_em, sizeof(e->atualizado_em));
+        totalEquipamentos++;
+    }
+    fclose(arquivo);
+}
+
 /* UC20 - Cadastrar Equipamento: cadastra um hardware ou software de um cliente */
 void cadastrarEquipamento(void)
 {
