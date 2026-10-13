@@ -1,8 +1,0 @@
-id_equipamento;id_cliente;categoria;tipo;marca;modelo_numero_serie;status;criado_em;atualizado_em
-1;4;hardware;Notebook;Dell;Inspiron 15 / DL15-88231;ativo;2026-09-01 08:30:00;2026-09-01 08:30:00
-2;4;software;Sistema Operacional;Microsoft;W11PR-7KX2M-QH8DT-4RV9C-PB3YF;ativo;2026-09-01 08:35:00;2026-09-01 08:35:00
-3;7;hardware;Impressora;HP;DeskJet 2774 / CN12K4L0QZ;ativo;2026-09-05 10:15:00;2026-09-05 10:15:00
-4;7;hardware;Desktop;Positivo;Master D610 / PS-55120;ativo;2026-09-05 10:20:00;2026-09-05 10:20:00
-5;8;hardware;Smartphone;Samsung;Galaxy A54 / R58T90XYZ;ativo;2026-09-06 11:40:00;2026-09-06 11:40:00
-6;8;software;Antivirus;Kaspersky;KP-4H7Q2-ZM8W1-T6RX3;ativo;2026-09-06 11:45:00;2026-09-06 11:45:00
-7;9;hardware;Notebook;Lenovo;IdeaPad 3 / LN-PF3K9W2A;inativo;2026-08-01 14:10:00;2026-09-10 16:00:00

@@ -1,9 +1,0 @@
-id_os;id_equipamento;id_atendente;data_abertura;problema_relatado;diagnostico;orcamento;status;resultado_resposta_cliente;data_entrega;resultado_teste;valor_pago;feedback_cliente;satisfeito;criado_em;atualizado_em
-1;1;2;2026-09-15;Notebook nao liga;Fonte queimada, troca da fonte;250.00;finalizada;aprovado;2026-09-22;aprovado;250.00;Atendimento rapido, tudo funcionando;sim;2026-09-15 09:00:00;2026-09-23 10:00:00
-2;3;2;2026-09-28;Impressora nao puxa o papel;Rolete de tracao gasto, troca do rolete;120.00;em_andamento;aprovado;;;-1.00;;;2026-09-28 14:00:00;2026-09-30 11:00:00
-3;5;1;2026-10-01;Tela trincada apos queda;Troca do display completo;680.00;em_andamento;recusado;;;-1.00;;;2026-10-01 15:30:00;2026-10-03 09:00:00
-4;2;2;2026-10-03;Windows lento e travando;;-1.00;em_andamento;;;;-1.00;;;2026-10-03 10:00:00;2026-10-04 08:30:00
-5;4;6;2026-10-06;Computador desliga sozinho;;-1.00;aberta;;;;-1.00;;;2026-10-06 16:20:00;2026-10-06 16:20:00
-6;6;2;2026-09-20;Licenca do antivirus expirada;;-1.00;cancelada;;;;-1.00;;;2026-09-20 13:00:00;2026-09-21 09:00:00
-7;1;2;2026-10-02;Teclas do teclado falhando;Oxidacao no teclado, troca do teclado;180.00;em_andamento;aprovado;;aprovado;-1.00;;;2026-10-02 11:00:00;2026-10-07 17:00:00
-8;7;2;2026-08-10;Notebook superaquecendo;Limpeza interna e troca da pasta termica;150.00;finalizada;aprovado;2026-08-14;aprovado;150.00;Resolveu o problema;sim;2026-08-10 10:00:00;2026-08-15 09:00:00
