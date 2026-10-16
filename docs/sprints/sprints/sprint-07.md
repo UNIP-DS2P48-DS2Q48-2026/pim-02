@@ -50,6 +50,7 @@ Fora do backlog: documento acadêmico do PIM, organização das sprints e acabam
 - [x] Conferir os nomes dos 44 casos de uso nos diagramas, nas descrições e no código: todos iguais - 16/10.
 - [x] Trocar o título "byteTech - Diagrama de Classes" para "byteTech - Diagrama Estendido" no `diagramas.asta` e exportar de novo os PNGs - 16/10.
 - [x] No Astah, trocar `OrdemServico.gerarRelatorio(inicio, fim)` por `gerarRelatorio(ano)`, porque o relatório agora pede o ano, e exportar os PNGs de novo (`2026-10-16-diagramas-de-casos-de-uso-e-estendido/`) - 16/10.
+- [x] Revisar o dicionário de dados do grupo com o banco (`schema_sqlserver.sql`) e com o exemplo do professor: título errado na tabela de OS, coluna `id_os` que faltava em `tecnico_os`, tipos trocados, valores de status e perfil, padrão 0,00 no orçamento e tamanhos. Versão final em `docs/dicionario-de-dados/` (Word e PDF), sem abreviações - 16/10.
 
 ## Decisões desta sprint
 
@@ -90,7 +91,7 @@ As Sprints 05 e 06 não foram fechadas a tempo, e a Sprint 06 chegou a ser abert
 
 ## Sprint Review
 
-Os 44 casos de uso funcionam com os arquivos `.txt`, e o código compila sem avisos (`gcc -Wall -Wextra main.c`). Um roteiro de 28 cenários testou o sistema com os 4 perfis, levando OS novas da abertura à finalização, e todos passaram. O código foi simplificado para a apresentação, e o documento do PIM foi iniciado. Os diagramas foram exportados de novo com o título "Diagrama Estendido".
+Os 44 casos de uso funcionam com os arquivos `.txt`, e o código compila sem avisos (`gcc -Wall -Wextra main.c`). Um roteiro de 28 cenários testou o sistema com os 4 perfis, levando OS novas da abertura à finalização, e todos passaram. O código foi simplificado para a apresentação, o documento do PIM foi iniciado e o dicionário de dados foi revisado e refeito no formato do professor. Os diagramas foram exportados de novo com o título "Diagrama Estendido".
 
 Não foram entregues: os protótipos no Figma e as etapas do documento que faltam (4 a 8).
 

@@ -24,7 +24,7 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 ### Documentação acadêmica
 
 - [ ] Etapa 3: diagrama de atividades ou de sequência (os fluxogramas de `docs/Fluxograma/` podem servir de base).
-- [ ] Etapa 4: normalização, principais comandos SQL e discussão sobre bancos NoSQL (os modelos e o `schema_sqlserver.sql` já existem).
+- [ ] Etapa 4: normalização, principais comandos SQL e discussão sobre bancos NoSQL (os modelos, o `schema_sqlserver.sql` e o dicionário de dados já existem).
 - [ ] Etapa 5: seção sobre a implementação em C (arquivos, `.txt`, menus por perfil, como compilar e executar), com algoritmos, pseudocódigo e prints das telas do terminal.
 - [ ] Etapa 6: redes e sistemas distribuídos (arquitetura, topologia, equipamentos, endereçamento IP, VLANs, nuvem, segurança).
 - [ ] Etapa 7: direitos humanos, inclusão e segurança (acessibilidade, privacidade, proteção de dados, ética).
