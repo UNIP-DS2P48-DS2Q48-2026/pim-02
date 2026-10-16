@@ -40,7 +40,7 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 
 - **Linguagem:** C
 - **Interface:** Terminal/console (menus textuais e opções numéricas)
-- **Persistência:** banco de dados SQL Server (script em [`schema_sqlserver.sql`](./docs/Modelagem_DB/schema_sqlserver.sql)), acessado pelo programa em C via ODBC, ou arquivos de texto (`.txt`), um por tabela
+- **Persistência:** nesta versão, arquivos de texto (`projeto/dados/*.txt`), um por tabela. O banco já está modelado em SQL Server ([`schema_sqlserver.sql`](./docs/Modelagem_DB/schema_sqlserver.sql)); ligar o programa em C a ele é o próximo passo
 
 ## Documentação
 
@@ -62,7 +62,7 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 
 | Documento | Conteúdo |
 |---|---|
-| [Diagrama Estendido](<./docs/Modalagem_casos_de_uso/2026-09-30-diagramas-de-casos-de-uso-e-estendido/Diagrama Estendido/Diagrama de Estendido Melhorado.png>) | Telas («boundary») e entidades (structs) do sistema, com seus relacionamentos - usado no lugar do diagrama de classes, já que C não tem classes |
+| [Diagrama Estendido](<./docs/Modalagem_casos_de_uso/2026-10-16-diagramas-de-casos-de-uso-e-estendido/Diagrama Estendido/Diagrama Estendido.png>) | Telas («boundary») e entidades (structs) do sistema, com seus relacionamentos - usado no lugar do diagrama de classes, já que C não tem classes |
 | [Diagrama de Casos de Uso (Astah)](./docs/Modalagem_casos_de_uso/diagramas.asta) | Casos de uso por ator, separados em pacotes (abrir com [Astah](https://astah.net/)) |
 | [Casos de Uso](./docs/Modalagem_casos_de_uso/descricoes-astah.md) | Descrição de cada elipse do diagrama no formato do Astah (ator, pré/pós-condição, fluxo principal, alternativo e de exceção), correlacionada com o fluxograma |
 

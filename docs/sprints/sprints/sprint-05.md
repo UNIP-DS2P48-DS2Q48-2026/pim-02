@@ -33,7 +33,7 @@ Fora do backlog: pesquisa de persistência em C (SQL Server e `.txt`), documenta
 - [ ] PBI01: funções de persistência (abrir, ler, gravar e tratar erros) para as duas opções, começando pelos usuários. → Versão `.txt` feita na Sprint 06 (07/10); SQL Server opcional.
 - [ ] PBI02: login consultando os usuários salvos (tabela `usuario` ou `usuario.txt`), senha com hash (RNF10) e bloqueio de usuário inativo (RN12) - UC01. → Feito na Sprint 06 (07/10).
 - [ ] PBI02: Fazer Logout, Consultar Meus Dados e Alterar Senha - UC02, UC03, UC44. → Feito na Sprint 06 (07/10).
-- [ ] Validar com o grupo as decisões pendentes do plano (UC28, UC30 e escopo da recepcionista). → Decididas na Sprint 06, durante a implementação (16/10).
+- [ ] Validar com o grupo as decisões pendentes do plano (UC28, UC30 e escopo da recepcionista). → Decididas na Sprint 07, durante a implementação (16/10).
 
 ### Modelagem
 
@@ -47,13 +47,13 @@ Fora do backlog: pesquisa de persistência em C (SQL Server e `.txt`), documenta
 
 ### Documentação acadêmica
 
-- [ ] Iniciar o documento do PIM no formato do manual (`docs/manual-pim/`), reaproveitando requisitos, casos de uso e modelagem já prontos. → Iniciado na Sprint 06 (12/10).
+- [ ] Iniciar o documento do PIM no formato do manual (`docs/manual-pim/`), reaproveitando requisitos, casos de uso e modelagem já prontos. → Iniciado na Sprint 07 (12/10).
 
 ## Sprint Review
 
 A estrutura do código ficou pronta: pasta `projeto/` com o `main.c`, um `.c` por pacote do Astah (geral, admin, recepcionista, técnico, cliente, equipamento, ordem de serviço, manutenção, orçamento e relatório) e o `banco.c`. Cada caso de uso tem a sua função, ainda vazia, com o comentário `/* UCnn */`. A persistência foi definida: arquivos `.txt` primeiro e SQL Server como opção, escolhida pela chave `USAR_SQLSERVER`. Na modelagem, o diagrama de classes virou o Diagrama Estendido (telas e entidades), exportado em PNG junto com os modelos do banco.
 
-Não foram entregues nesta sprint: a gravação de dados, o login real e o início do documento do PIM. Todos passaram para a Sprint 06.
+Não foram entregues nesta sprint: a gravação de dados, o login real e o início do documento do PIM. A gravação e o login foram feitos na Sprint 06, e o documento começou na Sprint 07.
 
 ## Retrospective
 
