@@ -43,6 +43,7 @@ Fora do backlog: documento acadêmico do PIM, organização das sprints e acabam
 - [x] Atualizar no documento do PIM o RNF04 e a seção 3.6 (arquitetura), e acrescentar o Quadro 5, que mostra onde cada elemento do Diagrama Estendido está no código - 16/10.
 - [x] Fechar a Sprint 05 e dividir o período de 03/10 a 23/10 em sprints de uma semana (06, 07 e 08) - 16/10.
 - [x] Atualizar o status dos PBIs no [Product Backlog](../../product-backlog/product-backlog.md) - 16/10.
+- [x] Alinhar a documentação ao código simplificado: descrições do UC25 (filtro), UC28 (mais de um técnico) e UC43 (relatório por ano), exemplo do RF10 e README (persistência, "Como executar" e link do documento do PIM) - 16/10.
 
 ### Modelagem
 

@@ -120,7 +120,7 @@ O sistema deverá indicar ao cliente que o serviço foi concluído (a OS passa a
 
 O sistema deverá permitir consultar ordens de serviço, equipamentos e usuários de acordo com o perfil autenticado, conforme a Matriz de Permissões, incluindo o histórico de ordens finalizadas e canceladas.
 
-Essa consulta inclui contagens e filtros operacionais sobre o histórico (por exemplo, quantidade de equipamentos que passaram por manutenção em um determinado período), restritos ao próprio perfil autenticado. Não inclui indicadores financeiros, de custo ou gerenciais - esses seguem fora do escopo (ver [Fora do Escopo](#fora-do-escopo)).
+Essa consulta inclui contagens e filtros operacionais sobre o histórico (por exemplo, quantas ordens de serviço foram abertas em cada mês do ano, separadas por status), restritos ao próprio perfil autenticado. Não inclui indicadores financeiros, de custo ou gerenciais - esses seguem fora do escopo (ver [Fora do Escopo](#fora-do-escopo)).
 
 Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo principal, alternativo e de exceção, pós-condição), organizado por diagrama e correlacionado com o fluxograma, em [Casos de Uso](../Modalagem_casos_de_uso/descricoes-astah.md).
 

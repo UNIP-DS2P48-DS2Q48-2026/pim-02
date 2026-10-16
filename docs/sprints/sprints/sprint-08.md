@@ -17,7 +17,7 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 ### Código (`projeto/`)
 
 - [ ] Abrir o PR da branch `refactor/codigo-simples` e fazer o merge na `main`.
-- [ ] Grupo decidir: o Admin volta a poder editar OS finalizada (exceção da RN08)?
+- [ ] Grupo decidir: o Admin volta a poder editar OS finalizada (exceção da RN08)? Hoje o código não deixa, mas o UC26 (exceção 4a) e a RN08 ainda dizem que o Admin pode: ou volta o `if` no `editarOS`, ou muda o texto do UC26 e da RN08.
 - [ ] Opcional: não apagar o texto do reparo quando o técnico registra uma nova observação; exigir o reparo registrado antes do teste.
 - [ ] Próximo passo (planejar): ligar o programa ao SQL Server (`schema_sqlserver.sql`). Definir se entra antes ou depois da entrega do PIM.
 
