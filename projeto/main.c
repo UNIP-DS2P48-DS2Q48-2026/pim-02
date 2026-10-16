@@ -3,7 +3,15 @@
 #include <string.h>
 #include <time.h>
 
-/* Arquivos .txt: um por tabela, campos separados por ';' na mesma ordem das colunas do banco (schema_sqlserver.sql) */
+#define USAR_SQLSERVER 0
+
+#if USAR_SQLSERVER
+#include <windows.h>
+#include <sql.h>
+#include <sqlext.h>
+#endif
+
+/* Arquivos .txt: um por tabela, campos separados por ';' na ordem do schema_sqlserver.sql */
 #define ARQ_USUARIO "dados/usuario.txt"
 #define ARQ_EQUIPAMENTO "dados/equipamento.txt"
 #define ARQ_OS "dados/os.txt"
@@ -101,7 +109,6 @@ void limparBuffer();
 void imprimirCabecalho(char subtitulo[]);
 void lerTexto(char rotulo[], char destino[], int tamanho);
 int lerInteiro(char rotulo[]);
-double lerValor(char rotulo[]);
 int confirmar(char pergunta[]);
 void pausar();
 void gerarHash(char senha[], char destino[]);
@@ -109,6 +116,10 @@ void dataHoje(char destino[]);
 void dataHoraAgora(char destino[]);
 void pegarCampo(char linha[], int posicao, char destino[], int tamanho);
 int contemTexto(char texto[], char filtro[]);
+
+#if USAR_SQLSERVER
+#include "banco.c"
+#endif
 
 #include "geral.c"
 #include "admin.c"
@@ -139,9 +150,8 @@ void lerTexto(char rotulo[], char destino[], int tamanho)
     printf("%s", rotulo);
     if (fgets(destino, tamanho, stdin) == NULL)
     {
-        /* Fim da entrada (Ctrl+Z): sem isso o menu repetiria "Opcao invalida" para sempre */
-        printf("\n\n[!] Fim da entrada. Encerrando o programa.\n");
-        exit(0);
+        destino[0] = '\0'; /* não leu nada (fim da entrada) */
+        return;
     }
 
     tam = strlen(destino);
@@ -172,26 +182,6 @@ int lerInteiro(char rotulo[])
 
     lerTexto(rotulo, texto, sizeof(texto));
     if (sscanf(texto, "%d", &valor) != 1)
-    {
-        return -1;
-    }
-    return valor;
-}
-
-/* Lê um valor em reais (aceita vírgula ou ponto); devolve -1 se ficou vazio ou não é um valor válido */
-double lerValor(char rotulo[])
-{
-    char texto[30];
-    double valor;
-    int i;
-
-    lerTexto(rotulo, texto, sizeof(texto));
-    for (i = 0; texto[i] != '\0'; i++)
-    {
-        if (texto[i] == ',')
-            texto[i] = '.';
-    }
-    if (sscanf(texto, "%lf", &valor) != 1 || valor < 0)
     {
         return -1;
     }
