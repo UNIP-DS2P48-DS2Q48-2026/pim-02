@@ -14,7 +14,8 @@ As Sprints 01 a 04 foram reconstruídas a partir do histórico do Git, pois não
 | [Sprint 02](./sprints/sprint-02.md) | 05/09 – 11/09/2026 | Casos de uso por módulo e ajuste do modelo de usuário | Concluída (reconstruída) |
 | [Sprint 03](./sprints/sprint-03.md) | 12/09 – 18/09/2026 | Reescrita de requisitos, escopo e modelo de dados (4 tabelas) | Concluída (reconstruída) |
 | [Sprint 04](./sprints/sprint-04.md) | 19/09 – 25/09/2026 | Fluxogramas, casos de uso no Astah, modelo lógico e descrição dos 44 UCs | Concluída (reconstruída) |
-| [Sprint 05](./sprints/sprint-05.md) | 26/09 – 02/10/2026 | Persistência em SQL Server ou .txt e avanço da estrutura do código (prioridade); diagrama estendido e documentação acadêmica | Em andamento |
+| [Sprint 05](./sprints/sprint-05.md) | 26/09 – 02/10/2026 | Persistência em SQL Server ou .txt e avanço da estrutura do código (prioridade); diagrama estendido e documentação acadêmica | Concluída (fechada em 16/10) |
+| [Sprint 06](./sprints/sprint-06.md) | 03/10 – 23/10/2026 | Sistema em C completo com `.txt` (44 casos de uso), documento do PIM e protótipos no Figma | Em andamento |
 
 ## Definition of Done
 
