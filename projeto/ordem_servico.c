@@ -132,22 +132,6 @@ void carregarTecnicosOS()
 
 /* ---------- Funções de apoio às OS (usadas também no manutencao.c, orcamento.c e relatorio.c) ---------- */
 
-/* Funções que ficam em arquivos incluídos depois deste */
-double textoParaValor(char texto[]); /* orcamento.c */
-int dataValida(char data[]);         /* relatorio.c */
-
-/* Etapas usadas para escolher quais OS aparecem em cada lista */
-#define ETAPA_TODAS 0          /* qualquer OS que o usuário logado pode ver */
-#define ETAPA_MANUTENCAO 1     /* OS em andamento que o usuário logado pode atender */
-#define ETAPA_PRONTA_ENTREGA 2 /* teste aprovado e ainda não entregue */
-#define ETAPA_SEM_ORCAMENTO 3  /* diagnóstico registrado e sem orçamento */
-#define ETAPA_AGUARDANDO 4     /* orçamento enviado, sem resposta do cliente */
-#define ETAPA_RECUSADO 5       /* orçamento recusado pelo cliente */
-#define ETAPA_COM_ORCAMENTO 6  /* qualquer OS que já tem orçamento */
-#define ETAPA_EM_ABERTO 7      /* aberta ou em andamento: pode cancelar e atribuir técnico */
-#define ETAPA_EDITAVEL 8       /* em aberto; o Admin edita também a finalizada (RN08) */
-#define ETAPA_FEEDBACK 9       /* entregue e esperando a resposta do cliente */
-
 /* Posição no vetor da OS com este id (-1 se não existir) */
 int buscarOSPorId(int id)
 {
@@ -156,19 +140,6 @@ int buscarOSPorId(int id)
     for (i = 0; i < totalOrdens; i++)
     {
         if (ordens[i].id_os == id)
-            return i;
-    }
-    return -1;
-}
-
-/* Posição no vetor tecnicosOS da linha deste técnico nesta OS (-1 se não existir) */
-int buscarTecnicoNaOS(int idTecnico, int idOS)
-{
-    int i;
-
-    for (i = 0; i < totalTecnicosOS; i++)
-    {
-        if (tecnicosOS[i].id_tecnico == idTecnico && tecnicosOS[i].id_os == idOS)
             return i;
     }
     return -1;
@@ -187,81 +158,18 @@ int podeVerOS(int i)
     }
     if (perfilLogado("tecnico"))
     {
-        return tecnicoEstaNaOS(idLogado, ordens[i].id_os);
+        if (buscarTecnicoNaOS(idLogado, ordens[i].id_os) >= 0)
+            return 1;
+        return 0;
     }
     return 1;
 }
 
-/* A OS está na etapa pedida? (e o usuário logado pode vê-la?) */
-int osNaEtapa(int i, int etapa)
+/* A OS ainda está em aberto (aberta ou em andamento)? Finalizada e cancelada não mudam mais (RN08) */
+int osEmAberto(int i)
 {
-    int emAndamento = 0;
-
-    if (!podeVerOS(i))
-        return 0;
-
-    /* RN08: OS finalizada ou cancelada não volta para as etapas de trabalho */
-    if (strcmp(ordens[i].status, "em_andamento") == 0)
-        emAndamento = 1;
-
-    if (etapa == ETAPA_TODAS)
-    {
+    if (strcmp(ordens[i].status, "aberta") == 0 || strcmp(ordens[i].status, "em_andamento") == 0)
         return 1;
-    }
-    if (etapa == ETAPA_EM_ABERTO)
-    {
-        if (emAndamento || strcmp(ordens[i].status, "aberta") == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_EDITAVEL)
-    {
-        if (emAndamento || strcmp(ordens[i].status, "aberta") == 0)
-            return 1;
-        if (perfilLogado("admin") && strcmp(ordens[i].status, "finalizada") == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_FEEDBACK)
-    {
-        if (emAndamento && strlen(ordens[i].data_entrega) > 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_MANUTENCAO)
-    {
-        return emAndamento;
-    }
-    if (etapa == ETAPA_PRONTA_ENTREGA)
-    {
-        if (emAndamento && strcmp(ordens[i].resultado_teste, "aprovado") == 0 && strlen(ordens[i].data_entrega) == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_SEM_ORCAMENTO)
-    {
-        if (emAndamento && strlen(ordens[i].diagnostico) > 0 && ordens[i].orcamento < 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_AGUARDANDO)
-    {
-        if (emAndamento && ordens[i].orcamento >= 0 && strlen(ordens[i].resultado_resposta_cliente) == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_RECUSADO)
-    {
-        if (emAndamento && strcmp(ordens[i].resultado_resposta_cliente, "recusado") == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_COM_ORCAMENTO)
-    {
-        if (ordens[i].orcamento >= 0)
-            return 1;
-        return 0;
-    }
     return 0;
 }
 
@@ -276,41 +184,64 @@ void nomeDoEquipamento(int idEquipamento, char destino[])
         strcpy(destino, "?");
 }
 
-/* Lista as OS que estão na etapa pedida; devolve quantas mostrou */
-int listarOS(int etapa)
+/* Copia para destino a etapa em que a OS está, olhando quais campos já foram preenchidos */
+void etapaDaOS(int i, char destino[])
 {
-    char dono[60], equipamento[90];
-    int i, mostrados = 0;
+    if (strcmp(ordens[i].status, "aberta") == 0)
+        strcpy(destino, "aguardando tecnico");
+    else if (strcmp(ordens[i].status, "em_andamento") != 0)
+        strcpy(destino, ordens[i].status); /* finalizada ou cancelada */
+    else if (strlen(ordens[i].data_entrega) > 0)
+        strcpy(destino, "aguardando feedback");
+    else if (strcmp(ordens[i].resultado_teste, "aprovado") == 0)
+        strcpy(destino, "pronta para entrega");
+    else if (strcmp(ordens[i].resultado_resposta_cliente, "aprovado") == 0)
+        strcpy(destino, "em reparo");
+    else if (strcmp(ordens[i].resultado_resposta_cliente, "recusado") == 0)
+        strcpy(destino, "orcamento recusado");
+    else if (ordens[i].orcamento >= 0)
+        strcpy(destino, "aguardando resposta");
+    else if (strlen(ordens[i].diagnostico) > 0)
+        strcpy(destino, "aguardando orcamento");
+    else
+        strcpy(destino, "em vistoria");
+}
+
+/* Mostra uma linha da tabela de OS (o cabeçalho é impresso por quem chama) */
+void imprimirLinhaOS(int i)
+{
+    char dono[60], equipamento[90], etapa[25];
+
+    nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
+    nomeDoEquipamento(ordens[i].id_equipamento, equipamento);
+    etapaDaOS(i, etapa);
+    printf("  %-4d %-11s %-18.18s %-20.20s %s\n", ordens[i].id_os, ordens[i].data_abertura, dono, equipamento, etapa);
+}
+
+void imprimirCabecalhoOS()
+{
+    printf("\n  %-4s %-11s %-18s %-20s %s\n", "OS", "Abertura", "Cliente", "Equipamento", "Etapa");
+    printf("  ---------------------------------------------------------------------------\n");
+}
+
+/* Lista as OS em aberto que o usuário pode ver e pede o número. Devolve a posição no vetor ou -1 */
+int selecionarOS()
+{
+    int i, id, mostrados = 0;
 
     for (i = 0; i < totalOrdens; i++)
     {
-        if (!osNaEtapa(i, etapa))
+        if (!podeVerOS(i) || !osEmAberto(i))
             continue;
-
-        /* Cabeçalho da tabela antes da primeira da lista */
         if (mostrados == 0)
-        {
-            printf("\n  %-4s %-11s %-18s %-22s %s\n", "OS", "Abertura", "Cliente", "Equipamento", "Status");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-
-        nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
-        nomeDoEquipamento(ordens[i].id_equipamento, equipamento);
-        printf("  %-4d %-11s %-18.18s %-22.22s %s\n", ordens[i].id_os, ordens[i].data_abertura, dono, equipamento,
-               ordens[i].status);
+            imprimirCabecalhoOS();
+        imprimirLinhaOS(i);
         mostrados++;
     }
-    return mostrados;
-}
 
-/* Lista as OS da etapa e pede o número. Devolve a posição no vetor ou -1 (voltou ou número inválido) */
-int selecionarOS(int etapa)
-{
-    int id, i;
-
-    if (listarOS(etapa) == 0)
+    if (mostrados == 0)
     {
-        printf("\n[!] Nenhuma ordem de servico disponivel para esta operacao.");
+        printf("\n[!] Nenhuma ordem de servico em aberto.");
         pausar();
         return -1;
     }
@@ -320,7 +251,7 @@ int selecionarOS(int etapa)
         return -1;
 
     i = buscarOSPorId(id);
-    if (i < 0 || !osNaEtapa(i, etapa))
+    if (i < 0 || !podeVerOS(i) || !osEmAberto(i))
     {
         printf("\n[!] OS %d nao esta na lista.", id);
         pausar();
@@ -359,85 +290,26 @@ int novaLinhaTecnicoOS(int idTecnico, int idOS)
     return n;
 }
 
-/* ---------- Casos de uso da ordem de servico ---------- */
-
-/* Copia para destino só os números do texto (CPF com ou sem ponto e traço) */
-void soNumeros(char texto[], char destino[])
-{
-    int i, j = 0;
-
-    for (i = 0; texto[i] != '\0'; i++)
-    {
-        if (texto[i] >= '0' && texto[i] <= '9')
-        {
-            destino[j] = texto[i];
-            j++;
-        }
-    }
-    destino[j] = '\0';
-}
-
-/* UC25: copia para destino a etapa da OS, deduzida dos campos preenchidos */
-void etapaDaOS(int i, char destino[])
-{
-    if (strcmp(ordens[i].status, "aberta") == 0)
-        strcpy(destino, "aguardando tecnico");
-    else if (strcmp(ordens[i].status, "em_andamento") != 0)
-        strcpy(destino, ordens[i].status); /* finalizada ou cancelada */
-    else if (strlen(ordens[i].data_entrega) > 0)
-        strcpy(destino, "aguardando feedback");
-    else if (strcmp(ordens[i].resultado_teste, "aprovado") == 0)
-        strcpy(destino, "pronta para entrega");
-    else if (strcmp(ordens[i].resultado_resposta_cliente, "aprovado") == 0)
-        strcpy(destino, "em reparo");
-    else if (strcmp(ordens[i].resultado_resposta_cliente, "recusado") == 0)
-        strcpy(destino, "orcamento recusado");
-    else if (ordens[i].orcamento >= 0)
-        strcpy(destino, "aguardando resposta");
-    else if (strlen(ordens[i].diagnostico) > 0)
-        strcpy(destino, "aguardando orcamento");
-    else
-        strcpy(destino, "em vistoria");
-}
-
 /* Mostra todos os dados da OS: cliente, equipamento, andamento e técnicos */
 void mostrarOS(int i)
 {
     char etapa[25], equipamento[90];
-    int c, a, k, t, e, tecnicos = 0;
+    int c, k, t;
 
     etapaDaOS(i, etapa);
     nomeDoEquipamento(ordens[i].id_equipamento, equipamento);
     c = buscarUsuarioPorId(donoDoEquipamento(ordens[i].id_equipamento));
-    a = buscarUsuarioPorId(ordens[i].id_atendente);
-    e = buscarEquipamentoPorId(ordens[i].id_equipamento);
 
-    if (strcmp(etapa, ordens[i].status) == 0)
-        printf("\nOS %d - %s\n", ordens[i].id_os, ordens[i].status);
-    else
-        printf("\nOS %d - %s (%s)\n", ordens[i].id_os, ordens[i].status, etapa);
+    printf("\nOS %d - %s\n", ordens[i].id_os, etapa);
     if (c >= 0)
         printf("  Cliente:     %s - CPF %s - %s\n", usuarios[c].nome, usuarios[c].cpf, usuarios[c].telefone);
-    if (e >= 0)
-        printf("  Equipamento: %s (%s)\n", equipamento, equipamentos[e].modelo_numero_serie);
-    if (a >= 0)
-        printf("  Abertura:    %s, por %s\n", ordens[i].data_abertura, usuarios[a].nome);
-    else
-        printf("  Abertura:    %s\n", ordens[i].data_abertura);
+    printf("  Equipamento: %s\n", equipamento);
+    printf("  Abertura:    %s\n", ordens[i].data_abertura);
     printf("  Problema:    %s\n", ordens[i].problema_relatado);
-
     if (strlen(ordens[i].diagnostico) > 0)
         printf("  Diagnostico: %s\n", ordens[i].diagnostico);
-    else
-        printf("  Diagnostico: (ainda nao registrado)\n");
-
     if (ordens[i].orcamento >= 0)
-    {
-        if (strlen(ordens[i].resultado_resposta_cliente) > 0)
-            printf("  Orcamento:   R$ %.2f (%s)\n", ordens[i].orcamento, ordens[i].resultado_resposta_cliente);
-        else
-            printf("  Orcamento:   R$ %.2f (aguardando resposta)\n", ordens[i].orcamento);
-    }
+        printf("  Orcamento:   R$ %.2f %s\n", ordens[i].orcamento, ordens[i].resultado_resposta_cliente);
     if (strlen(ordens[i].resultado_teste) > 0)
         printf("  Teste:       %s\n", ordens[i].resultado_teste);
     if (strlen(ordens[i].data_entrega) > 0)
@@ -445,168 +317,22 @@ void mostrarOS(int i)
     if (strlen(ordens[i].satisfeito) > 0)
         printf("  Feedback:    satisfeito: %s - %s\n", ordens[i].satisfeito, ordens[i].feedback_cliente);
 
-    printf("  Tecnicos:\n");
     for (k = 0; k < totalTecnicosOS; k++)
     {
         if (tecnicosOS[k].id_os != ordens[i].id_os)
             continue;
         t = buscarUsuarioPorId(tecnicosOS[k].id_tecnico);
         if (t >= 0)
-            printf("    - %s (desde %s): %s\n", usuarios[t].nome, tecnicosOS[k].data_atribuicao,
-                   tecnicosOS[k].observacoes_tecnicas);
-        tecnicos++;
+            printf("  Tecnico:     %s - %s\n", usuarios[t].nome, tecnicosOS[k].observacoes_tecnicas);
     }
-    if (tecnicos == 0)
-        printf("    (nenhum)\n");
 }
 
-/* UC25: a OS bate com o filtro escolhido? (1 todas, 2 número, 3 cliente, 4 status/etapa, 5 período) */
-int osBateFiltro(int i, int tipo, char filtro[], char fim[])
-{
-    char etapa[25], cpf[20], numeros[20];
-    int c;
-
-    if (tipo == 2)
-    {
-        if (ordens[i].id_os == atoi(filtro))
-            return 1;
-        return 0;
-    }
-    if (tipo == 3)
-    {
-        c = buscarUsuarioPorId(donoDoEquipamento(ordens[i].id_equipamento));
-        if (c < 0)
-            return 0;
-        if (contemTexto(usuarios[c].nome, filtro))
-            return 1;
-        /* CPF com ou sem pontuação */
-        soNumeros(usuarios[c].cpf, cpf);
-        soNumeros(filtro, numeros);
-        if (strlen(numeros) > 0 && strstr(cpf, numeros) != NULL)
-            return 1;
-        return 0;
-    }
-    if (tipo == 4)
-    {
-        etapaDaOS(i, etapa);
-        if (contemTexto(ordens[i].status, filtro) || contemTexto(etapa, filtro))
-            return 1;
-        return 0;
-    }
-    if (tipo == 5)
-    {
-        /* Datas AAAA-MM-DD podem ser comparadas como texto com strcmp */
-        if (strcmp(ordens[i].data_abertura, filtro) >= 0 && strcmp(ordens[i].data_abertura, fim) <= 0)
-            return 1;
-        return 0;
-    }
-    return 1;
-}
-
-/* Lista os técnicos e admins ativos que ainda não estão na OS e atribui um ou mais (UC28, RN04) */
-void atribuirTecnicosNaOS(int i)
-{
-    int k, t, id, mostrados;
-
-    do
-    {
-        printf("\nTecnicos ja atribuidos a OS %d: ", ordens[i].id_os);
-        mostrados = 0;
-        for (k = 0; k < totalTecnicosOS; k++)
-        {
-            if (tecnicosOS[k].id_os != ordens[i].id_os)
-                continue;
-            t = buscarUsuarioPorId(tecnicosOS[k].id_tecnico);
-            if (mostrados > 0)
-                printf(", ");
-            if (t >= 0)
-                printf("%s", usuarios[t].nome);
-            mostrados++;
-        }
-        if (mostrados == 0)
-            printf("(nenhum)");
-        printf("\n");
-
-        /* RN15: só técnico ou, na falta dele, admin (RN11); RN14: só ativos */
-        mostrados = 0;
-        for (t = 0; t < totalUsuarios; t++)
-        {
-            if (strcmp(usuarios[t].status, "ativo") != 0)
-                continue;
-            if (strcmp(usuarios[t].perfil, "tecnico") != 0 && strcmp(usuarios[t].perfil, "admin") != 0)
-                continue;
-            if (tecnicoEstaNaOS(usuarios[t].id_usuario, ordens[i].id_os))
-                continue;
-
-            if (mostrados == 0)
-            {
-                printf("\n  %-4s %-25s %-10s %s\n", "ID", "Nome", "Perfil", "Especialidade");
-                printf("  ---------------------------------------------------------------------------\n");
-            }
-            printf("  %-4d %-25.25s %-10s %s\n", usuarios[t].id_usuario, usuarios[t].nome, usuarios[t].perfil,
-                   usuarios[t].especialidade);
-            mostrados++;
-        }
-        if (mostrados == 0)
-        {
-            printf("\n[!] Nao ha outro tecnico ativo para atribuir.");
-            pausar();
-            return;
-        }
-
-        id = lerInteiro("\nID do tecnico (0 para voltar): ");
-        if (id <= 0)
-            return;
-
-        t = buscarUsuarioPorId(id);
-        if (t < 0 || (strcmp(usuarios[t].perfil, "tecnico") != 0 && strcmp(usuarios[t].perfil, "admin") != 0))
-        {
-            printf("\n[!] O usuario %d nao e tecnico nem admin (RN15).", id);
-            pausar();
-            return;
-        }
-        if (strcmp(usuarios[t].status, "ativo") != 0)
-        {
-            printf("\n[!] %s esta inativo e nao pode ser atribuido (RN14).", usuarios[t].nome);
-            pausar();
-            return;
-        }
-        if (tecnicoEstaNaOS(id, ordens[i].id_os))
-        {
-            printf("\n[!] %s ja esta nesta OS.", usuarios[t].nome);
-            pausar();
-            return;
-        }
-
-        if (novaLinhaTecnicoOS(id, ordens[i].id_os) < 0)
-            return;
-        if (!salvarTecnicosOS())
-        {
-            totalTecnicosOS--; /* desfaz a linha que não foi gravada */
-            pausar();
-            return;
-        }
-
-        /* Com técnico atribuído, a OS sai de "aberta" e vai para a vistoria (UC31/UC32) */
-        if (strcmp(ordens[i].status, "aberta") == 0)
-        {
-            strcpy(ordens[i].status, "em_andamento");
-            dataHoraAgora(ordens[i].atualizado_em);
-            if (!salvarOrdens())
-            {
-                pausar();
-                return;
-            }
-        }
-
-        printf("\n[+] %s atribuido(a) a OS %d!", usuarios[t].nome, ordens[i].id_os);
-    } while (confirmar("\n\nAtribuir outro tecnico a esta OS?"));
-}
+/* ---------- Casos de uso da ordem de servico ---------- */
 
 /* UC24 - Criar Ordem de Servico: abre uma OS para um equipamento do cliente */
 void criarOrdemServico()
 {
-    char cpf[20], numeros[20], cpfCliente[20], problema[200];
+    char cpf[20], problema[200];
     int i, c = -1, e, n, id, mostrados = 0, maiorId = 0;
 
     imprimirCabecalho("Ordens de Servico > Criar");
@@ -618,19 +344,17 @@ void criarOrdemServico()
         return;
     }
 
-    lerTexto("\nCPF do cliente, com ou sem pontuacao (ENTER para voltar): ", cpf, sizeof(cpf));
-    soNumeros(cpf, numeros);
-    if (strlen(numeros) == 0)
+    lerTexto("\nCPF do cliente, como foi cadastrado (ENTER para voltar): ", cpf, sizeof(cpf));
+    if (strlen(cpf) == 0)
         return;
 
     for (i = 0; i < totalUsuarios; i++)
     {
-        soNumeros(usuarios[i].cpf, cpfCliente);
-        if (strcmp(usuarios[i].perfil, "cliente") == 0 && strcmp(cpfCliente, numeros) == 0)
+        if (strcmp(usuarios[i].perfil, "cliente") == 0 && strcmp(usuarios[i].cpf, cpf) == 0)
             c = i;
     }
 
-    /* RN01/RI02: a OS só é aberta para cliente e equipamento já cadastrados */
+    /* RN01: a OS só é aberta para cliente já cadastrado e ativo (RN14) */
     if (c < 0)
     {
         printf("\n[!] Nenhum cliente com o CPF %s. Cadastre o cliente e o equipamento antes de abrir a OS.", cpf);
@@ -644,25 +368,19 @@ void criarOrdemServico()
         return;
     }
 
+    /* Equipamentos ativos deste cliente */
     printf("\nCliente: %s\n", usuarios[c].nome);
     for (e = 0; e < totalEquipamentos; e++)
     {
-        if (equipamentos[e].id_cliente != usuarios[c].id_usuario)
+        if (equipamentos[e].id_cliente != usuarios[c].id_usuario || strcmp(equipamentos[e].status, "ativo") != 0)
             continue;
-
-        if (mostrados == 0)
-        {
-            printf("\n  %-4s %-8s %-14s %-12s %-22s %s\n", "ID", "Categ.", "Tipo", "Marca", "Modelo/Serie", "Status");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-        printf("  %-4d %-8s %-14.14s %-12.12s %-22.22s %s\n", equipamentos[e].id_equipamento,
-               equipamentos[e].categoria, equipamentos[e].tipo, equipamentos[e].marca,
-               equipamentos[e].modelo_numero_serie, equipamentos[e].status);
+        printf("  %d - %s %s (%s)\n", equipamentos[e].id_equipamento, equipamentos[e].tipo, equipamentos[e].marca,
+               equipamentos[e].modelo_numero_serie);
         mostrados++;
     }
     if (mostrados == 0)
     {
-        printf("\n[!] O cliente nao tem equipamento cadastrado. Cadastre em Equipamentos > Cadastrar (RN02).");
+        printf("\n[!] O cliente nao tem equipamento ativo. Cadastre em Equipamentos > Cadastrar (RN02).");
         pausar();
         return;
     }
@@ -670,17 +388,10 @@ void criarOrdemServico()
     id = lerInteiro("\nID do equipamento (0 para voltar): ");
     if (id <= 0)
         return;
-
     e = buscarEquipamentoPorId(id);
-    if (e < 0 || equipamentos[e].id_cliente != usuarios[c].id_usuario)
+    if (e < 0 || equipamentos[e].id_cliente != usuarios[c].id_usuario || strcmp(equipamentos[e].status, "ativo") != 0)
     {
         printf("\n[!] ID %d nao esta na lista.", id);
-        pausar();
-        return;
-    }
-    if (strcmp(equipamentos[e].status, "ativo") != 0)
-    {
-        printf("\n[!] O equipamento %d esta inativo. Nao e possivel abrir OS (RN14).", id);
         pausar();
         return;
     }
@@ -695,7 +406,7 @@ void criarOrdemServico()
             maiorId = ordens[i].id_os;
     }
 
-    /* Preenche a próxima posição e só faz total++ no fim */
+    /* Preenche a próxima posição do vetor; dinheiro -1 = ainda não informado */
     n = totalOrdens;
     ordens[n].id_os = maiorId + 1;
     ordens[n].id_equipamento = id;
@@ -717,91 +428,42 @@ void criarOrdemServico()
 
     if (!salvarOrdens())
     {
-        totalOrdens--; /* desfaz o registro que não foi gravado */
+        totalOrdens--; /* não gravou: desfaz */
         pausar();
         return;
     }
 
-    printf("\n[+] OS %d criada com status \"aberta\"!", ordens[n].id_os);
-    if (confirmar("\n\nDeseja atribuir um tecnico agora?"))
-        atribuirTecnicosNaOS(n);
+    printf("\n[+] OS %d criada! Agora atribua um tecnico em Ordens de Servico > Atribuir Tecnico.", ordens[n].id_os);
+    pausar();
 }
 
-/* UC25 - Consultar Ordem de Servico: lista e busca as OS por numero, CPF, status ou periodo */
+/* UC25 - Consultar Ordem de Servico: lista as OS (inclusive finalizadas e canceladas) com um filtro */
 void consultarOS()
 {
-    char filtro[60], fim[TAM_DATA + 5], dono[60], equipamento[90], etapa[25];
-    int tipo, i, id, mostrados = 0;
+    char filtro[60], etapa[25];
+    int i, c, id, mostrados = 0;
 
     imprimirCabecalho("Ordens de Servico > Consultar");
 
-    printf("\n  1 - Listar todas\n");
-    printf("  2 - Por numero da OS\n");
-    printf("  3 - Por cliente (nome ou CPF)\n");
-    printf("  4 - Por status ou etapa\n");
-    printf("  5 - Por periodo de abertura\n");
-    printf("  0 - Voltar\n\n");
-    tipo = lerInteiro("Opcao: ");
-
-    strcpy(filtro, "");
-    strcpy(fim, "");
-    if (tipo == 0)
-    {
+    lerTexto("\nFiltro (cliente, CPF ou etapa), ENTER para listar todas ou 0 para voltar: ", filtro, sizeof(filtro));
+    if (strcmp(filtro, "0") == 0)
         return;
-    }
-    else if (tipo == 2)
-    {
-        lerTexto("\nNumero da OS: ", filtro, sizeof(filtro));
-    }
-    else if (tipo == 3)
-    {
-        lerTexto("\nNome ou CPF do cliente: ", filtro, sizeof(filtro));
-    }
-    else if (tipo == 4)
-    {
-        printf("\nStatus: aberta, em_andamento, finalizada, cancelada\n");
-        printf("Etapas: aguardando tecnico, em vistoria, aguardando orcamento, aguardando resposta,\n");
-        printf("        orcamento recusado, em reparo, pronta para entrega, aguardando feedback\n");
-        lerTexto("Status ou etapa: ", filtro, sizeof(filtro));
-    }
-    else if (tipo == 5)
-    {
-        lerTexto("\nData inicial AAAA-MM-DD (ENTER para desde o inicio): ", filtro, sizeof(filtro));
-        lerTexto("Data final AAAA-MM-DD (ENTER para ate hoje): ", fim, sizeof(fim));
-        if (strlen(filtro) == 0)
-            strcpy(filtro, "0000-01-01");
-        if (strlen(fim) == 0)
-            dataHoje(fim);
-        if (!dataValida(filtro) || !dataValida(fim))
-        {
-            printf("\n[!] Data invalida. Use o formato AAAA-MM-DD (ex: 2026-10-01).");
-            pausar();
-            return;
-        }
-    }
-    else if (tipo != 1)
-    {
-        printf("\n[!] Opcao invalida!");
-        pausar();
-        return;
-    }
 
-    /* RN10/RI10: só as OS que o perfil pode ver, inclusive finalizadas e canceladas (RN09) */
     for (i = 0; i < totalOrdens; i++)
     {
-        if (!osNaEtapa(i, ETAPA_TODAS) || !osBateFiltro(i, tipo, filtro, fim))
+        if (!podeVerOS(i)) /* RN10, RI10 */
+            continue;
+
+        /* O filtro pode estar no nome do cliente, no CPF ou na etapa da OS */
+        c = buscarUsuarioPorId(donoDoEquipamento(ordens[i].id_equipamento));
+        etapaDaOS(i, etapa);
+        if (c < 0 || (!contemTexto(usuarios[c].nome, filtro) && !contemTexto(usuarios[c].cpf, filtro) &&
+                      !contemTexto(etapa, filtro)))
             continue;
 
         if (mostrados == 0)
-        {
-            printf("\n  %-4s %-11s %-18s %-20s %s\n", "OS", "Abertura", "Cliente", "Equipamento", "Etapa");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-        nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
-        nomeDoEquipamento(ordens[i].id_equipamento, equipamento);
-        etapaDaOS(i, etapa);
-        printf("  %-4d %-11s %-18.18s %-20.20s %s\n", ordens[i].id_os, ordens[i].data_abertura, dono, equipamento,
-               etapa);
+            imprimirCabecalhoOS();
+        imprimirLinhaOS(i);
         mostrados++;
     }
 
@@ -815,7 +477,6 @@ void consultarOS()
     id = lerInteiro("\nNumero da OS para ver os detalhes (0 para voltar): ");
     if (id <= 0)
         return;
-
     i = buscarOSPorId(id);
     if (i < 0 || !podeVerOS(i))
     {
@@ -835,23 +496,13 @@ void editarOS()
 
     imprimirCabecalho("Ordens de Servico > Editar");
 
-    /* RN08: finalizada e cancelada não são editadas (finalizada só pelo Admin) */
-    i = selecionarOS(ETAPA_EDITAVEL);
+    i = selecionarOS();
     if (i < 0)
         return;
 
-    mostrarOS(i);
-
-    /* RN07: o atendente altera só o dado administrativo; diagnóstico e teste são do técnico */
-    printf("\nSo o problema relatado pode ser alterado aqui (RN07). ENTER mantem o valor atual.\n");
+    /* RN07: a recepcao altera só o dado administrativo; diagnóstico e teste são do técnico */
+    printf("\nSo o problema relatado pode ser alterado (RN07). ENTER mantem o valor atual.\n");
     lerOuManter("Problema relatado", ordens[i].problema_relatado, problema, sizeof(problema));
-
-    if (strcmp(problema, ordens[i].problema_relatado) == 0)
-    {
-        printf("\nNada foi alterado.");
-        pausar();
-        return;
-    }
 
     strcpy(ordens[i].problema_relatado, problema);
     dataHoraAgora(ordens[i].atualizado_em);
@@ -860,7 +511,6 @@ void editarOS()
         pausar();
         return;
     }
-
     printf("\n[+] OS %d atualizada!", ordens[i].id_os);
     pausar();
 }
@@ -872,12 +522,10 @@ void cancelarOS()
 
     imprimirCabecalho("Ordens de Servico > Cancelar");
 
-    /* RN08: OS finalizada não pode ser cancelada */
-    i = selecionarOS(ETAPA_EM_ABERTO);
+    i = selecionarOS();
     if (i < 0)
         return;
 
-    mostrarOS(i);
     if (!confirmar("\nCancelar esta OS? Ela continua no historico (RN09)."))
     {
         printf("\nOperacao cancelada. A OS nao foi alterada.");
@@ -892,45 +540,102 @@ void cancelarOS()
         pausar();
         return;
     }
-
     printf("\n[+] OS %d cancelada. O registro foi mantido no historico.", ordens[i].id_os);
     pausar();
 }
 
-/* UC28 - Atribuir Tecnico a Ordem de Servico: vincula um ou mais tecnicos a OS */
+/* UC28 - Atribuir Tecnico a Ordem de Servico: vincula um técnico à OS (pode repetir para mais de um, RN04) */
 void atribuirTecnico()
 {
-    int i;
+    int i, t, id, mostrados = 0;
 
     imprimirCabecalho("Ordens de Servico > Atribuir Tecnico");
 
-    i = selecionarOS(ETAPA_EM_ABERTO);
+    i = selecionarOS();
     if (i < 0)
         return;
 
-    atribuirTecnicosNaOS(i);
+    /* RN15: só técnico ou, na falta dele, admin (RN11); RN14: só ativos */
+    printf("\nTecnicos disponiveis:\n");
+    for (t = 0; t < totalUsuarios; t++)
+    {
+        if (strcmp(usuarios[t].status, "ativo") != 0)
+            continue;
+        if (strcmp(usuarios[t].perfil, "tecnico") != 0 && strcmp(usuarios[t].perfil, "admin") != 0)
+            continue;
+        printf("  %d - %s (%s %s)\n", usuarios[t].id_usuario, usuarios[t].nome, usuarios[t].perfil,
+               usuarios[t].especialidade);
+        mostrados++;
+    }
+    if (mostrados == 0)
+    {
+        printf("\n[!] Nenhum tecnico ativo cadastrado.");
+        pausar();
+        return;
+    }
+
+    id = lerInteiro("\nID do tecnico (0 para voltar): ");
+    if (id <= 0)
+        return;
+
+    t = buscarUsuarioPorId(id);
+    if (t < 0 || strcmp(usuarios[t].status, "ativo") != 0 ||
+        (strcmp(usuarios[t].perfil, "tecnico") != 0 && strcmp(usuarios[t].perfil, "admin") != 0))
+    {
+        printf("\n[!] O usuario %d nao e um tecnico ativo (RN14, RN15).", id);
+        pausar();
+        return;
+    }
+    if (buscarTecnicoNaOS(id, ordens[i].id_os) >= 0)
+    {
+        printf("\n[!] %s ja esta nesta OS.", usuarios[t].nome);
+        pausar();
+        return;
+    }
+
+    if (novaLinhaTecnicoOS(id, ordens[i].id_os) < 0)
+        return;
+    if (!salvarTecnicosOS())
+    {
+        totalTecnicosOS--; /* não gravou: desfaz */
+        pausar();
+        return;
+    }
+
+    /* Com técnico atribuído, a OS sai de "aberta" e vai para a vistoria */
+    strcpy(ordens[i].status, "em_andamento");
+    dataHoraAgora(ordens[i].atualizado_em);
+    if (!salvarOrdens())
+    {
+        pausar();
+        return;
+    }
+    printf("\n[+] %s atribuido(a) a OS %d!", usuarios[t].nome, ordens[i].id_os);
+    pausar();
 }
 
 /* UC29 - Registrar Entrega e Pagamento: registra a data de entrega e o valor pago */
 void registrarEntrega()
 {
-    char texto[30];
-    double valor, diferenca;
+    double valor;
     int i;
 
     imprimirCabecalho("Ordens de Servico > Registrar Entrega");
 
-    /* RF08: só OS com teste aprovado e ainda não entregue */
-    i = selecionarOS(ETAPA_PRONTA_ENTREGA);
+    i = selecionarOS();
     if (i < 0)
         return;
 
-    mostrarOS(i);
-    lerTexto("\nValor recebido em R$ (ENTER para voltar): ", texto, sizeof(texto));
-    if (strlen(texto) == 0)
+    /* RF08: só entrega depois do teste aprovado */
+    if (strcmp(ordens[i].resultado_teste, "aprovado") != 0 || strlen(ordens[i].data_entrega) > 0)
+    {
+        printf("\n[!] A OS %d nao esta pronta para entrega.", ordens[i].id_os);
+        pausar();
         return;
+    }
 
-    valor = textoParaValor(texto);
+    printf("\nOrcamento aprovado: R$ %.2f\n", ordens[i].orcamento);
+    valor = lerValor("Valor recebido em R$: ");
     if (valor < 0)
     {
         printf("\n[!] Valor invalido. Nada foi gravado.");
@@ -938,18 +643,12 @@ void registrarEntrega()
         return;
     }
 
-    /* 7a: o valor recebido deve ser o do orçamento aprovado */
-    diferenca = valor - ordens[i].orcamento;
-    if (diferenca > 0.005 || diferenca < -0.005)
+    /* O valor recebido deve ser o do orçamento aprovado */
+    if (valor != ordens[i].orcamento && !confirmar("\n[!] Valor diferente do orcamento. Confirmar mesmo assim?"))
     {
-        printf("\n[!] O valor recebido (R$ %.2f) e diferente do orcamento aprovado (R$ %.2f).", valor,
-               ordens[i].orcamento);
-        if (!confirmar("\nConfirmar este valor mesmo assim?"))
-        {
-            printf("\nNada foi gravado.");
-            pausar();
-            return;
-        }
+        printf("\nNada foi gravado.");
+        pausar();
+        return;
     }
 
     dataHoje(ordens[i].data_entrega);
@@ -960,7 +659,6 @@ void registrarEntrega()
         pausar();
         return;
     }
-
     printf("\n[+] Entrega registrada! A OS %d aguarda o feedback do cliente.", ordens[i].id_os);
     pausar();
 }
@@ -969,44 +667,36 @@ void registrarEntrega()
 void registrarFeedback()
 {
     char comentario[200];
-    int i, opcao;
+    int i;
 
     imprimirCabecalho("Ordens de Servico > Registrar Feedback");
 
-    /* Só OS já entregues (UC29); o cliente vê só as dele (RI10) */
-    i = selecionarOS(ETAPA_FEEDBACK);
+    i = selecionarOS();
     if (i < 0)
         return;
 
-    mostrarOS(i);
-    printf("\nO cliente ficou satisfeito com o servico?\n");
-    printf("  1 - Sim (finaliza a OS)\n");
-    printf("  2 - Nao (a OS volta para reparo)\n");
-    printf("  0 - Voltar\n\n");
-    opcao = lerInteiro("Opcao: ");
-
-    if (opcao == 1)
+    if (strlen(ordens[i].data_entrega) == 0)
     {
-        lerTexto("\nComentario (opcional): ", comentario, sizeof(comentario));
-        strcpy(ordens[i].satisfeito, "sim");
-        strcpy(ordens[i].feedback_cliente, comentario);
-        strcpy(ordens[i].status, "finalizada");
+        printf("\n[!] A OS %d ainda nao foi entregue.", ordens[i].id_os);
+        pausar();
+        return;
     }
-    else if (opcao == 2)
+
+    lerTexto("\nComentario do cliente: ", comentario, sizeof(comentario));
+    strcpy(ordens[i].feedback_cliente, comentario);
+
+    if (confirmar("O cliente ficou satisfeito?"))
     {
-        lerTexto("\nO que ainda esta com problema? ", comentario, sizeof(comentario));
-        if (!campoPreenchido(comentario, "problema"))
-            return;
-        strcpy(ordens[i].satisfeito, "nao");
-        strcpy(ordens[i].feedback_cliente, comentario);
-        /* Volta para Executar Manutenção (UC33): limpa o teste, a entrega e o pagamento */
-        strcpy(ordens[i].resultado_teste, "");
-        strcpy(ordens[i].data_entrega, "");
-        ordens[i].valor_pago = -1;
+        strcpy(ordens[i].satisfeito, "sim");
+        strcpy(ordens[i].status, "finalizada");
     }
     else
     {
-        return;
+        /* Não satisfeito: volta para Executar Manutenção (limpa teste, entrega e pagamento) */
+        strcpy(ordens[i].satisfeito, "nao");
+        strcpy(ordens[i].resultado_teste, "");
+        strcpy(ordens[i].data_entrega, "");
+        ordens[i].valor_pago = -1;
     }
 
     dataHoraAgora(ordens[i].atualizado_em);
@@ -1016,7 +706,7 @@ void registrarFeedback()
         return;
     }
 
-    if (opcao == 1)
+    if (strcmp(ordens[i].status, "finalizada") == 0)
         printf("\n[+] Feedback registrado. A OS %d foi finalizada!", ordens[i].id_os);
     else
         printf("\n[+] Feedback registrado. A OS %d voltou para Executar Manutencao.", ordens[i].id_os);

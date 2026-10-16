@@ -102,7 +102,7 @@ int podeVerEquipamento(int i)
     {
         for (j = 0; j < totalOrdens; j++)
         {
-            if (ordens[j].id_equipamento == equipamentos[i].id_equipamento && tecnicoEstaNaOS(idLogado, ordens[j].id_os))
+            if (ordens[j].id_equipamento == equipamentos[i].id_equipamento && buscarTecnicoNaOS(idLogado, ordens[j].id_os) >= 0)
                 return 1;
         }
         return 0;

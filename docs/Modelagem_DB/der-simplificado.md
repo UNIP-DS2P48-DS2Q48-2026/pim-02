@@ -252,7 +252,7 @@ Dialeto SQLite a seguir. A mesma modelagem está disponível em dois outros moto
 |---|---|
 | [`schema.sql`](./schema.sql) | SQLite - referência |
 | [`schema_mysql.sql`](./schema_mysql.sql) | MySQL/MariaDB (XAMPP) |
-| [`schema_sqlserver.sql`](./schema_sqlserver.sql) | SQL Server - **banco usado pelo sistema em C** |
+| [`schema_sqlserver.sql`](./schema_sqlserver.sql) | SQL Server - **modelo físico do projeto**. Nesta versão o programa em C grava os mesmos campos em `.txt`; ligar ao SQL Server é o próximo passo |
 
 Os três scripts foram validados com inserções de teste executadas manualmente em cada motor. Duas diferenças de comportamento foram identificadas entre eles:
 
