@@ -150,8 +150,9 @@ void lerTexto(char rotulo[], char destino[], int tamanho)
     printf("%s", rotulo);
     if (fgets(destino, tamanho, stdin) == NULL)
     {
-        destino[0] = '\0'; /* não leu nada (fim da entrada) */
-        return;
+        /* Fim da entrada (Ctrl+Z): sem isso o menu repetiria "Opcao invalida" para sempre */
+        printf("\n\n[!] Fim da entrada. Encerrando o programa.\n");
+        exit(0);
     }
 
     tam = strlen(destino);
