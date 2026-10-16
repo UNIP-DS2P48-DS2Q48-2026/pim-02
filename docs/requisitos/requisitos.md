@@ -29,7 +29,7 @@ Itens deliberadamente fora do sistema - decisão tomada, não uma lacuna:
 - **Centro de custos e relatórios financeiros/gerenciais.** Fora do escopo desta versão (ver [DER Simplificado](../Modelagem_DB/der-simplificado.md)).
 - **Gestão de fornecedores.** Decorre diretamente da ausência de controle de estoque.
 - **Interface gráfica, web ou mobile.** O sistema é exclusivamente terminal/console (RNF02).
-- **Operação em rede com múltiplos usuários simultâneos.** O programa roda localmente, gravando os dados em uma instância local do SQL Server ou em arquivos de texto; arquitetura de rede é uma proposta conceitual separada (Etapa 6 do PIM), não implementada no código em C.
+- **Operação em rede com múltiplos usuários simultâneos.** O programa roda localmente, gravando os dados em arquivos de texto (a gravação no SQL Server é o próximo passo); arquitetura de rede é uma proposta conceitual separada (Etapa 6 do PIM), não implementada no código em C.
 
 ## Problema Identificado
 
@@ -132,7 +132,7 @@ Detalhamento de cada caso de uso do sistema (ator, pré-condição, fluxo princi
 
 **RNF03:** A interface deverá utilizar menus textuais e opções numéricas.
 
-**RNF04:** As informações deverão permanecer armazenadas mesmo após o encerramento do programa, em um banco de dados SQL Server ou em arquivos de texto (`.txt`).
+**RNF04:** As informações deverão permanecer armazenadas mesmo após o encerramento do programa, Nesta versão, os dados ficam em arquivos de texto (`.txt`), um por tabela. O banco já está modelado em SQL Server (`schema_sqlserver.sql`), e a gravação nele é o próximo passo do projeto.
 
 **RNF05:** As operações deverão apresentar resposta adequada para o volume de dados previsto.
 

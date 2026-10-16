@@ -8,9 +8,15 @@ void registrarObservacao()
 
     imprimirCabecalho("Manutencao > Registrar Observacao Tecnica");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS();
     if (i < 0)
         return;
+    if (strcmp(ordens[i].status, "aberta") == 0)
+    {
+        printf("\n[!] A OS %d ainda nao tem tecnico. Atribua um tecnico primeiro (UC28).", ordens[i].id_os);
+        pausar();
+        return;
+    }
 
     printf("\nProblema relatado: %s\n", ordens[i].problema_relatado);
 
@@ -52,9 +58,15 @@ void registrarDiagnostico()
 
     imprimirCabecalho("Manutencao > Registrar Diagnostico");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS();
     if (i < 0)
         return;
+    if (strcmp(ordens[i].status, "aberta") == 0)
+    {
+        printf("\n[!] A OS %d ainda nao tem tecnico. Atribua um tecnico primeiro (UC28).", ordens[i].id_os);
+        pausar();
+        return;
+    }
 
     /* Depois do orçamento o diagnóstico fica travado, para não mudar o que o cliente vai aprovar */
     if (ordens[i].orcamento >= 0)
@@ -135,7 +147,7 @@ void executarManutencao()
 
     imprimirCabecalho("Manutencao > Executar Manutencao");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS();
     if (i < 0)
         return;
 
@@ -207,7 +219,7 @@ void registrarTeste()
 
     imprimirCabecalho("Manutencao > Registrar Teste");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS();
     if (i < 0)
         return;
 
@@ -262,7 +274,9 @@ void osProntasEntrega()
 
     for (i = 0; i < totalOrdens; i++)
     {
-        if (!osNaEtapa(i, ETAPA_PRONTA_ENTREGA))
+        /* Pronta para entrega: em andamento, teste aprovado e ainda não entregue */
+        if (strcmp(ordens[i].status, "em_andamento") != 0 || strcmp(ordens[i].resultado_teste, "aprovado") != 0 ||
+            strlen(ordens[i].data_entrega) > 0)
             continue;
 
         if (mostrados == 0)

@@ -181,17 +181,17 @@ int donoDoEquipamento(int idEquipamento)
     return -1;
 }
 
-/* O técnico está atribuído a esta OS? (tabela tecnico_os) */
-int tecnicoEstaNaOS(int idTecnico, int idOS)
+/* Posição na tecnico_os da linha deste técnico nesta OS (-1 = o técnico não está na OS) */
+int buscarTecnicoNaOS(int idTecnico, int idOS)
 {
     int i;
 
     for (i = 0; i < totalTecnicosOS; i++)
     {
         if (tecnicosOS[i].id_tecnico == idTecnico && tecnicosOS[i].id_os == idOS)
-            return 1;
+            return i;
     }
-    return 0;
+    return -1;
 }
 
 /* RN14: o usuário está em alguma OS aberta ou em andamento, como atendente, cliente ou técnico? */
@@ -208,7 +208,7 @@ int temOSEmAndamento(int idUsuario)
             return 1;
         if (donoDoEquipamento(ordens[i].id_equipamento) == idUsuario)
             return 1;
-        if (tecnicoEstaNaOS(idUsuario, ordens[i].id_os))
+        if (buscarTecnicoNaOS(idUsuario, ordens[i].id_os) >= 0)
             return 1;
     }
     return 0;
@@ -221,7 +221,7 @@ int tecnicoAtendeCliente(int idTecnico, int idCliente)
 
     for (i = 0; i < totalOrdens; i++)
     {
-        if (donoDoEquipamento(ordens[i].id_equipamento) == idCliente && tecnicoEstaNaOS(idTecnico, ordens[i].id_os))
+        if (donoDoEquipamento(ordens[i].id_equipamento) == idCliente && buscarTecnicoNaOS(idTecnico, ordens[i].id_os) >= 0)
             return 1;
     }
     return 0;
