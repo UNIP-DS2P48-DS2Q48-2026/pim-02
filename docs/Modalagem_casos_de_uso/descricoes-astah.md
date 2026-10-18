@@ -1137,11 +1137,12 @@ Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
 1. O ator seleciona a opção "Ordens de Serviço > Consultar" no menu.
-2. O sistema solicita um filtro de busca (número da OS, cliente, status ou período) ou a listagem completa.
+2. O sistema solicita um filtro de busca (nome do cliente, CPF ou etapa da OS) ou a listagem completa.
 3. O ator informa o filtro ou escolhe listar todas.
 4. O sistema busca as OS dentro do escopo do perfil (RN10), incluindo finalizadas e canceladas.
-5. O sistema exibe as OS encontradas, com equipamento, status e etapa atual.
-6. O caso de uso é encerrado.
+5. O sistema exibe as OS encontradas, com número, data de abertura, cliente, equipamento e etapa atual.
+6. O ator informa o número de uma OS para ver os detalhes (diagnóstico, orçamento, teste, entrega, feedback e técnicos).
+7. O caso de uso é encerrado.
 
 **Branch Sequence**
 4a: Nenhuma OS encontrada. O sistema informa que não há OS para o filtro informado. Retorna ao passo 2.
@@ -1278,7 +1279,7 @@ OS com um ou mais técnicos atribuídos, pronta para a vistoria (UC31/UC32).
 9. O caso de uso é encerrado.
 
 **Branch Sequence**
-8a: Mais de um técnico necessário. O atendente escolhe atribuir outro técnico à mesma OS; cada técnico gera uma linha própria em `tecnico_os` (RN04). Retorna ao passo 4.
+8a: Mais de um técnico necessário. O atendente repete a opção "Atribuir Técnico" para a mesma OS; cada técnico gera uma linha própria em `tecnico_os` (RN04). O sistema não deixa atribuir o mesmo técnico duas vezes.
 
 *a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
 
@@ -1931,7 +1932,7 @@ Observação: o nome da elipse no diagrama está "Consultar Histórico dos Equip
 ### UC43 - Consultar Relatórios
 
 **Summary**
-Permite que o Admin consulte indicadores operacionais sobre o histórico, filtrando por período (RF10). Disponível apenas para o Admin (associação direta).
+Permite que o Admin consulte quantas OS foram abertas em cada mês de um ano, separadas por status (RF10). Disponível apenas para o Admin (associação direta).
 
 **Actor**
 Admin (associação direta).
@@ -1944,14 +1945,14 @@ Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
 1. O Admin seleciona a opção "Histórico e Relatórios > Relatórios" no menu.
-2. O sistema exibe os relatórios disponíveis e solicita o período.
-3. O Admin escolhe o relatório e informa o período.
-4. O sistema calcula as contagens e os indicadores operacionais do período (ex.: quantos equipamentos passaram por manutenção).
-5. O sistema exibe o relatório.
+2. O sistema solicita o ano (ENTER para o ano atual).
+3. O Admin informa o ano.
+4. O sistema conta as OS abertas no ano numa matriz de 12 meses por 4 status (aberta, em andamento, finalizada e cancelada) e conta os clientes satisfeitos.
+5. O sistema exibe a tabela, um mês por linha, e o total de clientes satisfeitos.
 6. O caso de uso é encerrado.
 
 **Branch Sequence**
-4a: Nenhum dado no período. O sistema informa que não há registros para o período escolhido. Retorna ao passo 2.
+4a: Mês sem OS no ano. O mês não aparece na tabela.
 
 *a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
@@ -1964,5 +1965,5 @@ Não se aplica.
 **Note**
 Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
 Regras: RN06 - o Admin consulta quaisquer dados; RN10 - funcionalidade exclusiva do perfil Admin.
-Dados: lê `os` (contagens por data_abertura, status e equipamento).
+Dados: lê `os` (contagens por mês de data_abertura e por status, e o campo satisfeito).
 Observação: não inclui indicadores financeiros, de custo ou gerenciais, que estão fora do escopo (ver requisitos.md, Fora do Escopo).

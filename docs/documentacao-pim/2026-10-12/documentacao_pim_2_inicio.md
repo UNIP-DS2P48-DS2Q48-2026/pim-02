@@ -223,7 +223,7 @@ Quadro 3 — Requisitos não funcionais do sistema
 | RNF01 | Utilizar a linguagem C. |
 | RNF02 | Executar exclusivamente em terminal. |
 | RNF03 | Apresentar menus textuais e opções numéricas. |
-| RNF04 | Manter os dados após o encerramento do programa, utilizando SQL Server ou arquivos de texto. |
+| RNF04 | Manter os dados após o encerramento do programa: nesta versão em arquivos de texto, um por tabela; depois, no SQL Server. |
 | RNF05 | Oferecer tempo de resposta adequado ao volume de dados previsto. |
 | RNF06 | Organizar o código em funções e estruturas separadas. |
 | RNF07 | Executar em ambientes compatíveis com compiladores C. |
@@ -287,15 +287,33 @@ Quadro 4 — Organização das responsabilidades do programa - Fonte: elaboraç�
 
 As principais estruturas são Usuário, Equipamento, OrdemServico e TecnicoOS. A primeira reúne os quatro perfis; a segunda representa o item atendido; a terceira organiza os dados da ordem; e a quarta estabelece a associação entre técnicos e ordens. Como a implementação utiliza programação estruturada em C, os dados são representados por estruturas e manipulados por funções, sem classes implementadas.
 
-A alternativa de persistência presente no código utiliza arquivos de texto, com leitura dos registros para vetores em memória e gravação das alterações. Os requisitos também preveem SQL Server, mas as rotinas de integração com esse banco ainda estão incompletas na versão analisada.
+O Diagrama Estendido do projeto foi elaborado a partir do diagrama de classes da UML. Ele mostra as telas, com o estereótipo «boundary», e os dados, com o estereótipo «entity». Como C não possui classes, cada entidade foi implementada como uma estrutura (struct), e cada tela, como um arquivo de código com o seu menu. O Quadro 5 mostra onde cada elemento do diagrama está no código.
 
-Foram identificadas rotinas de autenticação e de gestão de usuários e equipamentos. As operações de abertura e acompanhamento de ordens, manutenção, orçamento e relatórios ainda possuem funções sem implementação. Portanto, a organização dos módulos demonstra a estrutura do desenvolvimento, mas não equivale à conclusão do fluxo de atendimento. A avaliação do funcionamento será apresentada com as evidências de testes na etapa de programação.
+Quadro 5 — Correspondência entre o Diagrama Estendido e o código
+
+| Elemento do diagrama | Onde está no código |
+|---|---|
+| Usuario, Equipamento, OrdemServico, TecnicoOS («entity») | Estruturas (typedef struct) em main.c, gravadas em usuario.txt, equipamento.txt, os.txt e tecnico_os.txt |
+| TelaLogin e TelaMeusDados | geral.c: login, logout, meus dados e alterar senha |
+| MenuPrincipal | main.c: menu inicial e um menu para cada perfil |
+| TelaUsuario | admin.c, recepcionista.c, tecnico.c e cliente.c, que usam as funções comuns de geral.c |
+| TelaEquipamento | equipamento.c |
+| TelaOrdemServico | ordem_servico.c |
+| TelaManutencao | manutencao.c |
+| TelaOrcamento | orcamento.c |
+| TelaHistoricoRelatorio | relatorio.c |
+
+Fonte: elaboração própria (2026).
+
+Os dados ficam em arquivos de texto, um por tabela. Ao abrir, o programa lê cada arquivo para um vetor de estruturas; a cada alteração, grava o arquivo de novo. O banco SQL Server já foi modelado, mas nesta versão o programa ainda não se conecta a ele. Essa integração é o próximo passo do projeto.
+
+Todos os casos de uso estão implementados: login, cadastros, ordens de serviço, manutenção, orçamento, entrega e relatórios. O funcionamento foi verificado com testes que percorrem o atendimento completo com os quatro perfis.
 
 ## 3.7 Backlog do produto
 
-O backlog reúne os itens de trabalho necessários para desenvolver a solução. Cada item recebeu um identificador PBI e foi relacionado aos requisitos e casos de uso correspondentes. O Quadro 5 apresenta os doze itens e suas prioridades na documentação do grupo.
+O backlog reúne os itens de trabalho necessários para desenvolver a solução. Cada item recebeu um identificador PBI e foi relacionado aos requisitos e casos de uso correspondentes. O Quadro 6 apresenta os doze itens e suas prioridades na documentação do grupo.
 
-Quadro 5 — Síntese do backlog do produto
+Quadro 6 — Síntese do backlog do produto
 
 | Item | Trabalho previsto | Referência principal | Prioridade |
 |---|---|---|---|
@@ -326,7 +344,7 @@ A distribuição registrada atribui a Leonardo Lemgruber Portugal a função de 
 
 O planejamento estabelece ciclos semanais, com revisão do trabalho, retrospectiva e planejamento do ciclo seguinte previstos para as sextas-feiras. Os registros das quatro primeiras sprints foram reconstruídos posteriormente, com base no histórico do projeto, conforme informado pelo grupo. Por isso, esses documentos devem ser lidos como uma organização das atividades registradas, sem comprovar a realização de todos os eventos do Scrum durante cada período.
 
-Quadro 6 — Períodos e focos registrados nas sprints
+Quadro 7 — Períodos e focos registrados nas sprints
 
 | Sprint | Período de 2026 | Foco registrado |
 |---|---|---|
@@ -335,10 +353,13 @@ Quadro 6 — Períodos e focos registrados nas sprints
 | 03 | 12 a 18 de setembro | Revisão dos requisitos, delimitação do escopo e modelo com quatro tabelas. |
 | 04 | 19 a 25 de setembro | Fluxogramas, diagramas, descrições dos casos de uso e modelagem do banco. |
 | 05 | 26 de setembro a 2 de outubro | Persistência, estrutura do código, autenticação e documentação. |
+| 06 | 3 a 9 de outubro | Login, cadastros de usuários e equipamentos gravando em arquivos de texto. |
+| 07 | 10 a 16 de outubro | Ordens de serviço, manutenção, orçamento e relatórios; testes e simplificação do código; início deste documento. |
+| 08 | 17 a 23 de outubro | Etapas restantes deste documento, protótipos das telas e preparação da apresentação. |
 
 Fonte: elaboração própria, com base nos registros de planejamento do projeto (2026).
 
-O primeiro período registrado inclui a organização inicial e ultrapassa a cadência semanal prevista para os seguintes. O documento da Sprint 05 ainda apresenta situação em andamento e não possui revisão e retrospectiva concluídas. Esses registros precisam ser atualizados a partir do que foi efetivamente realizado.
+O primeiro período registrado inclui a organização inicial e ultrapassa a cadência semanal prevista para os seguintes. As Sprints 05 e 06 foram fechadas com atraso, a partir do histórico do projeto; desde então, cada sprint é fechada na sexta-feira, com revisão e retrospectiva registradas.
 
 O grupo também estabeleceu critérios para considerar uma tarefa pronta. Os documentos e diagramas devem estar disponíveis no repositório com seus arquivos editáveis. Para o código, os critérios incluem compilação sem erros, verificação do fluxo principal e das exceções, respeito às permissões e manutenção dos dados após encerrar o programa. A conclusão ainda exige o vínculo com o requisito e a atualização do registro da sprint.
 
