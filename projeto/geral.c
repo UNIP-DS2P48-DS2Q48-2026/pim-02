@@ -408,16 +408,23 @@ void consultarUsuarios(char perfil[], char titulo[])
 {
     char filtro[60];
 
+    int mostrados;
+
     imprimirCabecalho(titulo);
 
-    lerTexto("\nFiltro (nome, e-mail ou CPF), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
-    if (strcmp(filtro, "0") == 0)
-        return;
-
-    if (listarUsuarios(perfil, filtro, "") == 0)
+    /* Pede o filtro de novo enquanto nenhum cadastro for encontrado (exceção 4a) */
+    do
     {
-        printf("\n[!] Nenhum cadastro encontrado para o filtro informado.\n");
-    }
+        lerTexto("\nFiltro (nome, e-mail ou CPF), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+        if (strcmp(filtro, "0") == 0)
+            return;
+
+        mostrados = listarUsuarios(perfil, filtro, "");
+        if (mostrados == 0)
+        {
+            printf("\n[!] Nenhum cadastro encontrado para o filtro informado. Tente outro filtro.\n");
+        }
+    } while (mostrados == 0);
     pausar();
 }
 
@@ -538,9 +545,22 @@ void inativarUsuario(char perfil[], char titulo[])
 /* Reativar (UC45, UC46, UC47, UC48): volta um cadastro inativo para ativo (RF02); o usuário volta a poder entrar */
 void reativarUsuario(char perfil[], char titulo[])
 {
-    int i;
+    int i, inativos = 0;
 
     imprimirCabecalho(titulo);
+
+    /* Exceção 2a: nenhum cadastro inativo deste perfil */
+    for (i = 0; i < totalUsuarios; i++)
+    {
+        if (strcmp(usuarios[i].perfil, perfil) == 0 && strcmp(usuarios[i].status, "inativo") == 0)
+            inativos++;
+    }
+    if (inativos == 0)
+    {
+        printf("\n[!] Nenhum cadastro inativo. Nao ha cadastro para reativar.");
+        pausar();
+        return;
+    }
 
     /* Só os cadastros inativos aparecem na lista */
     i = selecionarUsuario(perfil, "inativo");
