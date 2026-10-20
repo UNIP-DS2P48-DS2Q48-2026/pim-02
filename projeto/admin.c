@@ -21,3 +21,9 @@ void inativarAdmin()
 {
     inativarUsuario("admin", "Administradores > Inativar");
 }
+
+/* UC45 - Reativar Admin: reativa um administrador inativo */
+void reativarAdmin()
+{
+    reativarUsuario("admin", "Administradores > Reativar");
+}

@@ -1,213 +1,35 @@
-/* ---------- Funções de apoio às OS (usadas também no orcamento.c e no relatorio.c) ---------- */
+/* ---------- Casos de uso da manutenção ---------- */
 
-/* Etapas usadas para escolher quais OS aparecem em cada lista */
-#define ETAPA_MANUTENCAO 1     /* OS em andamento que o usuário logado pode atender */
-#define ETAPA_PRONTA_ENTREGA 2 /* teste aprovado e ainda não entregue */
-#define ETAPA_SEM_ORCAMENTO 3  /* diagnóstico registrado e sem orçamento */
-#define ETAPA_AGUARDANDO 4     /* orçamento enviado, sem resposta do cliente */
-#define ETAPA_RECUSADO 5       /* orçamento recusado pelo cliente */
-#define ETAPA_COM_ORCAMENTO 6  /* qualquer OS que já tem orçamento */
-
-/* Posição no vetor da OS com este id (-1 se não existir) */
-int buscarOSPorId(int id)
-{
-    int i;
-
-    for (i = 0; i < totalOrdens; i++)
-    {
-        if (ordens[i].id_os == id)
-            return i;
-    }
-    return -1;
-}
-
-/* Posição no vetor tecnicosOS da linha deste técnico nesta OS (-1 se não existir) */
-int buscarTecnicoNaOS(int idTecnico, int idOS)
+/* Confere se algum técnico da OS já registrou o reparo (UC33 grava "Reparo: ...") */
+int osTemReparo(int idOS)
 {
     int i;
 
     for (i = 0; i < totalTecnicosOS; i++)
     {
-        if (tecnicosOS[i].id_tecnico == idTecnico && tecnicosOS[i].id_os == idOS)
-            return i;
-    }
-    return -1;
-}
-
-/* RN10: cliente só vê as OS dos próprios equipamentos; técnico só as OS atribuídas a ele */
-int podeVerOS(int i)
-{
-    int idLogado = usuarios[usuarioLogado].id_usuario;
-
-    if (perfilLogado("cliente"))
-    {
-        if (donoDoEquipamento(ordens[i].id_equipamento) == idLogado)
+        if (tecnicosOS[i].id_os == idOS && contemTexto(tecnicosOS[i].observacoes_tecnicas, "reparo:"))
             return 1;
-        return 0;
-    }
-    if (perfilLogado("tecnico"))
-    {
-        return tecnicoEstaNaOS(idLogado, ordens[i].id_os);
-    }
-    return 1;
-}
-
-/* A OS está na etapa pedida? (e o usuário logado pode vê-la?) */
-int osNaEtapa(int i, int etapa)
-{
-    int emAndamento = 0;
-
-    if (!podeVerOS(i))
-        return 0;
-
-    /* RN08: OS finalizada ou cancelada não volta para as etapas de trabalho */
-    if (strcmp(ordens[i].status, "em_andamento") == 0)
-        emAndamento = 1;
-
-    if (etapa == ETAPA_MANUTENCAO)
-    {
-        return emAndamento;
-    }
-    if (etapa == ETAPA_PRONTA_ENTREGA)
-    {
-        if (emAndamento && strcmp(ordens[i].resultado_teste, "aprovado") == 0 && strlen(ordens[i].data_entrega) == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_SEM_ORCAMENTO)
-    {
-        if (emAndamento && strlen(ordens[i].diagnostico) > 0 && ordens[i].orcamento < 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_AGUARDANDO)
-    {
-        if (emAndamento && ordens[i].orcamento >= 0 && strlen(ordens[i].resultado_resposta_cliente) == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_RECUSADO)
-    {
-        if (emAndamento && strcmp(ordens[i].resultado_resposta_cliente, "recusado") == 0)
-            return 1;
-        return 0;
-    }
-    if (etapa == ETAPA_COM_ORCAMENTO)
-    {
-        if (ordens[i].orcamento >= 0)
-            return 1;
-        return 0;
     }
     return 0;
 }
 
-/* Copia para destino o tipo e a marca do equipamento da OS, para as listagens */
-void nomeDoEquipamento(int idEquipamento, char destino[])
-{
-    int e = buscarEquipamentoPorId(idEquipamento);
-
-    if (e >= 0)
-        sprintf(destino, "%s %s", equipamentos[e].tipo, equipamentos[e].marca);
-    else
-        strcpy(destino, "?");
-}
-
-/* Lista as OS que estão na etapa pedida; devolve quantas mostrou */
-int listarOS(int etapa)
-{
-    char dono[60], equipamento[90];
-    int i, mostrados = 0;
-
-    for (i = 0; i < totalOrdens; i++)
-    {
-        if (!osNaEtapa(i, etapa))
-            continue;
-
-        /* Cabeçalho da tabela antes da primeira da lista */
-        if (mostrados == 0)
-        {
-            printf("\n  %-4s %-11s %-18s %-22s %s\n", "OS", "Abertura", "Cliente", "Equipamento", "Status");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-
-        nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
-        nomeDoEquipamento(ordens[i].id_equipamento, equipamento);
-        printf("  %-4d %-11s %-18.18s %-22.22s %s\n", ordens[i].id_os, ordens[i].data_abertura, dono, equipamento,
-               ordens[i].status);
-        mostrados++;
-    }
-    return mostrados;
-}
-
-/* Lista as OS da etapa e pede o número. Devolve a posição no vetor ou -1 (voltou ou número inválido) */
-int selecionarOS(int etapa)
-{
-    int id, i;
-
-    if (listarOS(etapa) == 0)
-    {
-        printf("\n[!] Nenhuma ordem de servico disponivel para esta operacao.");
-        pausar();
-        return -1;
-    }
-
-    id = lerInteiro("\nNumero da OS (0 para voltar): ");
-    if (id <= 0)
-        return -1;
-
-    i = buscarOSPorId(id);
-    if (i < 0 || !osNaEtapa(i, etapa))
-    {
-        printf("\n[!] OS %d nao esta na lista.", id);
-        pausar();
-        return -1;
-    }
-    return i;
-}
-
-/* RN11/RN15: o Admin que cobre o técnico ganha a própria linha na tecnico_os. Devolve a posição ou -1 */
-int novaLinhaTecnicoOS(int idOS)
-{
-    int i, n, maiorId = 0;
-
-    if (totalTecnicosOS >= MAX_TECNICO_OS)
-    {
-        printf("\n[!] Limite de %d atribuicoes atingido.", MAX_TECNICO_OS);
-        pausar();
-        return -1;
-    }
-
-    for (i = 0; i < totalTecnicosOS; i++)
-    {
-        if (tecnicosOS[i].id_tecnico_os > maiorId)
-            maiorId = tecnicosOS[i].id_tecnico_os;
-    }
-
-    n = totalTecnicosOS;
-    tecnicosOS[n].id_tecnico_os = maiorId + 1;
-    tecnicosOS[n].id_tecnico = usuarios[usuarioLogado].id_usuario;
-    tecnicosOS[n].id_os = idOS;
-    dataHoje(tecnicosOS[n].data_atribuicao);
-    strcpy(tecnicosOS[n].observacoes_tecnicas, "");
-    dataHoraAgora(tecnicosOS[n].criado_em);
-    strcpy(tecnicosOS[n].atualizado_em, tecnicosOS[n].criado_em);
-    totalTecnicosOS++;
-    return n;
-}
-
-/* ---------- Casos de uso da manutenção ---------- */
-
 /* UC31 - Registrar Observacao Tecnica sobre Equipamento: o tecnico anota a vistoria na OS */
 void registrarObservacao()
 {
-    char observacao[300];
+    char observacao[300], texto[600];
     int i, k;
 
     imprimirCabecalho("Manutencao > Registrar Observacao Tecnica");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS("", 0);
     if (i < 0)
         return;
+    if (strcmp(ordens[i].status, "aberta") == 0)
+    {
+        printf("\n[!] A OS %d ainda nao tem tecnico. Atribua um tecnico primeiro (UC28).", ordens[i].id_os);
+        pausar();
+        return;
+    }
 
     printf("\nProblema relatado: %s\n", ordens[i].problema_relatado);
 
@@ -222,14 +44,27 @@ void registrarObservacao()
     if (strlen(observacao) == 0)
         return;
 
+    /* Se o reparo (UC33) já foi registrado, a nova observação entra no fim, para o reparo não se perder */
+    if (k >= 0 && contemTexto(tecnicosOS[k].observacoes_tecnicas, "reparo:"))
+        sprintf(texto, "%s | %s", tecnicosOS[k].observacoes_tecnicas, observacao);
+    else
+        strcpy(texto, observacao);
+
+    if (strlen(texto) >= sizeof(tecnicosOS[0].observacoes_tecnicas))
+    {
+        printf("\n[!] O texto ficou maior que o espaco das observacoes. Escreva de forma mais curta.");
+        pausar();
+        return;
+    }
+
     if (k < 0)
     {
-        k = novaLinhaTecnicoOS(ordens[i].id_os);
+        k = novaLinhaTecnicoOS(usuarios[usuarioLogado].id_usuario, ordens[i].id_os);
         if (k < 0)
             return;
     }
 
-    strcpy(tecnicosOS[k].observacoes_tecnicas, observacao);
+    strcpy(tecnicosOS[k].observacoes_tecnicas, texto);
     dataHoraAgora(tecnicosOS[k].atualizado_em);
     if (!salvarTecnicosOS())
     {
@@ -249,9 +84,15 @@ void registrarDiagnostico()
 
     imprimirCabecalho("Manutencao > Registrar Diagnostico");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS("", 0);
     if (i < 0)
         return;
+    if (strcmp(ordens[i].status, "aberta") == 0)
+    {
+        printf("\n[!] A OS %d ainda nao tem tecnico. Atribua um tecnico primeiro (UC28).", ordens[i].id_os);
+        pausar();
+        return;
+    }
 
     /* Depois do orçamento o diagnóstico fica travado, para não mudar o que o cliente vai aprovar */
     if (ordens[i].orcamento >= 0)
@@ -296,19 +137,18 @@ void registrarDiagnostico()
     printf("  0 - Voltar\n\n");
     opcao = lerInteiro("Opcao: ");
 
-    if (opcao == 1)
+    switch (opcao)
     {
+    case 1:
         lerTexto("\nDiagnostico (situacao e servico necessario, ENTER para voltar): ", diagnostico, sizeof(diagnostico));
         if (strlen(diagnostico) == 0)
             return;
-    }
-    else if (opcao == 2)
-    {
+        break;
+    case 2:
         /* RN18: sem defeito, a OS segue o fluxo normal com orçamento zero */
         strcpy(diagnostico, "Nenhum defeito encontrado, nenhum servico necessario");
-    }
-    else
-    {
+        break;
+    default:
         return;
     }
 
@@ -332,7 +172,7 @@ void executarManutencao()
 
     imprimirCabecalho("Manutencao > Executar Manutencao");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    i = selecionarOS("", 0);
     if (i < 0)
         return;
 
@@ -380,7 +220,7 @@ void executarManutencao()
 
     if (k < 0)
     {
-        k = novaLinhaTecnicoOS(ordens[i].id_os);
+        k = novaLinhaTecnicoOS(usuarios[usuarioLogado].id_usuario, ordens[i].id_os);
         if (k < 0)
             return;
     }
@@ -404,19 +244,15 @@ void registrarTeste()
 
     imprimirCabecalho("Manutencao > Registrar Teste");
 
-    i = selecionarOS(ETAPA_MANUTENCAO);
+    /* Só aparecem as OS com orçamento aprovado (RF06) e ainda sem teste aprovado */
+    i = selecionarOS("em reparo", 0);
     if (i < 0)
         return;
 
-    if (strcmp(ordens[i].resultado_resposta_cliente, "aprovado") != 0)
+    /* Segue a ordem do fluxo: primeiro Executar Manutencao (UC33), depois o teste */
+    if (!osTemReparo(ordens[i].id_os))
     {
-        printf("\n[!] O orcamento da OS %d ainda nao foi aprovado pelo cliente (RF06).", ordens[i].id_os);
-        pausar();
-        return;
-    }
-    if (strcmp(ordens[i].resultado_teste, "aprovado") == 0)
-    {
-        printf("\n[!] O teste da OS %d ja foi aprovado. Ela esta pronta para entrega.", ordens[i].id_os);
+        printf("\n[!] Nenhum reparo registrado na OS %d. Use Executar Manutencao antes do teste.", ordens[i].id_os);
         pausar();
         return;
     }
@@ -428,12 +264,17 @@ void registrarTeste()
     printf("  0 - Voltar\n\n");
     opcao = lerInteiro("Opcao: ");
 
-    if (opcao == 1)
+    switch (opcao)
+    {
+    case 1:
         strcpy(ordens[i].resultado_teste, "aprovado");
-    else if (opcao == 2)
+        break;
+    case 2:
         strcpy(ordens[i].resultado_teste, "reprovado");
-    else
+        break;
+    default:
         return;
+    }
 
     dataHoraAgora(ordens[i].atualizado_em);
     if (!salvarOrdens())
@@ -450,37 +291,29 @@ void registrarTeste()
 }
 
 /* UC35 - Informar Conclusao ao Cliente: lista as OS prontas para entrega e o contato do cliente */
-void osProntasEntrega()
+void listarProntasParaEntrega()
 {
-    char equipamento[90];
-    int i, c, mostrados = 0;
+    int i, c;
 
     imprimirCabecalho("OS Prontas para Entrega");
 
-    for (i = 0; i < totalOrdens; i++)
+    /* Passo 2: só as OS com teste aprovado e ainda não entregues (exceção 3a: as outras não aparecem) */
+    i = selecionarOS("pronta para entrega", 0);
+    if (i < 0)
+        return;
+
+    /* Passo 4: contato do cliente, obtido pelo dono do equipamento da OS */
+    c = buscarUsuarioPorId(donoDoEquipamento(ordens[i].id_equipamento));
+    if (c < 0)
     {
-        if (!osNaEtapa(i, ETAPA_PRONTA_ENTREGA))
-            continue;
-
-        if (mostrados == 0)
-        {
-            printf("\n  %-4s %-18s %-17s %-26s %s\n", "OS", "Cliente", "Telefone", "E-mail", "Equipamento");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-
-        c = buscarUsuarioPorId(donoDoEquipamento(ordens[i].id_equipamento));
-        nomeDoEquipamento(ordens[i].id_equipamento, equipamento);
-        if (c >= 0)
-            printf("  %-4d %-18.18s %-17.17s %-26.26s %s\n", ordens[i].id_os, usuarios[c].nome, usuarios[c].telefone,
-                   usuarios[c].email, equipamento);
-        else
-            printf("  %-4d %-18s %-17s %-26s %s\n", ordens[i].id_os, "?", "", "", equipamento);
-        mostrados++;
+        printf("\n[!] Cliente da OS %d nao encontrado.", ordens[i].id_os);
+        pausar();
+        return;
     }
 
-    if (mostrados == 0)
-    {
-        printf("\n[!] Nenhuma OS pronta para entrega no momento.\n");
-    }
+    printf("\nContato para combinar a retirada da OS %d:\n", ordens[i].id_os);
+    printf("  Cliente:  %s\n", usuarios[c].nome);
+    printf("  Telefone: %s\n", usuarios[c].telefone);
+    printf("  E-mail:   %s\n", usuarios[c].email);
     pausar();
 }
