@@ -264,18 +264,24 @@ void cadastrarEquipamento()
 void consultarEquipamento()
 {
     char filtro[60];
+    int mostrados;
 
     imprimirCabecalho("Equipamentos > Consultar");
 
-    lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
-    if (strcmp(filtro, "0") == 0)
-        return;
-
-    /* Ativos e inativos aparecem, com o status, para preservar o histórico */
-    if (listarEquipamentos(filtro, "") == 0)
+    /* Pede o filtro de novo enquanto nenhum equipamento for encontrado (exceção 4a) */
+    do
     {
-        printf("\n[!] Nenhum equipamento encontrado para o filtro informado.\n");
-    }
+        lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+        if (strcmp(filtro, "0") == 0)
+            return;
+
+        /* Ativos e inativos aparecem, com o status, para preservar o histórico */
+        mostrados = listarEquipamentos(filtro, "");
+        if (mostrados == 0)
+        {
+            printf("\n[!] Nenhum equipamento encontrado para o filtro informado. Tente outro filtro.\n");
+        }
+    } while (mostrados == 0);
     pausar();
 }
 
@@ -361,9 +367,22 @@ void inativarEquipamento()
 void reativarEquipamento()
 {
     char dono[60];
-    int i, c;
+    int i, c, inativos = 0;
 
     imprimirCabecalho("Equipamentos > Reativar");
+
+    /* Exceção 2a: nenhum equipamento inativo */
+    for (i = 0; i < totalEquipamentos; i++)
+    {
+        if (strcmp(equipamentos[i].status, "inativo") == 0)
+            inativos++;
+    }
+    if (inativos == 0)
+    {
+        printf("\n[!] Nenhum equipamento inativo. Nao ha cadastro para reativar.");
+        pausar();
+        return;
+    }
 
     /* Só os equipamentos inativos aparecem na lista */
     i = selecionarEquipamento("inativo");
