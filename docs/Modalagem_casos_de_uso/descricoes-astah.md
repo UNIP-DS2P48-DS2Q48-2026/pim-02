@@ -403,7 +403,7 @@ Administrador ativo. Pode autenticar-se de novo (RN12) e ser vinculado a novas O
 4. O sistema solicita a confirmação da reativação.
 5. O Admin confirma a reativação.
 6. O sistema marca `status = ativo`.
-7. O sistema informa que o administrador foi reativado e volta a poder autenticar-se.
+7. O sistema informa que o administrador foi reativado e pode autenticar-se.
 8. O caso de uso é encerrado.
 
 **Branch Sequence**
