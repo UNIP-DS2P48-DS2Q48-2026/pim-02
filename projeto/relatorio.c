@@ -42,7 +42,7 @@ void gerarRelatorio()
     /* Matriz: uma linha por mês (0 = janeiro ... 11 = dezembro), uma coluna por status */
     int contagem[12][4];
     char nomesMes[12][4] = {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"};
-    char ano[10], anoDaOS[5], mesDaOS[3];
+    char ano[10], hoje[TAM_DATA], anoDaOS[5], mesDaOS[3];
     int i, m, s, totalMes, satisfeitos = 0, comFeedback = 0;
 
     imprimirCabecalho("Relatorios");
@@ -50,9 +50,9 @@ void gerarRelatorio()
     lerTexto("\nAno (AAAA, ENTER para o ano atual): ", ano, sizeof(ano));
     if (strlen(ano) == 0)
     {
-        dataHoje(anoDaOS); /* AAAA-MM-DD: fica só com o AAAA */
-        anoDaOS[4] = '\0';
-        strcpy(ano, anoDaOS);
+        dataHoje(hoje); /* AAAA-MM-DD: fica só com o AAAA */
+        hoje[4] = '\0';
+        strcpy(ano, hoje);
     }
 
     /* Zera a matriz */

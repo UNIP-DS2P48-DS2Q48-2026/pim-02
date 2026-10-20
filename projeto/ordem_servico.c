@@ -704,7 +704,7 @@ void atribuirTecnico()
 void registrarEntrega()
 {
     double valor;
-    int i;
+    int i, confirmado;
 
     imprimirCabecalho("Ordens de Servico > Registrar Entrega");
 
@@ -721,21 +721,28 @@ void registrarEntrega()
     }
 
     printf("\nOrcamento aprovado: R$ %.2f\n", ordens[i].orcamento);
-    valor = lerValor("Valor recebido em R$: ");
-    if (valor < 0)
-    {
-        printf("\n[!] Valor invalido. Nada foi gravado.");
-        pausar();
-        return;
-    }
 
-    /* O valor recebido deve ser o do orçamento aprovado */
-    if (valor != ordens[i].orcamento && !confirmar("\n[!] Valor diferente do orcamento. Confirmar mesmo assim?"))
+    /* Exceção 7a: valor diferente do orçamento aprovado. O atendente confirma ou digita o valor de novo */
+    do
     {
-        printf("\nNada foi gravado.");
-        pausar();
-        return;
-    }
+        valor = lerValor("Valor recebido em R$ (ENTER para voltar): ");
+        if (valor < 0)
+        {
+            printf("\nNada foi gravado.");
+            pausar();
+            return;
+        }
+
+        confirmado = 1;
+        if (valor != ordens[i].orcamento)
+        {
+            confirmado = confirmar("\n[!] Valor diferente do orcamento. Confirmar mesmo assim?");
+            if (!confirmado)
+            {
+                printf("Digite o valor correto.\n");
+            }
+        }
+    } while (!confirmado);
 
     dataHoje(ordens[i].data_entrega);
     ordens[i].valor_pago = valor;
