@@ -102,7 +102,7 @@ int podeVerEquipamento(int i)
     {
         for (j = 0; j < totalOrdens; j++)
         {
-            if (ordens[j].id_equipamento == equipamentos[i].id_equipamento && tecnicoEstaNaOS(idLogado, ordens[j].id_os))
+            if (ordens[j].id_equipamento == equipamentos[i].id_equipamento && buscarTecnicoNaOS(idLogado, ordens[j].id_os) >= 0)
                 return 1;
         }
         return 0;
@@ -121,8 +121,9 @@ void nomeDoCliente(int idCliente, char destino[])
         strcpy(destino, "?");
 }
 
-/* Lista os equipamentos visíveis que batem com o filtro (cliente, tipo, marca ou número de série); devolve quantos mostrou */
-int listarEquipamentos(char filtro[], int soAtivos)
+/* Lista os equipamentos visíveis que batem com o filtro (cliente, tipo, marca ou número de série); devolve quantos mostrou.
+   status: "ativo" ou "inativo" para listar só esses, ou "" para listar todos */
+int listarEquipamentos(char filtro[], char status[])
 {
     char dono[60];
     int i, mostrados = 0;
@@ -131,7 +132,7 @@ int listarEquipamentos(char filtro[], int soAtivos)
     {
         if (!podeVerEquipamento(i))
             continue;
-        if (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0)
+        if (strlen(status) > 0 && strcmp(equipamentos[i].status, status) != 0)
             continue;
 
         nomeDoCliente(equipamentos[i].id_cliente, dono);
@@ -155,7 +156,7 @@ int listarEquipamentos(char filtro[], int soAtivos)
 }
 
 /* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
-int selecionarEquipamento(int soAtivos)
+int selecionarEquipamento(char status[])
 {
     char filtro[60];
     int id, i;
@@ -164,7 +165,7 @@ int selecionarEquipamento(int soAtivos)
     if (strcmp(filtro, "0") == 0)
         return -1;
 
-    if (listarEquipamentos(filtro, soAtivos) == 0)
+    if (listarEquipamentos(filtro, status) == 0)
     {
         printf("\n[!] Nenhum equipamento encontrado para o filtro informado.");
         pausar();
@@ -176,7 +177,7 @@ int selecionarEquipamento(int soAtivos)
         return -1;
 
     i = buscarEquipamentoPorId(id);
-    if (i < 0 || !podeVerEquipamento(i) || (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0))
+    if (i < 0 || !podeVerEquipamento(i) || (strlen(status) > 0 && strcmp(equipamentos[i].status, status) != 0))
     {
         printf("\n[!] ID %d nao esta na lista.", id);
         pausar();
@@ -201,7 +202,7 @@ void cadastrarEquipamento()
 
     /* Vinculação do equipamento a um cliente ativo (RN01, RN14) */
     printf("\nCliente proprietario:");
-    iCliente = selecionarUsuario("cliente", 1);
+    iCliente = selecionarUsuario("cliente", "ativo");
     if (iCliente < 0)
         return;
 
@@ -271,7 +272,7 @@ void consultarEquipamento()
         return;
 
     /* Ativos e inativos aparecem, com o status, para preservar o histórico */
-    if (listarEquipamentos(filtro, 0) == 0)
+    if (listarEquipamentos(filtro, "") == 0)
     {
         printf("\n[!] Nenhum equipamento encontrado para o filtro informado.\n");
     }
@@ -286,7 +287,7 @@ void editarEquipamento()
 
     imprimirCabecalho("Equipamentos > Editar");
 
-    i = selecionarEquipamento(0);
+    i = selecionarEquipamento("");
     if (i < 0)
         return;
 
@@ -320,7 +321,8 @@ void inativarEquipamento()
 
     imprimirCabecalho("Equipamentos > Inativar");
 
-    i = selecionarEquipamento(1);
+    /* Só os equipamentos ativos podem ser inativados */
+    i = selecionarEquipamento("ativo");
     if (i < 0)
         return;
 
@@ -352,5 +354,49 @@ void inativarEquipamento()
     }
 
     printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
+    pausar();
+}
+
+/* UC49 - Reativar Equipamento: volta um equipamento inativo para ativo (RF03) */
+void reativarEquipamento()
+{
+    char dono[60];
+    int i, c;
+
+    imprimirCabecalho("Equipamentos > Reativar");
+
+    /* Só os equipamentos inativos aparecem na lista */
+    i = selecionarEquipamento("inativo");
+    if (i < 0)
+        return;
+
+    /* RN01 e RN14: o equipamento só volta se o cliente dono estiver ativo */
+    c = buscarUsuarioPorId(equipamentos[i].id_cliente);
+    if (c < 0 || strcmp(usuarios[c].status, "ativo") != 0)
+    {
+        nomeDoCliente(equipamentos[i].id_cliente, dono);
+        printf("\n[!] O cliente %s esta inativo. Reative o cliente antes do equipamento (RN14).", dono);
+        pausar();
+        return;
+    }
+
+    printf("\nReativar o equipamento ID %d (%s %s).", equipamentos[i].id_equipamento, equipamentos[i].tipo,
+           equipamentos[i].marca);
+    if (!confirmar("\nTem certeza?"))
+    {
+        printf("\nOperacao cancelada. O equipamento continua inativo.");
+        pausar();
+        return;
+    }
+
+    strcpy(equipamentos[i].status, "ativo");
+    dataHoraAgora(equipamentos[i].atualizado_em);
+    if (!salvarEquipamentos())
+    {
+        pausar();
+        return;
+    }
+
+    printf("\n[+] Equipamento reativado. Ele volta a poder receber novas OS.");
     pausar();
 }

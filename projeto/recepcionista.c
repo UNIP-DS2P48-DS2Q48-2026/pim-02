@@ -21,3 +21,9 @@ void inativarRecepcionista()
 {
     inativarUsuario("recepcionista", "Recepcionistas > Inativar");
 }
+
+/* UC46 - Reativar Recepcionista: reativa uma recepcionista inativa */
+void reativarRecepcionista()
+{
+    reativarUsuario("recepcionista", "Recepcionistas > Reativar");
+}

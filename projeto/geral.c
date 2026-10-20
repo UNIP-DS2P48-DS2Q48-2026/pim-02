@@ -181,17 +181,17 @@ int donoDoEquipamento(int idEquipamento)
     return -1;
 }
 
-/* O técnico está atribuído a esta OS? (tabela tecnico_os) */
-int tecnicoEstaNaOS(int idTecnico, int idOS)
+/* Posição na tecnico_os da linha deste técnico nesta OS (-1 = o técnico não está na OS) */
+int buscarTecnicoNaOS(int idTecnico, int idOS)
 {
     int i;
 
     for (i = 0; i < totalTecnicosOS; i++)
     {
         if (tecnicosOS[i].id_tecnico == idTecnico && tecnicosOS[i].id_os == idOS)
-            return 1;
+            return i;
     }
-    return 0;
+    return -1;
 }
 
 /* RN14: o usuário está em alguma OS aberta ou em andamento, como atendente, cliente ou técnico? */
@@ -208,7 +208,7 @@ int temOSEmAndamento(int idUsuario)
             return 1;
         if (donoDoEquipamento(ordens[i].id_equipamento) == idUsuario)
             return 1;
-        if (tecnicoEstaNaOS(idUsuario, ordens[i].id_os))
+        if (buscarTecnicoNaOS(idUsuario, ordens[i].id_os) >= 0)
             return 1;
     }
     return 0;
@@ -221,7 +221,7 @@ int tecnicoAtendeCliente(int idTecnico, int idCliente)
 
     for (i = 0; i < totalOrdens; i++)
     {
-        if (donoDoEquipamento(ordens[i].id_equipamento) == idCliente && tecnicoEstaNaOS(idTecnico, ordens[i].id_os))
+        if (donoDoEquipamento(ordens[i].id_equipamento) == idCliente && buscarTecnicoNaOS(idTecnico, ordens[i].id_os) >= 0)
             return 1;
     }
     return 0;
@@ -237,8 +237,9 @@ int podeVerUsuario(int i, char perfil[])
     return 1;
 }
 
-/* Lista os usuários do perfil que batem com o filtro (nome, e-mail ou CPF); devolve quantos mostrou */
-int listarUsuarios(char perfil[], char filtro[], int soAtivos)
+/* Lista os usuários do perfil que batem com o filtro (nome, e-mail ou CPF); devolve quantos mostrou.
+   status: "ativo" ou "inativo" para listar só esses, ou "" para listar todos */
+int listarUsuarios(char perfil[], char filtro[], char status[])
 {
     int i, mostrados = 0;
 
@@ -246,7 +247,7 @@ int listarUsuarios(char perfil[], char filtro[], int soAtivos)
     {
         if (!podeVerUsuario(i, perfil))
             continue;
-        if (soAtivos == 1 && strcmp(usuarios[i].status, "ativo") != 0)
+        if (strlen(status) > 0 && strcmp(usuarios[i].status, status) != 0)
             continue;
         if (!contemTexto(usuarios[i].nome, filtro) && !contemTexto(usuarios[i].email, filtro) &&
             !contemTexto(usuarios[i].cpf, filtro))
@@ -272,8 +273,9 @@ int listarUsuarios(char perfil[], char filtro[], int soAtivos)
     return mostrados;
 }
 
-/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
-int selecionarUsuario(char perfil[], int soAtivos)
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido).
+   status: "ativo", "inativo" ou "" (todos), como no listarUsuarios */
+int selecionarUsuario(char perfil[], char status[])
 {
     char filtro[60];
     int id, i;
@@ -282,7 +284,7 @@ int selecionarUsuario(char perfil[], int soAtivos)
     if (strcmp(filtro, "0") == 0)
         return -1;
 
-    if (listarUsuarios(perfil, filtro, soAtivos) == 0)
+    if (listarUsuarios(perfil, filtro, status) == 0)
     {
         printf("\n[!] Nenhum cadastro encontrado para o filtro informado.");
         pausar();
@@ -294,7 +296,7 @@ int selecionarUsuario(char perfil[], int soAtivos)
         return -1;
 
     i = buscarUsuarioPorId(id);
-    if (i < 0 || !podeVerUsuario(i, perfil) || (soAtivos == 1 && strcmp(usuarios[i].status, "ativo") != 0))
+    if (i < 0 || !podeVerUsuario(i, perfil) || (strlen(status) > 0 && strcmp(usuarios[i].status, status) != 0))
     {
         printf("\n[!] ID %d nao esta na lista.", id);
         pausar();
@@ -412,14 +414,14 @@ void consultarUsuarios(char perfil[], char titulo[])
     if (strcmp(filtro, "0") == 0)
         return;
 
-    if (listarUsuarios(perfil, filtro, 0) == 0)
+    if (listarUsuarios(perfil, filtro, "") == 0)
     {
         printf("\n[!] Nenhum cadastro encontrado para o filtro informado.\n");
     }
     pausar();
 }
 
-/* Editar (UC06, UC10, UC14, UC18): ENTER mantém o valor atual; o status só muda pelo Inativar */
+/* Editar (UC06, UC10, UC14, UC18): ENTER mantém o valor atual; o status só muda pelo Inativar e pelo Reativar */
 void editarUsuario(char perfil[], char titulo[])
 {
     char nome[60], email[60], telefone[20], cpf[15], especialidade[40], senha[50];
@@ -427,7 +429,7 @@ void editarUsuario(char perfil[], char titulo[])
 
     imprimirCabecalho(titulo);
 
-    i = selecionarUsuario(perfil, 0);
+    i = selecionarUsuario(perfil, "");
     if (i < 0)
         return;
 
@@ -495,7 +497,8 @@ void inativarUsuario(char perfil[], char titulo[])
 
     imprimirCabecalho(titulo);
 
-    i = selecionarUsuario(perfil, 1);
+    /* Só os cadastros ativos podem ser inativados */
+    i = selecionarUsuario(perfil, "ativo");
     if (i < 0)
         return;
 
@@ -529,6 +532,38 @@ void inativarUsuario(char perfil[], char titulo[])
     }
 
     printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado (RN12).", usuarios[i].nome);
+    pausar();
+}
+
+/* Reativar (UC45, UC46, UC47, UC48): volta um cadastro inativo para ativo (RF02); o usuário volta a poder entrar */
+void reativarUsuario(char perfil[], char titulo[])
+{
+    int i;
+
+    imprimirCabecalho(titulo);
+
+    /* Só os cadastros inativos aparecem na lista */
+    i = selecionarUsuario(perfil, "inativo");
+    if (i < 0)
+        return;
+
+    printf("\nReativar %s.", usuarios[i].nome);
+    if (!confirmar("\nTem certeza?"))
+    {
+        printf("\nOperacao cancelada. O cadastro continua inativo.");
+        pausar();
+        return;
+    }
+
+    strcpy(usuarios[i].status, "ativo");
+    dataHoraAgora(usuarios[i].atualizado_em);
+    if (!salvarUsuarios())
+    {
+        pausar();
+        return;
+    }
+
+    printf("\n[+] %s reativado(a). O acesso ao sistema foi liberado.", usuarios[i].nome);
     pausar();
 }
 
@@ -580,7 +615,7 @@ int realizarLogin()
                 pausar();
                 return -1;
             }
-            return i; /* Retorna o índice do utilizador autenticado */
+            return i; /* Retorna o índice do usuário autenticado */
         }
     }
 
@@ -594,7 +629,7 @@ int realizarLogin()
 void fazerLogout()
 {
     usuarioLogado = -1;
-    printf("\nA terminar a sessao...\n");
+    printf("\nEncerrando a sessao...\n");
 }
 
 /* UC03 - Consultar Meus Dados: mostra o cadastro do usuario logado */
