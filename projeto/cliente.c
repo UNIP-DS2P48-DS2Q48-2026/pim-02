@@ -21,3 +21,9 @@ void inativarCliente()
 {
     inativarUsuario("cliente", "Clientes > Inativar");
 }
+
+/* UC48 - Reativar Cliente: reativa um cliente inativo */
+void reativarCliente()
+{
+    reativarUsuario("cliente", "Clientes > Reativar");
+}

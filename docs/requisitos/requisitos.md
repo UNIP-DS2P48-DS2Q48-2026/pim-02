@@ -68,9 +68,11 @@ A matriz abaixo é a fonte única de permissões do sistema. Qualquer requisito 
 | Executar manutenção (um ou mais técnicos) | ✔¹ | - | ✔ | - |
 | Registrar teste de funcionamento | ✔¹ | - | ✔ | - |
 | Registrar entrega, pagamento e feedback | ✔¹ | ✔ | - | dá o feedback |
-| Consultar ordens de serviço | todas | as que atendeu | as que executou | só as próprias |
+| Consultar ordens de serviço | todas | todas² | as que executou | só as próprias |
 
 ¹ O Administrador pode ocupar qualquer uma dessas ações quando não houver um Recepcionista ou Técnico disponível para realizá-la (RN11).
+
+² A Recepcionista consulta todas as OS, e não só as que ela abriu, porque qualquer recepcionista pode entregar a OS e registrar o feedback de uma OS aberta por outra (decisão de 16/10, Sprint 07).
 
 ## Requisitos Funcionais
 

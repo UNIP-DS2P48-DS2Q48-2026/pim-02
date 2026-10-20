@@ -48,9 +48,12 @@ No terminal, de dentro da pasta `projeto` (é onde fica a pasta `dados/`):
 
 ```
 cd projeto
+mkdir output
 gcc main.c -o output/main.exe
-.outputmain.exe
+.\output\main.exe
 ```
+
+O `mkdir output` só é preciso na primeira vez: a pasta `output/` fica fora do Git (`.gitignore`).
 
 Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrador), `carla@bytetech.com` (Recepcionista), `rafael@bytetech.com` (Técnico) e `joao.pereira@email.com` (Cliente). Os dados de exemplo ficam em `projeto/dados/*.txt`; para voltar a eles depois de testar, use `git checkout projeto/dados`.
 

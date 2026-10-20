@@ -19,11 +19,11 @@ Todo fluxo principal começa pela opção do menu, escrita como caminho ("Client
 
 - **Tela inicial:** Entrar
 - **Menu principal:** Meus Dados · Alterar Senha · Sair
-- **Administradores:** Cadastrar · Consultar · Editar · Inativar
-- **Recepcionistas:** Cadastrar · Consultar · Editar · Inativar
-- **Técnicos:** Cadastrar · Consultar · Editar · Inativar
-- **Clientes:** Cadastrar · Consultar · Editar · Inativar
-- **Equipamentos:** Cadastrar · Consultar · Editar · Inativar
+- **Administradores:** Cadastrar · Consultar · Editar · Inativar · Reativar
+- **Recepcionistas:** Cadastrar · Consultar · Editar · Inativar · Reativar
+- **Técnicos:** Cadastrar · Consultar · Editar · Inativar · Reativar
+- **Clientes:** Cadastrar · Consultar · Editar · Inativar · Reativar
+- **Equipamentos:** Cadastrar · Consultar · Editar · Inativar · Reativar
 - **Ordens de Serviço:** Criar · Consultar · Editar · Cancelar · Atribuir Técnico · Registrar Entrega · Registrar Feedback
 - **Manutenção:** Registrar Observação Técnica · Registrar Diagnóstico · Executar Manutenção · Registrar Teste · OS Prontas para Entrega
 - **Orçamentos:** Registrar · Editar · Consultar · Aprovar · Recusar · Arquivar
@@ -333,7 +333,7 @@ Não se aplica.
 Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
 Regras: RN05 - somente o Admin altera usuários; RN13/RI13 - e-mail único; RNF10 - nova senha gravada como hash.
 Dados: atualiza `usuario` (nome, email, senha) e `atualizado_em`. Perfil e status não mudam aqui.
-Observação: o status só é alterado pelo UC07 (Inativar Admin).
+Observação: o status só é alterado pelo UC07 (Inativar Admin) e pelo UC45 (Reativar Admin).
 
 ### UC07 - Inativar Admin
 
@@ -380,6 +380,48 @@ Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a
 Regras: RN05 - somente o Admin inativa usuários; RN12/RI12 - inativação no lugar de exclusão física; RN14/RI14 - bloqueio com OS aberta ou em andamento; RN17/RI17 - o Admin não inativa o próprio cadastro.
 Dados: atualiza `usuario.status` para "inativo". O banco reforça a RN14 pelo trigger `trg_usuario_valida_inativacao`; a RN17 é validada pelo programa, comparando o administrador-alvo com o usuário da sessão.
 Observação: como o Admin nunca inativa a si mesmo, o sistema sempre mantém pelo menos um Admin ativo: para inativar um administrador, é preciso que outro Admin ativo faça a operação.
+
+### UC45 - Reativar Admin
+
+**Summary**
+Permite que o Admin reative um administrador inativo, que volta a poder autenticar-se (RF02, RN12). Disponível apenas para o Admin (associação direta).
+
+**Actor**
+Admin (associação direta).
+
+**Precondition**
+Usuário autenticado (UC01) com perfil Admin.
+Administrador-alvo cadastrado e com `status` inativo (UC07).
+
+**Postcondition**
+Administrador ativo. Pode autenticar-se de novo (RN12) e ser vinculado a novas OS.
+
+**Base Sequence**
+1. O Admin seleciona a opção "Administradores > Reativar" no menu.
+2. O sistema exibe a lista de administradores inativos.
+3. O Admin seleciona o administrador que deseja reativar.
+4. O sistema solicita a confirmação da reativação.
+5. O Admin confirma a reativação.
+6. O sistema marca `status = ativo`.
+7. O sistema informa que o administrador foi reativado e volta a poder autenticar-se.
+8. O caso de uso é encerrado.
+
+**Branch Sequence**
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
+**Exception Sequence**
+2a: Nenhum administrador inativo. O sistema informa que não há cadastro para reativar. O caso de uso é encerrado.
+
+5a: Admin desiste da reativação. O sistema mantém o cadastro inativo. O caso de uso é encerrado.
+
+**Sub UseCase**
+Não se aplica.
+
+**Note**
+Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
+Regras: RF02 - ativar/inativar usuários; RN05 - somente o Admin reativa usuários da equipe; RN12 - o cadastro inativo continua no sistema e pode voltar a ser ativo.
+Dados: atualiza `usuario.status` para "ativo" e `atualizado_em`.
+Observação: a reativação não tem bloqueio por OS, porque um usuário inativo não pode ter OS em andamento (RN14).
 
 ---
 
@@ -503,7 +545,7 @@ Não se aplica.
 Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
 Regras: RN05 - somente o Admin altera usuários; RN13/RI13 - e-mail único; RNF10 - nova senha gravada como hash.
 Dados: atualiza `usuario` e `atualizado_em`. Perfil e status não mudam aqui.
-Observação: o status só é alterado pelo UC11 (Inativar Recepcionista).
+Observação: o status só é alterado pelo UC11 (Inativar Recepcionista) e pelo UC46 (Reativar Recepcionista).
 
 ### UC11 - Inativar Recepcionista
 
@@ -547,6 +589,48 @@ Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a
 Regras: RN05; RN12/RI12 - inativação no lugar de exclusão; RN14/RI14 - bloqueio com OS aberta ou em andamento.
 Dados: atualiza `usuario.status` para "inativo". O trigger `trg_usuario_valida_inativacao` verifica `os.id_atendente`.
 Observação: as OS já atendidas por ele continuam apontando para o registro, preservando o histórico.
+
+### UC46 - Reativar Recepcionista
+
+**Summary**
+Permite que o Admin reative um recepcionista inativo, que volta a poder autenticar-se e abrir OS (RF02, RN12). Disponível apenas para o Admin (associação direta).
+
+**Actor**
+Admin (associação direta).
+
+**Precondition**
+Usuário autenticado (UC01) com perfil Admin.
+Recepcionista-alvo cadastrado e com `status` inativo (UC11).
+
+**Postcondition**
+Recepcionista ativo. Pode autenticar-se de novo (RN12) e abrir novas OS.
+
+**Base Sequence**
+1. O Admin seleciona a opção "Recepcionistas > Reativar" no menu.
+2. O sistema exibe a lista de recepcionistas inativos.
+3. O Admin seleciona o recepcionista que deseja reativar.
+4. O sistema solicita a confirmação da reativação.
+5. O Admin confirma a reativação.
+6. O sistema marca `status = ativo`.
+7. O sistema informa que o recepcionista foi reativado e volta a poder autenticar-se.
+8. O caso de uso é encerrado.
+
+**Branch Sequence**
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
+**Exception Sequence**
+2a: Nenhum recepcionista inativo. O sistema informa que não há cadastro para reativar. O caso de uso é encerrado.
+
+5a: Admin desiste da reativação. O sistema mantém o cadastro inativo. O caso de uso é encerrado.
+
+**Sub UseCase**
+Não se aplica.
+
+**Note**
+Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
+Regras: RF02 - ativar/inativar usuários; RN05 - somente o Admin reativa usuários da equipe; RN12 - o cadastro inativo continua no sistema e pode voltar a ser ativo.
+Dados: atualiza `usuario.status` para "ativo" e `atualizado_em`.
+Observação: as OS que ele atendeu antes da inativação continuam no histórico, sem mudança.
 
 ---
 
@@ -670,7 +754,7 @@ Não se aplica.
 Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
 Regras: RN05 - somente o Admin altera usuários; RN13/RI13 - e-mail único; RNF09 - especialidade continua obrigatória; RNF10 - nova senha gravada como hash.
 Dados: atualiza `usuario` (incluindo especialidade) e `atualizado_em`.
-Observação: o status só é alterado pelo UC15 (Inativar Técnico).
+Observação: o status só é alterado pelo UC15 (Inativar Técnico) e pelo UC47 (Reativar Técnico).
 
 ### UC15 - Inativar Técnico
 
@@ -714,6 +798,48 @@ Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a
 Regras: RN05; RN12/RI12 - inativação no lugar de exclusão; RN14/RI14 - bloqueio com OS aberta ou em andamento.
 Dados: atualiza `usuario.status` para "inativo". O trigger `trg_usuario_valida_inativacao` verifica as atribuições em `tecnico_os`.
 Observação: o histórico de atribuições em `tecnico_os` é preservado.
+
+### UC47 - Reativar Técnico
+
+**Summary**
+Permite que o Admin reative um técnico inativo, que volta a poder autenticar-se e ser atribuído a OS (RF02, RN12). Disponível apenas para o Admin (associação direta).
+
+**Actor**
+Admin (associação direta).
+
+**Precondition**
+Usuário autenticado (UC01) com perfil Admin.
+Técnico-alvo cadastrado e com `status` inativo (UC15).
+
+**Postcondition**
+Técnico ativo. Pode autenticar-se de novo (RN12) e ser atribuído a novas OS (UC28).
+
+**Base Sequence**
+1. O Admin seleciona a opção "Técnicos > Reativar" no menu.
+2. O sistema exibe a lista de técnicos inativos.
+3. O Admin seleciona o técnico que deseja reativar.
+4. O sistema solicita a confirmação da reativação.
+5. O Admin confirma a reativação.
+6. O sistema marca `status = ativo`.
+7. O sistema informa que o técnico foi reativado e volta a poder autenticar-se.
+8. O caso de uso é encerrado.
+
+**Branch Sequence**
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
+**Exception Sequence**
+2a: Nenhum técnico inativo. O sistema informa que não há cadastro para reativar. O caso de uso é encerrado.
+
+5a: Admin desiste da reativação. O sistema mantém o cadastro inativo. O caso de uso é encerrado.
+
+**Sub UseCase**
+Não se aplica.
+
+**Note**
+Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
+Regras: RF02 - ativar/inativar usuários; RN05 - somente o Admin reativa usuários da equipe; RN12 - o cadastro inativo continua no sistema e pode voltar a ser ativo.
+Dados: atualiza `usuario.status` para "ativo" e `atualizado_em`.
+Observação: a especialidade e o histórico de atribuições em `tecnico_os` continuam como estavam.
 
 ---
 
@@ -840,7 +966,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF02; RN13/RI13 - e-mail e CPF únicos; RNF09 - campos obrigatórios.
 Dados: atualiza `usuario` (cliente) e `atualizado_em`.
-Observação: o status só é alterado pelo UC19 (Inativar Cliente).
+Observação: o status só é alterado pelo UC19 (Inativar Cliente) e pelo UC48 (Reativar Cliente).
 
 ### UC19 - Inativar Cliente
 
@@ -885,6 +1011,49 @@ Herança (RN11): o Admin executa este caso de uso por ser especialização do Re
 Regras: RN12/RI12 - inativação no lugar de exclusão; RN14/RI14 - bloqueio com OS aberta ou em andamento.
 Dados: atualiza `usuario.status` para "inativo". O trigger `trg_usuario_valida_inativacao` verifica as OS dos equipamentos do cliente.
 Observação: os equipamentos do cliente continuam ativos, mas não recebem nova OS, porque a abertura exige cliente ativo (trigger `trg_os_valida_ativos_ins`).
+
+### UC48 - Reativar Cliente
+
+**Summary**
+Permite que o Recepcionista reative um cliente inativo, que volta a poder autenticar-se, ter equipamentos e abrir OS (RF02, RN12). Disponível para Recepcionista e, por herança, Admin.
+
+**Actor**
+Recepcionista.
+Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
+
+**Precondition**
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Cliente-alvo cadastrado e com `status` inativo (UC19).
+
+**Postcondition**
+Cliente ativo. Pode autenticar-se de novo (RN12), ter novos equipamentos e abrir novas OS.
+
+**Base Sequence**
+1. O atendente seleciona a opção "Clientes > Reativar" no menu.
+2. O sistema exibe a lista de clientes inativos (busca por nome ou CPF).
+3. O atendente seleciona o cliente que deseja reativar.
+4. O sistema solicita a confirmação da reativação.
+5. O atendente confirma a reativação.
+6. O sistema marca `status = ativo`.
+7. O sistema informa que o cliente foi reativado e volta a poder autenticar-se.
+8. O caso de uso é encerrado.
+
+**Branch Sequence**
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
+**Exception Sequence**
+2a: Nenhum cliente inativo. O sistema informa que não há cadastro para reativar. O caso de uso é encerrado.
+
+5a: Atendente desiste da reativação. O sistema mantém o cadastro inativo. O caso de uso é encerrado.
+
+**Sub UseCase**
+Não se aplica.
+
+**Note**
+Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
+Regras: RF02 - ativar/inativar usuários; RN12 - o cadastro inativo continua no sistema e pode voltar a ser ativo.
+Dados: atualiza `usuario.status` para "ativo" e `atualizado_em`.
+Observação: os equipamentos do cliente que foram inativados continuam inativos; cada um volta pelo UC49.
 
 ---
 
@@ -1019,7 +1188,7 @@ Não se aplica.
 Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
 Regras: RF03; RNF09 - campos obrigatórios; RN16 - se o dono (id_cliente) for alterado, o trigger valida o novo dono.
 Dados: atualiza `equipamento` e `atualizado_em`.
-Observação: o status só é alterado pelo UC23 (Inativar Equipamento). A transferência para outro cliente não faz parte do fluxo principal.
+Observação: o status só é alterado pelo UC23 (Inativar Equipamento) e pelo UC49 (Reativar Equipamento). A transferência para outro cliente não faz parte do fluxo principal.
 
 ### UC23 - Inativar Equipamento
 
@@ -1064,6 +1233,52 @@ Herança (RN11): o Admin executa este caso de uso por ser especialização do Re
 Regras: RN12/RI12 - inativação no lugar de exclusão; RN14/RI14 - bloqueio com OS aberta ou em andamento.
 Dados: atualiza `equipamento.status` para "inativo" (trigger de inativação verifica as OS do equipamento).
 Observação: o histórico de OS do equipamento continua consultável (UC42).
+
+### UC49 - Reativar Equipamento
+
+**Summary**
+Permite que o Recepcionista reative um equipamento inativo, que volta a poder receber OS (RF03, RN12). Disponível para Recepcionista e, por herança, Admin.
+
+**Actor**
+Recepcionista.
+Admin: por generalização (herda de Recepcionista, RN11). Não aparece vinculado neste campo - ver Note.
+
+**Precondition**
+Usuário autenticado (UC01) com perfil Recepcionista ou Admin.
+Equipamento-alvo cadastrado e com `status` inativo (UC23).
+
+**Postcondition**
+Equipamento ativo. Pode receber uma nova OS (UC24).
+
+**Base Sequence**
+1. O atendente seleciona a opção "Equipamentos > Reativar" no menu.
+2. O sistema exibe a lista de equipamentos inativos (busca por cliente ou número de série).
+3. O atendente seleciona o equipamento que deseja reativar.
+4. O sistema verifica se o cliente dono do equipamento está com `status` ativo (RN01, RN14).
+5. O sistema solicita a confirmação da reativação.
+6. O atendente confirma a reativação.
+7. O sistema marca `status = ativo`.
+8. O sistema informa que o equipamento foi reativado e volta a poder receber OS.
+9. O caso de uso é encerrado.
+
+**Branch Sequence**
+*a: Voltar ao menu (em qualquer passo antes da gravação). O ator escolhe voltar. O sistema descarta os dados informados, sem gravar nada, e retorna ao menu anterior. O caso de uso é encerrado.
+
+**Exception Sequence**
+2a: Nenhum equipamento inativo. O sistema informa que não há cadastro para reativar. O caso de uso é encerrado.
+
+4a: Cliente dono inativo. O sistema impede a reativação e informa que o cliente precisa ser reativado antes (UC48, RN14). O caso de uso é encerrado.
+
+6a: Atendente desiste da reativação. O sistema mantém o equipamento inativo. O caso de uso é encerrado.
+
+**Sub UseCase**
+Não se aplica.
+
+**Note**
+Herança (RN11): o Admin executa este caso de uso por ser especialização do Recepcionista, herdando as associações dele. Por isso não aparece no campo Actor nem ligado diretamente à elipse no diagrama.
+Regras: RF03 - ativar/inativar equipamentos; RN01 e RN14 - o equipamento só volta se o cliente dono estiver ativo; RN12 - o cadastro inativo continua no sistema e pode voltar a ser ativo.
+Dados: lê `usuario.status` do dono (`equipamento.id_cliente`) e atualiza `equipamento.status` para "ativo" e `atualizado_em`.
+Observação: o histórico de OS do equipamento continua consultável (UC42) antes e depois da reativação.
 
 ---
 

@@ -8,8 +8,8 @@ Prioridade: `Alta` / `Média` / `Baixa`. Status: `A fazer` / `Em andamento` / `C
 | ----- | ----------------------------------------------------------- | ----------------------------------------- | ------------------- | ---------- | ------------ |
 | PBI01 | Estrutura inicial do projeto e persistência (.txt; SQL Server no próximo passo) | RNF01, RNF02, RNF03, RNF04, RNF06, RNF07  | -                   | Alta       | Concluído (S06) |
 | PBI02 | Autenticação e controle de acesso por perfil                | RF01, RNF10, RN10, RN12, RN19             | UC01–UC03, UC44     | Alta       | Concluído (S06) |
-| PBI03 | Gerenciar usuários (admin, recepcionista, técnico, cliente) | RF02, RN05, RN12, RN13, RN17              | UC04–UC19           | Alta       | Concluído (S06) |
-| PBI04 | Gerenciar equipamentos (hardware e software)                | RF03, RN01, RN12, RN14, RN16              | UC20–UC23           | Alta       | Concluído (S06) |
+| PBI03 | Gerenciar usuários (admin, recepcionista, técnico, cliente) | RF02, RN05, RN12, RN13, RN17              | UC04–UC19, UC45–UC48 | Alta     | Concluído (S06; reativar na S08) |
+| PBI04 | Gerenciar equipamentos (hardware e software)                | RF03, RN01, RN12, RN14, RN16              | UC20–UC23, UC49    | Alta       | Concluído (S06; reativar na S08) |
 | PBI05 | Abrir ordem de serviço                                      | RF04, RN02, RN03, RN09, RN11, RN14        | UC24–UC27           | Alta       | Concluído (S07) |
 | PBI06 | Registrar diagnóstico técnico                               | RF05, RN18                                | UC31, UC32          | Alta       | Concluído (S07) |
 | PBI07 | Elaborar orçamento e registrar aprovação do cliente         | RF06, RN09, RN18                          | UC36–UC41           | Alta       | Concluído (S07) |
@@ -22,4 +22,4 @@ PBI12 não é implementado sozinho: as validações de cada operação entram ju
 
 O número entre parênteses é a sprint em que o PBI foi concluído (S06 = [Sprint 06](../sprints/sprints/sprint-06.md), S07 = [Sprint 07](../sprints/sprints/sprint-07.md)). No PBI01, a versão concluída grava em `.txt`; ligar o programa ao SQL Server é o próximo passo.
 
-Os 44 casos de uso estão distribuídos entre os PBIs acima, sem repetição.
+Os 49 casos de uso estão distribuídos entre os PBIs acima, sem repetição.

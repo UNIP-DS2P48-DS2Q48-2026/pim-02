@@ -3,15 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#define USAR_SQLSERVER 0
-
-#if USAR_SQLSERVER
-#include <windows.h>
-#include <sql.h>
-#include <sqlext.h>
-#endif
-
-/* Arquivos .txt: um por tabela, campos separados por ';' na ordem do schema_sqlserver.sql */
+/* Arquivos .txt: um por tabela, campos separados por ';' na mesma ordem das colunas do banco (schema_sqlserver.sql) */
 #define ARQ_USUARIO "dados/usuario.txt"
 #define ARQ_EQUIPAMENTO "dados/equipamento.txt"
 #define ARQ_OS "dados/os.txt"
@@ -109,6 +101,7 @@ void limparBuffer();
 void imprimirCabecalho(char subtitulo[]);
 void lerTexto(char rotulo[], char destino[], int tamanho);
 int lerInteiro(char rotulo[]);
+double lerValor(char rotulo[]);
 int confirmar(char pergunta[]);
 void pausar();
 void gerarHash(char senha[], char destino[]);
@@ -116,10 +109,6 @@ void dataHoje(char destino[]);
 void dataHoraAgora(char destino[]);
 void pegarCampo(char linha[], int posicao, char destino[], int tamanho);
 int contemTexto(char texto[], char filtro[]);
-
-#if USAR_SQLSERVER
-#include "banco.c"
-#endif
 
 #include "geral.c"
 #include "admin.c"
@@ -150,8 +139,9 @@ void lerTexto(char rotulo[], char destino[], int tamanho)
     printf("%s", rotulo);
     if (fgets(destino, tamanho, stdin) == NULL)
     {
-        destino[0] = '\0'; /* não leu nada (fim da entrada) */
-        return;
+        /* Fim da entrada (Ctrl+Z): sem isso o menu repetiria "Opcao invalida" para sempre */
+        printf("\n\n[!] Fim da entrada. Encerrando o programa.\n");
+        exit(0);
     }
 
     tam = strlen(destino);
@@ -182,6 +172,26 @@ int lerInteiro(char rotulo[])
 
     lerTexto(rotulo, texto, sizeof(texto));
     if (sscanf(texto, "%d", &valor) != 1)
+    {
+        return -1;
+    }
+    return valor;
+}
+
+/* Lê um valor em reais (aceita vírgula ou ponto); devolve -1 se ficou vazio ou não é um valor válido */
+double lerValor(char rotulo[])
+{
+    char texto[30];
+    double valor;
+    int i;
+
+    lerTexto(rotulo, texto, sizeof(texto));
+    for (i = 0; texto[i] != '\0'; i++)
+    {
+        if (texto[i] == ',')
+            texto[i] = '.';
+    }
+    if (sscanf(texto, "%lf", &valor) != 1 || valor < 0)
     {
         return -1;
     }
@@ -317,6 +327,7 @@ void menuAdministradores()
         printf("  2 - Consultar\n");
         printf("  3 - Editar\n");
         printf("  4 - Inativar\n");
+        printf("  5 - Reativar\n");
         printf("  0 - Voltar\n\n");
         opcao = lerInteiro("Opcao: ");
 
@@ -326,6 +337,7 @@ void menuAdministradores()
         case 2: consultarAdmin(); break;
         case 3: editarAdmin(); break;
         case 4: inativarAdmin(); break;
+        case 5: reativarAdmin(); break;
         case 0: break;
         default:
             printf("\n[!] Opcao invalida!");
@@ -345,6 +357,7 @@ void menuRecepcionistas()
         printf("  2 - Consultar\n");
         printf("  3 - Editar\n");
         printf("  4 - Inativar\n");
+        printf("  5 - Reativar\n");
         printf("  0 - Voltar\n\n");
         opcao = lerInteiro("Opcao: ");
 
@@ -354,6 +367,7 @@ void menuRecepcionistas()
         case 2: consultarRecepcionista(); break;
         case 3: editarRecepcionista(); break;
         case 4: inativarRecepcionista(); break;
+        case 5: reativarRecepcionista(); break;
         case 0: break;
         default:
             printf("\n[!] Opcao invalida!");
@@ -373,6 +387,7 @@ void menuTecnicos()
         printf("  2 - Consultar\n");
         printf("  3 - Editar\n");
         printf("  4 - Inativar\n");
+        printf("  5 - Reativar\n");
         printf("  0 - Voltar\n\n");
         opcao = lerInteiro("Opcao: ");
 
@@ -382,6 +397,7 @@ void menuTecnicos()
         case 2: consultarTecnico(); break;
         case 3: editarTecnico(); break;
         case 4: inativarTecnico(); break;
+        case 5: reativarTecnico(); break;
         case 0: break;
         default:
             printf("\n[!] Opcao invalida!");
@@ -401,6 +417,7 @@ void menuClientes()
         printf("  2 - Consultar\n");
         printf("  3 - Editar\n");
         printf("  4 - Inativar\n");
+        printf("  5 - Reativar\n");
         printf("  0 - Voltar\n\n");
         opcao = lerInteiro("Opcao: ");
 
@@ -410,6 +427,7 @@ void menuClientes()
         case 2: consultarCliente(); break;
         case 3: editarCliente(); break;
         case 4: inativarCliente(); break;
+        case 5: reativarCliente(); break;
         case 0: break;
         default:
             printf("\n[!] Opcao invalida!");
@@ -429,6 +447,7 @@ void menuEquipamentos()
         printf("  2 - Consultar\n");
         printf("  3 - Editar\n");
         printf("  4 - Inativar\n");
+        printf("  5 - Reativar\n");
         printf("  0 - Voltar\n\n");
         opcao = lerInteiro("Opcao: ");
 
@@ -438,6 +457,7 @@ void menuEquipamentos()
         case 2: consultarEquipamento(); break;
         case 3: editarEquipamento(); break;
         case 4: inativarEquipamento(); break;
+        case 5: reativarEquipamento(); break;
         case 0: break;
         default:
             printf("\n[!] Opcao invalida!");
@@ -534,7 +554,7 @@ void menuManutencao()
         case 2: registrarDiagnostico(); break;
         case 3: executarManutencao(); break;
         case 4: registrarTeste(); break;
-        case 5: osProntasEntrega(); break;
+        case 5: listarProntasParaEntrega(); break;
         case 0: break;
         default:
             printf("\n[!] Opcao invalida!");
@@ -579,8 +599,8 @@ void menuDoAdmin()
         case 6: menuOrdensServico(); break;
         case 7: menuManutencao(); break;
         case 8: menuOrcamentos(); break;
-        case 9: historicoEquipamento(); break;
-        case 10: consultarRelatorios(); break;
+        case 9: consultarHistorico(); break;
+        case 10: gerarRelatorio(); break;
         case 11: consultarMeusDados(); break;
         case 12: alterarSenha(); break;
         case 0: fazerLogout(); break;
@@ -616,9 +636,9 @@ void menuDaRecepcionista()
         case 1: menuClientes(); break;
         case 2: menuEquipamentos(); break;
         case 3: menuOrdensServico(); break;
-        case 4: osProntasEntrega(); break;
+        case 4: listarProntasParaEntrega(); break;
         case 5: menuOrcamentos(); break;
-        case 6: historicoEquipamento(); break;
+        case 6: consultarHistorico(); break;
         case 7: consultarMeusDados(); break;
         case 8: alterarSenha(); break;
         case 0: fazerLogout(); break;
@@ -661,7 +681,7 @@ void menuDoTecnico()
         case 5: registrarDiagnostico(); break;
         case 6: executarManutencao(); break;
         case 7: registrarTeste(); break;
-        case 8: historicoEquipamento(); break;
+        case 8: consultarHistorico(); break;
         case 9: consultarMeusDados(); break;
         case 10: alterarSenha(); break;
         case 0: fazerLogout(); break;
@@ -702,7 +722,7 @@ void menuDoCliente()
         case 4: consultarOrcamento(); break;
         case 5: aprovarOrcamento(); break;
         case 6: recusarOrcamento(); break;
-        case 7: historicoEquipamento(); break;
+        case 7: consultarHistorico(); break;
         case 8: consultarMeusDados(); break;
         case 9: alterarSenha(); break;
         case 0: fazerLogout(); break;
@@ -715,6 +735,7 @@ void menuDoCliente()
 
 void menuPrincipal()
 {
+    char perfil[15];
     int opcao = -1;
 
     while (opcao != 0)
@@ -735,29 +756,44 @@ void menuPrincipal()
 
         opcao = lerInteiro("Opcao: ");
 
-        if (opcao == 1)
+        switch (opcao)
         {
+        case 1:
             usuarioLogado = realizarLogin();
 
-            /* Sucesso: abre o menu do perfil de quem entrou */
-            if (usuarioLogado >= 0)
+            /* Login falhou: volta para a tela inicial */
+            if (usuarioLogado < 0)
             {
-                if (strcmp(usuarios[usuarioLogado].perfil, "admin") == 0)
-                    menuDoAdmin();
-                else if (strcmp(usuarios[usuarioLogado].perfil, "recepcionista") == 0)
-                    menuDaRecepcionista();
-                else if (strcmp(usuarios[usuarioLogado].perfil, "tecnico") == 0)
-                    menuDoTecnico();
-                else
-                    menuDoCliente();
+                break;
             }
-        }
-        else if (opcao == 0)
-        {
-            printf("\nA encerrar o sistema BYTETECH. Ate logo!\n");
-        }
-        else
-        {
+
+            /* Login certo: guarda o perfil (o logout apaga o usuarioLogado) e abre o menu dele */
+            strcpy(perfil, usuarios[usuarioLogado].perfil);
+
+            if (strcmp(perfil, "admin") == 0)
+            {
+                menuDoAdmin();
+            }
+
+            if (strcmp(perfil, "recepcionista") == 0)
+            {
+                menuDaRecepcionista();
+            }
+
+            if (strcmp(perfil, "tecnico") == 0)
+            {
+                menuDoTecnico();
+            }
+
+            if (strcmp(perfil, "cliente") == 0)
+            {
+                menuDoCliente();
+            }
+            break;
+        case 0:
+            printf("\nEncerrando o sistema BYTETECH. Ate logo!\n");
+            break;
+        default:
             printf("\n[!] Opcao invalida!");
             pausar();
         }
