@@ -77,6 +77,8 @@ Fora do backlog: documento acadêmico do PIM, organização das sprints e acabam
 
 **Resultado.** O código passou de 3.647 para 3.254 linhas. Os 28 cenários de teste continuam passando, cobrindo os 44 casos de uso.
 
+> **Nota (20/10):** na noite de 16/10, o PR #29 ("Volta para a versão 19d76d2") trocou a pasta `projeto/` pela versão de 15/10, e a simplificação saiu do código. Em 20/10 a simplificação voltou, com duas correções a mais (ver a [Sprint 08](./sprint-08.md#decisões-desta-sprint)).
+
 ### 16/10 - O nome continua Diagrama Estendido
 
 **Decisão.** O grupo mantém o nome **Diagrama Estendido**, escolhido em 30/09 porque C não tem classes.
