@@ -73,7 +73,7 @@ void editarOrcamento()
 /* UC38 - Consultar Orcamento: mostra o valor e a resposta de cada orcamento */
 void consultarOrcamento()
 {
-    char dono[60];
+    char dono[60], resposta[25];
     int i, mostrados = 0;
 
     imprimirCabecalho("Orcamentos > Consultar");
@@ -90,8 +90,19 @@ void consultarOrcamento()
             printf("  ---------------------------------------------------------------------------\n");
         }
         nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
-        printf("  %-4d %-20.20s %-12.2f %-12s %s\n", ordens[i].id_os, dono, ordens[i].orcamento,
-               ordens[i].resultado_resposta_cliente, ordens[i].status);
+
+        /* Situação do orçamento (passo 5): resposta vazia = o cliente ainda não respondeu */
+        if (strlen(ordens[i].resultado_resposta_cliente) == 0)
+        {
+            strcpy(resposta, "aguardando");
+        }
+        else
+        {
+            strcpy(resposta, ordens[i].resultado_resposta_cliente);
+        }
+
+        printf("  %-4d %-20.20s %-12.2f %-12s %s\n", ordens[i].id_os, dono, ordens[i].orcamento, resposta,
+               ordens[i].status);
         mostrados++;
     }
 

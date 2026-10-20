@@ -233,6 +233,18 @@ void executarManutencao()
         return;
     }
 
+    /* Novo reparo depois de um teste reprovado: a OS fica liberada para outro teste (UC34) */
+    if (strcmp(ordens[i].resultado_teste, "reprovado") == 0)
+    {
+        strcpy(ordens[i].resultado_teste, "");
+        dataHoraAgora(ordens[i].atualizado_em);
+        if (!salvarOrdens())
+        {
+            pausar();
+            return;
+        }
+    }
+
     printf("\n[+] Reparo registrado na OS %d! Quando terminar, registre o teste.", ordens[i].id_os);
     pausar();
 }
@@ -253,6 +265,14 @@ void registrarTeste()
     if (!osTemReparo(ordens[i].id_os))
     {
         printf("\n[!] Nenhum reparo registrado na OS %d. Use Executar Manutencao antes do teste.", ordens[i].id_os);
+        pausar();
+        return;
+    }
+
+    /* Exceção 6a/7a: depois de um teste reprovado, a OS volta para um novo reparo (UC33) antes de outro teste */
+    if (strcmp(ordens[i].resultado_teste, "reprovado") == 0)
+    {
+        printf("\n[!] O ultimo teste da OS %d foi reprovado. Registre o novo reparo em Executar Manutencao.", ordens[i].id_os);
         pausar();
         return;
     }
