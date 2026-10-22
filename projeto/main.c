@@ -3,21 +3,10 @@
 #include <string.h>
 #include <time.h>
 
-/* 1 = dados no SQL Server (banco bytetech, compilar com -lodbc32)
-   0 = dados nos arquivos .txt da pasta dados/ */
-#define USAR_SQLSERVER 1
-
-#if USAR_SQLSERVER
+/* Conexão com o SQL Server (banco bytetech). Compilar com: gcc main.c -o output/main.exe -lodbc32 */
 #include <windows.h>
 #include <sql.h>
 #include <sqlext.h>
-#else
-/* Arquivos .txt: um por tabela, campos separados por ';' na mesma ordem das colunas do banco */
-#define ARQ_USUARIO "dados/usuario.txt"
-#define ARQ_EQUIPAMENTO "dados/equipamento.txt"
-#define ARQ_OS "dados/os.txt"
-#define ARQ_TECNICO_OS "dados/tecnico_os.txt"
-#endif
 
 #define MAX_USUARIOS 200
 #define MAX_EQUIPAMENTOS 300
@@ -28,7 +17,6 @@
 #define TAM_DATA 11      /* AAAA-MM-DD */
 #define TAM_DATAHORA 20  /* AAAA-MM-DD HH:MM:SS */
 #define TAM_HASH 17
-#define TAM_LINHA 1200
 
 /* Tabela usuario: todos os perfis (admin, recepcionista, tecnico, cliente) */
 typedef struct
@@ -116,12 +104,8 @@ void pausar();
 void gerarHash(char senha[], char destino[]);
 void dataHoje(char destino[]);
 void dataHoraAgora(char destino[]);
-void pegarCampo(char linha[], int posicao, char destino[], int tamanho);
 
-#if USAR_SQLSERVER
 #include "banco.c"
-#endif
-
 #include "geral.c"
 #include "admin.c"
 #include "recepcionista.c"
@@ -136,37 +120,18 @@ void pegarCampo(char linha[], int posicao, char destino[], int tamanho);
 /* Lê uma linha inteira (aceita espaços) e tira o ENTER do final */
 void lerTexto(char rotulo[], char destino[], int tamanho)
 {
-    int i, c;
+    char linha[500];
 
     printf("%s", rotulo);
-    if (fgets(destino, tamanho, stdin) == NULL)
+    if (fgets(linha, sizeof(linha), stdin) == NULL)
     {
         /* Acabou a entrada (Ctrl+Z): encerra, senão o menu repetiria para sempre */
         printf("\n\n[!] Fim da entrada. Encerrando o programa.\n");
         exit(0);
     }
-
-    i = strlen(destino);
-    if (i > 0 && destino[i - 1] == '\n')
-    {
-        destino[i - 1] = '\0'; /* tira o ENTER */
-    }
-    else
-    {
-        /* digitou mais do que cabe: descarta o resto da linha */
-        c = getchar();
-        while (c != '\n' && c != EOF)
-        {
-            c = getchar();
-        }
-    }
-
-    /* ';' separa os campos nos arquivos .txt, então vira ',' */
-    for (i = 0; destino[i] != '\0'; i++)
-    {
-        if (destino[i] == ';')
-            destino[i] = ',';
-    }
+    linha[strcspn(linha, "\n")] = '\0'; /* tira o ENTER */
+    linha[tamanho - 1] = '\0';          /* corta o que não cabe no destino */
+    strcpy(destino, linha);
 }
 
 /* Lê um número inteiro; devolve -1 se não for número */
@@ -242,27 +207,6 @@ void dataHoraAgora(char destino[])
 {
     time_t agora = time(NULL);
     strftime(destino, TAM_DATAHORA, "%Y-%m-%d %H:%M:%S", localtime(&agora));
-}
-
-/* Copia o campo número 'posicao' (0, 1, 2...) de uma linha do .txt */
-void pegarCampo(char linha[], int posicao, char destino[], int tamanho)
-{
-    int i = 0, j = 0, campo = 0;
-
-    while (linha[i] != '\0' && linha[i] != '\n')
-    {
-        if (linha[i] == ';')
-        {
-            campo++;
-        }
-        else if (campo == posicao && j < tamanho - 1)
-        {
-            destino[j] = linha[i];
-            j++;
-        }
-        i++;
-    }
-    destino[j] = '\0';
 }
 
 void imprimirCabecalho(char titulo[])
@@ -728,7 +672,6 @@ void menuPrincipal()
 
 int main()
 {
-#if USAR_SQLSERVER
     if (!bdConectar())
     {
         printf("[!] Nao foi possivel conectar ao SQL Server (banco bytetech).\n");
@@ -736,16 +679,6 @@ int main()
         printf("    sqlcmd -S localhost -E -i docs\\Modelagem_DB\\schema_sqlserver.sql\n");
         return 1;
     }
-#else
-    /* Os .txt ficam em projeto/dados/: o programa precisa ser aberto de dentro da pasta projeto */
-    FILE *teste = fopen("dados/.gitkeep", "r");
-    if (teste == NULL)
-    {
-        printf("[!] Pasta dados/ nao encontrada. Abra o programa de dentro da pasta projeto.\n");
-        return 1;
-    }
-    fclose(teste);
-#endif
 
     carregarUsuarios();
     carregarEquipamentos();
@@ -764,8 +697,6 @@ int main()
 
     menuPrincipal();
 
-#if USAR_SQLSERVER
     bdDesconectar();
-#endif
     return 0;
 }

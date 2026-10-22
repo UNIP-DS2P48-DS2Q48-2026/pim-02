@@ -40,7 +40,7 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 
 - **Linguagem:** C
 - **Interface:** Terminal/console (menus textuais e opções numéricas)
-- **Persistência:** SQL Server, banco `bytetech` ([`schema_sqlserver.sql`](./docs/Modelagem_DB/schema_sqlserver.sql)), acessado pela API ODBC em [`projeto/banco.c`](./projeto/banco.c). A versão em arquivos de texto (`projeto/dados/*.txt`, um por tabela) continua no código: basta trocar `#define USAR_SQLSERVER 1` para `0` no `main.c`
+- **Persistência:** SQL Server, banco `bytetech` ([`schema_sqlserver.sql`](./docs/Modelagem_DB/schema_sqlserver.sql)), acessado pela API ODBC em [`projeto/banco.c`](./projeto/banco.c).
 
 ## Como executar
 
@@ -62,9 +62,9 @@ gcc main.c -o output/main.exe -lodbc32
 .\output\main.exe
 ```
 
-O `mkdir output` só é preciso na primeira vez: a pasta `output/` fica fora do Git (`.gitignore`). Com `USAR_SQLSERVER 0` o `-lodbc32` não é necessário, e o programa precisa ser aberto de dentro da pasta `projeto` (é onde fica a pasta `dados/`).
+O `mkdir output` só é preciso na primeira vez: a pasta `output/` fica fora do Git (`.gitignore`).
 
-Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrador), `carla@bytetech.com` (Recepcionista), `rafael@bytetech.com` (Técnico) e `joao.pereira@email.com` (Cliente). Para voltar aos dados de exemplo depois de testar, rode de novo os dois comandos `sqlcmd` acima (no modo `.txt`: `git checkout projeto/dados`).
+Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrador), `carla@bytetech.com` (Recepcionista), `rafael@bytetech.com` (Técnico) e `joao.pereira@email.com` (Cliente). Para voltar aos dados de exemplo depois de testar, rode de novo os dois comandos `sqlcmd` acima.
 
 ## Documentação
 

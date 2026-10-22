@@ -122,26 +122,33 @@ void bdLerTexto(int coluna, char destino[], int tamanho)
         destino[0] = '\0';
 }
 
-/* Prepara um texto para entrar no SQL: N'texto' com ' dobrado, ou NULL se estiver vazio */
+/* Prepara um texto para entrar no SQL: vazio vira NULL; o resto vira N'texto'.
+   O apóstrofo é escrito duas vezes (D'Avila vira D''Avila): assim o SQL Server
+   entende que ele faz parte do texto e não que o texto acabou */
 void sqlTexto(char destino[], char texto[])
 {
-    int i, j = 0;
+    int i, j, tamanho = strlen(texto);
 
-    if (texto[0] == '\0')
+    if (tamanho == 0)
     {
         strcpy(destino, "NULL");
         return;
     }
-    destino[j++] = 'N';
-    destino[j++] = '\'';
-    for (i = 0; texto[i] != '\0'; i++)
+
+    strcpy(destino, "N'");
+    j = 2; /* próxima posição livre do destino */
+    for (i = 0; i < tamanho; i++)
     {
+        destino[j] = texto[i];
+        j++;
         if (texto[i] == '\'')
-            destino[j++] = '\'';
-        destino[j++] = texto[i];
+        {
+            destino[j] = '\''; /* repete o apóstrofo */
+            j++;
+        }
     }
-    destino[j++] = '\'';
     destino[j] = '\0';
+    strcat(destino, "'");
 }
 
 /* Prepara um valor em dinheiro: -1 (ainda não informado) vira NULL */
