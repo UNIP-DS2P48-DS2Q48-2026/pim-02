@@ -3,11 +3,21 @@
 #include <string.h>
 #include <time.h>
 
+/* 1 = dados no SQL Server (banco bytetech, compilar com -lodbc32)
+   0 = dados nos arquivos .txt da pasta dados/ */
+#define USAR_SQLSERVER 1
+
+#if USAR_SQLSERVER
+#include <windows.h>
+#include <sql.h>
+#include <sqlext.h>
+#else
 /* Arquivos .txt: um por tabela, campos separados por ';' na mesma ordem das colunas do banco (schema_sqlserver.sql) */
 #define ARQ_USUARIO "dados/usuario.txt"
 #define ARQ_EQUIPAMENTO "dados/equipamento.txt"
 #define ARQ_OS "dados/os.txt"
 #define ARQ_TECNICO_OS "dados/tecnico_os.txt"
+#endif
 
 #define MAX_USUARIOS 200
 #define MAX_EQUIPAMENTOS 300
@@ -109,6 +119,10 @@ void dataHoje(char destino[]);
 void dataHoraAgora(char destino[]);
 void pegarCampo(char linha[], int posicao, char destino[], int tamanho);
 int contemTexto(char texto[], char filtro[]);
+
+#if USAR_SQLSERVER
+#include "banco.c"
+#endif
 
 #include "geral.c"
 #include "admin.c"
@@ -802,6 +816,15 @@ void menuPrincipal()
 
 int main()
 {
+#if USAR_SQLSERVER
+    if (!bdConectar())
+    {
+        printf("[!] Nao foi possivel conectar ao SQL Server (banco bytetech).\n");
+        printf("    Confira se o servico do SQL Server esta rodando e se o banco foi criado:\n");
+        printf("    sqlcmd -S localhost -E -i docs\\Modelagem_DB\\schema_sqlserver.sql\n");
+        return 1;
+    }
+#else
     FILE *teste;
 
     /* Os .txt ficam em projeto/dados/: o programa precisa ser aberto de dentro da pasta projeto */
@@ -815,6 +838,7 @@ int main()
         return 1;
     }
     fclose(teste);
+#endif
 
     carregarUsuarios();
     carregarEquipamentos();
@@ -822,5 +846,9 @@ int main()
     carregarTecnicosOS();
 
     menuPrincipal();
+
+#if USAR_SQLSERVER
+    bdDesconectar();
+#endif
     return 0;
 }

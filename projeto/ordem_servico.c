@@ -1,3 +1,185 @@
+#if USAR_SQLSERVER
+/* Quantas posições de cada vetor já estão gravadas no banco. Registro novo entra sempre no fim do vetor */
+int ordensNoBanco = 0;
+int tecnicosOSNoBanco = 0;
+
+/* Grava o vetor na tabela os: UPDATE do que já está no banco, INSERT do que é novo.
+   Texto vazio e dinheiro -1 (ainda não informado) viram NULL */
+int salvarOrdens()
+{
+    char sql[4000];
+    char abertura[30], problema[410], diagnostico[410], orcamento[30], status[40], resposta[30];
+    char entrega[30], teste[30], pago[30], feedback[410], satisfeito[20], criado[50], atualizado[50];
+    int i, ok = 1;
+
+    /* deixa gravar o id que o programa escolheu, em vez de o banco gerar outro */
+    bdExecutar("SET IDENTITY_INSERT os ON");
+    for (i = 0; i < totalOrdens && ok; i++)
+    {
+        sqlTexto(abertura, ordens[i].data_abertura);
+        sqlTexto(problema, ordens[i].problema_relatado);
+        sqlTexto(diagnostico, ordens[i].diagnostico);
+        sqlDinheiro(orcamento, ordens[i].orcamento);
+        sqlTexto(status, ordens[i].status);
+        sqlTexto(resposta, ordens[i].resultado_resposta_cliente);
+        sqlTexto(entrega, ordens[i].data_entrega);
+        sqlTexto(teste, ordens[i].resultado_teste);
+        sqlDinheiro(pago, ordens[i].valor_pago);
+        sqlTexto(feedback, ordens[i].feedback_cliente);
+        sqlTexto(satisfeito, ordens[i].satisfeito);
+        sqlTexto(criado, ordens[i].criado_em);
+        sqlTexto(atualizado, ordens[i].atualizado_em);
+
+        if (i < ordensNoBanco)
+        {
+            sprintf(sql, "UPDATE os SET id_equipamento = %d, id_atendente = %d, data_abertura = %s, problema_relatado = %s, "
+                         "diagnostico = %s, orcamento = %s, status = %s, resultado_resposta_cliente = %s, data_entrega = %s, "
+                         "resultado_teste = %s, valor_pago = %s, feedback_cliente = %s, satisfeito = %s, criado_em = %s, "
+                         "atualizado_em = %s WHERE id_os = %d",
+                    ordens[i].id_equipamento, ordens[i].id_atendente, abertura, problema, diagnostico, orcamento,
+                    status, resposta, entrega, teste, pago, feedback, satisfeito, criado, atualizado, ordens[i].id_os);
+        }
+        else
+        {
+            sprintf(sql, "INSERT INTO os (id_os, id_equipamento, id_atendente, data_abertura, problema_relatado, diagnostico, "
+                         "orcamento, status, resultado_resposta_cliente, data_entrega, resultado_teste, valor_pago, "
+                         "feedback_cliente, satisfeito, criado_em, atualizado_em) "
+                         "VALUES (%d, %d, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    ordens[i].id_os, ordens[i].id_equipamento, ordens[i].id_atendente, abertura, problema, diagnostico,
+                    orcamento, status, resposta, entrega, teste, pago, feedback, satisfeito, criado, atualizado);
+        }
+        ok = bdExecutar(sql);
+    }
+    bdExecutar("SET IDENTITY_INSERT os OFF");
+
+    if (ok)
+        ordensNoBanco = totalOrdens;
+    return ok;
+}
+
+/* Lê a tabela os para o vetor. Dinheiro NULL vira -1 (ainda não informado) */
+void carregarOrdens()
+{
+    char numero[30];
+    int n;
+
+    totalOrdens = 0;
+    ordensNoBanco = 0;
+    /* CONVERT 120 devolve AAAA-MM-DD (date) e AAAA-MM-DD HH:MM:SS (datetime2), igual aos .txt */
+    if (!bdConsultar("SELECT id_os, id_equipamento, id_atendente, CONVERT(VARCHAR(10), data_abertura, 120), "
+                     "problema_relatado, diagnostico, orcamento, status, resultado_resposta_cliente, "
+                     "CONVERT(VARCHAR(10), data_entrega, 120), resultado_teste, valor_pago, feedback_cliente, satisfeito, "
+                     "CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
+                     "FROM os ORDER BY id_os"))
+    {
+        return;
+    }
+    while (totalOrdens < MAX_OS && bdProximaLinha())
+    {
+        n = totalOrdens;
+        bdLerTexto(1, numero, sizeof(numero));
+        ordens[n].id_os = atoi(numero);
+        bdLerTexto(2, numero, sizeof(numero));
+        ordens[n].id_equipamento = atoi(numero);
+        bdLerTexto(3, numero, sizeof(numero));
+        ordens[n].id_atendente = atoi(numero);
+        bdLerTexto(4, ordens[n].data_abertura, sizeof(ordens[n].data_abertura));
+        bdLerTexto(5, ordens[n].problema_relatado, sizeof(ordens[n].problema_relatado));
+        bdLerTexto(6, ordens[n].diagnostico, sizeof(ordens[n].diagnostico));
+        bdLerTexto(7, numero, sizeof(numero));
+        if (numero[0] == '\0')
+            ordens[n].orcamento = -1;
+        else
+            ordens[n].orcamento = atof(numero);
+        bdLerTexto(8, ordens[n].status, sizeof(ordens[n].status));
+        bdLerTexto(9, ordens[n].resultado_resposta_cliente, sizeof(ordens[n].resultado_resposta_cliente));
+        bdLerTexto(10, ordens[n].data_entrega, sizeof(ordens[n].data_entrega));
+        bdLerTexto(11, ordens[n].resultado_teste, sizeof(ordens[n].resultado_teste));
+        bdLerTexto(12, numero, sizeof(numero));
+        if (numero[0] == '\0')
+            ordens[n].valor_pago = -1;
+        else
+            ordens[n].valor_pago = atof(numero);
+        bdLerTexto(13, ordens[n].feedback_cliente, sizeof(ordens[n].feedback_cliente));
+        bdLerTexto(14, ordens[n].satisfeito, sizeof(ordens[n].satisfeito));
+        bdLerTexto(15, ordens[n].criado_em, sizeof(ordens[n].criado_em));
+        bdLerTexto(16, ordens[n].atualizado_em, sizeof(ordens[n].atualizado_em));
+        totalOrdens++;
+    }
+    ordensNoBanco = totalOrdens;
+}
+
+/* Grava o vetor na tabela tecnico_os: UPDATE do que já está no banco, INSERT do que é novo */
+int salvarTecnicosOS()
+{
+    char sql[1500];
+    char atribuicao[30], observacoes[610], criado[50], atualizado[50];
+    int i, ok = 1;
+
+    /* deixa gravar o id que o programa escolheu, em vez de o banco gerar outro */
+    bdExecutar("SET IDENTITY_INSERT tecnico_os ON");
+    for (i = 0; i < totalTecnicosOS && ok; i++)
+    {
+        sqlTexto(atribuicao, tecnicosOS[i].data_atribuicao);
+        sqlTexto(observacoes, tecnicosOS[i].observacoes_tecnicas);
+        sqlTexto(criado, tecnicosOS[i].criado_em);
+        sqlTexto(atualizado, tecnicosOS[i].atualizado_em);
+
+        if (i < tecnicosOSNoBanco)
+        {
+            sprintf(sql, "UPDATE tecnico_os SET id_tecnico = %d, id_os = %d, data_atribuicao = %s, observacoes_tecnicas = %s, "
+                         "criado_em = %s, atualizado_em = %s WHERE id_tecnico_os = %d",
+                    tecnicosOS[i].id_tecnico, tecnicosOS[i].id_os, atribuicao, observacoes, criado, atualizado,
+                    tecnicosOS[i].id_tecnico_os);
+        }
+        else
+        {
+            sprintf(sql, "INSERT INTO tecnico_os (id_tecnico_os, id_tecnico, id_os, data_atribuicao, observacoes_tecnicas, "
+                         "criado_em, atualizado_em) VALUES (%d, %d, %d, %s, %s, %s, %s)",
+                    tecnicosOS[i].id_tecnico_os, tecnicosOS[i].id_tecnico, tecnicosOS[i].id_os, atribuicao,
+                    observacoes, criado, atualizado);
+        }
+        ok = bdExecutar(sql);
+    }
+    bdExecutar("SET IDENTITY_INSERT tecnico_os OFF");
+
+    if (ok)
+        tecnicosOSNoBanco = totalTecnicosOS;
+    return ok;
+}
+
+/* Lê a tabela tecnico_os para o vetor */
+void carregarTecnicosOS()
+{
+    char numero[20];
+    int n;
+
+    totalTecnicosOS = 0;
+    tecnicosOSNoBanco = 0;
+    if (!bdConsultar("SELECT id_tecnico_os, id_tecnico, id_os, CONVERT(VARCHAR(10), data_atribuicao, 120), "
+                     "observacoes_tecnicas, CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
+                     "FROM tecnico_os ORDER BY id_tecnico_os"))
+    {
+        return;
+    }
+    while (totalTecnicosOS < MAX_TECNICO_OS && bdProximaLinha())
+    {
+        n = totalTecnicosOS;
+        bdLerTexto(1, numero, sizeof(numero));
+        tecnicosOS[n].id_tecnico_os = atoi(numero);
+        bdLerTexto(2, numero, sizeof(numero));
+        tecnicosOS[n].id_tecnico = atoi(numero);
+        bdLerTexto(3, numero, sizeof(numero));
+        tecnicosOS[n].id_os = atoi(numero);
+        bdLerTexto(4, tecnicosOS[n].data_atribuicao, sizeof(tecnicosOS[n].data_atribuicao));
+        bdLerTexto(5, tecnicosOS[n].observacoes_tecnicas, sizeof(tecnicosOS[n].observacoes_tecnicas));
+        bdLerTexto(6, tecnicosOS[n].criado_em, sizeof(tecnicosOS[n].criado_em));
+        bdLerTexto(7, tecnicosOS[n].atualizado_em, sizeof(tecnicosOS[n].atualizado_em));
+        totalTecnicosOS++;
+    }
+    tecnicosOSNoBanco = totalTecnicosOS;
+}
+#else
 /* Regrava o os.txt inteiro com o que está no vetor. Dinheiro -1.00 = ainda não informado */
 int salvarOrdens()
 {
@@ -129,6 +311,7 @@ void carregarTecnicosOS()
     }
     fclose(arquivo);
 }
+#endif
 
 /* ---------- Funções de apoio às OS (usadas também no manutencao.c, orcamento.c e relatorio.c) ---------- */
 

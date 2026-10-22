@@ -40,22 +40,31 @@ Detalhamento completo em [Requisitos do Sistema](./docs/requisitos/requisitos.md
 
 - **Linguagem:** C
 - **Interface:** Terminal/console (menus textuais e opções numéricas)
-- **Persistência:** nesta versão, arquivos de texto (`projeto/dados/*.txt`), um por tabela. O banco já está modelado em SQL Server ([`schema_sqlserver.sql`](./docs/Modelagem_DB/schema_sqlserver.sql)); ligar o programa em C a ele é o próximo passo
+- **Persistência:** SQL Server, banco `bytetech` ([`schema_sqlserver.sql`](./docs/Modelagem_DB/schema_sqlserver.sql)), acessado pela API ODBC em [`projeto/banco.c`](./projeto/banco.c). A versão em arquivos de texto (`projeto/dados/*.txt`, um por tabela) continua no código: basta trocar `#define USAR_SQLSERVER 1` para `0` no `main.c`
 
 ## Como executar
 
-No terminal, de dentro da pasta `projeto` (é onde fica a pasta `dados/`):
+Precisa do SQL Server rodando na máquina (instância padrão, `localhost`, login do Windows) e do driver "ODBC Driver 18 for SQL Server". Se a máquina só tiver o driver 17, troque o nome do driver em `projeto/banco.c`.
+
+Na primeira vez, de dentro da pasta `pim-02`, crie o banco e carregue os dados de exemplo (isso apaga o que estiver nas tabelas do `bytetech`):
+
+```
+sqlcmd -S localhost -E -b -i docs\Modelagem_DB\schema_sqlserver.sql
+sqlcmd -S localhost -E -b -W -i docs\Modelagem_DB\dados_exemplo_sqlserver.sql
+```
+
+Depois, para compilar e rodar:
 
 ```
 cd projeto
 mkdir output
-gcc main.c -o output/main.exe
+gcc main.c -o output/main.exe -lodbc32
 .\output\main.exe
 ```
 
-O `mkdir output` só é preciso na primeira vez: a pasta `output/` fica fora do Git (`.gitignore`).
+O `mkdir output` só é preciso na primeira vez: a pasta `output/` fica fora do Git (`.gitignore`). Com `USAR_SQLSERVER 0` o `-lodbc32` não é necessário, e o programa precisa ser aberto de dentro da pasta `projeto` (é onde fica a pasta `dados/`).
 
-Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrador), `carla@bytetech.com` (Recepcionista), `rafael@bytetech.com` (Técnico) e `joao.pereira@email.com` (Cliente). Os dados de exemplo ficam em `projeto/dados/*.txt`; para voltar a eles depois de testar, use `git checkout projeto/dados`.
+Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrador), `carla@bytetech.com` (Recepcionista), `rafael@bytetech.com` (Técnico) e `joao.pereira@email.com` (Cliente). Para voltar aos dados de exemplo depois de testar, rode de novo os dois comandos `sqlcmd` acima (no modo `.txt`: `git checkout projeto/dados`).
 
 ## Documentação
 
