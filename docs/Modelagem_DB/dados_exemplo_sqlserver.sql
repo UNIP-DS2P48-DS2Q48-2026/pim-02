@@ -1,8 +1,7 @@
 -- ByteTech - Dados de exemplo para o SQL Server
--- Os mesmos registros de projeto/dados/*.txt (branch main), para o banco
--- mostrar no SSMS o que o programa em C mostra no modo .txt.
+-- Usuarios, equipamentos e OS de exemplo para testar o programa em C.
 -- Rodar DEPOIS do schema_sqlserver.sql (que apaga e recria as tabelas).
--- No .txt, campo vazio e dinheiro -1.00 viram NULL aqui.
+-- Campo vazio e dinheiro ainda nao informado ficam NULL.
 
 USE bytetech;
 GO

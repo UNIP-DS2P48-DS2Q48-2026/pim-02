@@ -6,7 +6,6 @@ int perfilLogado(char perfil[])
     return 0;
 }
 
-#if USAR_SQLSERVER
 /* Quantas posições do vetor já estão gravadas no banco. Cadastro novo entra sempre no fim do vetor */
 int usuariosNoBanco = 0;
 
@@ -89,68 +88,6 @@ void carregarUsuarios()
     }
     usuariosNoBanco = totalUsuarios;
 }
-#else
-/* Regrava o usuario.txt inteiro com o que está no vetor */
-int salvarUsuarios()
-{
-    FILE *arquivo;
-    int i;
-
-    arquivo = fopen(ARQ_USUARIO, "w");
-    if (arquivo == NULL)
-    {
-        printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_USUARIO);
-        return 0;
-    }
-    fprintf(arquivo, "id_usuario;nome;email;telefone;senha;perfil;cpf;especialidade;status;criado_em;atualizado_em\n");
-    for (i = 0; i < totalUsuarios; i++)
-    {
-        fprintf(arquivo, "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
-                usuarios[i].id_usuario, usuarios[i].nome, usuarios[i].email, usuarios[i].telefone,
-                usuarios[i].senha, usuarios[i].perfil, usuarios[i].cpf, usuarios[i].especialidade,
-                usuarios[i].status, usuarios[i].criado_em, usuarios[i].atualizado_em);
-    }
-    fclose(arquivo);
-    return 1;
-}
-
-/* Lê o usuario.txt para o vetor (sem arquivo = nenhum usuário ainda) */
-void carregarUsuarios()
-{
-    FILE *arquivo;
-    char linha[TAM_LINHA];
-    char numero[20];
-    int n;
-
-    totalUsuarios = 0;
-    arquivo = fopen(ARQ_USUARIO, "r");
-    if (arquivo == NULL)
-        return;
-
-    while (totalUsuarios < MAX_USUARIOS && fgets(linha, sizeof(linha), arquivo) != NULL)
-    {
-        /* Pula o cabeçalho: toda linha de dados começa com o id (um número) */
-        if (linha[0] < '0' || linha[0] > '9')
-            continue;
-
-        n = totalUsuarios;
-        pegarCampo(linha, 0, numero, sizeof(numero));
-        usuarios[n].id_usuario = atoi(numero);
-        pegarCampo(linha, 1, usuarios[n].nome, sizeof(usuarios[n].nome));
-        pegarCampo(linha, 2, usuarios[n].email, sizeof(usuarios[n].email));
-        pegarCampo(linha, 3, usuarios[n].telefone, sizeof(usuarios[n].telefone));
-        pegarCampo(linha, 4, usuarios[n].senha, sizeof(usuarios[n].senha));
-        pegarCampo(linha, 5, usuarios[n].perfil, sizeof(usuarios[n].perfil));
-        pegarCampo(linha, 6, usuarios[n].cpf, sizeof(usuarios[n].cpf));
-        pegarCampo(linha, 7, usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
-        pegarCampo(linha, 8, usuarios[n].status, sizeof(usuarios[n].status));
-        pegarCampo(linha, 9, usuarios[n].criado_em, sizeof(usuarios[n].criado_em));
-        pegarCampo(linha, 10, usuarios[n].atualizado_em, sizeof(usuarios[n].atualizado_em));
-        totalUsuarios++;
-    }
-    fclose(arquivo);
-}
-#endif
 
 /* Coloca um usuário de teste no fim do vetor, com a senha byte123 (usado no main na primeira vez) */
 void adicionarUsuarioInicial(char nome[], char email[], char telefone[], char perfil[], char cpf[], char especialidade[])

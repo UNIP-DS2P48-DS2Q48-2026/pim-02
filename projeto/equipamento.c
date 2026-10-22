@@ -1,4 +1,3 @@
-#if USAR_SQLSERVER
 /* Quantas posições do vetor já estão gravadas no banco. Cadastro novo entra sempre no fim do vetor */
 int equipamentosNoBanco = 0;
 
@@ -76,68 +75,6 @@ void carregarEquipamentos()
     }
     equipamentosNoBanco = totalEquipamentos;
 }
-#else
-/* Regrava o equipamento.txt inteiro com o que está no vetor */
-int salvarEquipamentos()
-{
-    FILE *arquivo;
-    int i;
-
-    arquivo = fopen(ARQ_EQUIPAMENTO, "w");
-    if (arquivo == NULL)
-    {
-        printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_EQUIPAMENTO);
-        return 0;
-    }
-    fprintf(arquivo, "id_equipamento;id_cliente;categoria;tipo;marca;modelo_numero_serie;status;criado_em;atualizado_em\n");
-    for (i = 0; i < totalEquipamentos; i++)
-    {
-        fprintf(arquivo, "%d;%d;%s;%s;%s;%s;%s;%s;%s\n",
-                equipamentos[i].id_equipamento, equipamentos[i].id_cliente, equipamentos[i].categoria,
-                equipamentos[i].tipo, equipamentos[i].marca, equipamentos[i].modelo_numero_serie,
-                equipamentos[i].status, equipamentos[i].criado_em, equipamentos[i].atualizado_em);
-    }
-    fclose(arquivo);
-    return 1;
-}
-
-/* Lê o equipamento.txt para o vetor (sem arquivo = nenhum equipamento ainda) */
-void carregarEquipamentos()
-{
-    FILE *arquivo;
-    char linha[TAM_LINHA];
-    char numero[20];
-    int n;
-
-    totalEquipamentos = 0;
-    arquivo = fopen(ARQ_EQUIPAMENTO, "r");
-    if (arquivo == NULL)
-    {
-        return;
-    }
-    while (totalEquipamentos < MAX_EQUIPAMENTOS && fgets(linha, sizeof(linha), arquivo) != NULL)
-    {
-        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
-        if (linha[0] < '0' || linha[0] > '9')
-            continue;
-
-        n = totalEquipamentos;
-        pegarCampo(linha, 0, numero, sizeof(numero));
-        equipamentos[n].id_equipamento = atoi(numero);
-        pegarCampo(linha, 1, numero, sizeof(numero));
-        equipamentos[n].id_cliente = atoi(numero);
-        pegarCampo(linha, 2, equipamentos[n].categoria, sizeof(equipamentos[n].categoria));
-        pegarCampo(linha, 3, equipamentos[n].tipo, sizeof(equipamentos[n].tipo));
-        pegarCampo(linha, 4, equipamentos[n].marca, sizeof(equipamentos[n].marca));
-        pegarCampo(linha, 5, equipamentos[n].modelo_numero_serie, sizeof(equipamentos[n].modelo_numero_serie));
-        pegarCampo(linha, 6, equipamentos[n].status, sizeof(equipamentos[n].status));
-        pegarCampo(linha, 7, equipamentos[n].criado_em, sizeof(equipamentos[n].criado_em));
-        pegarCampo(linha, 8, equipamentos[n].atualizado_em, sizeof(equipamentos[n].atualizado_em));
-        totalEquipamentos++;
-    }
-    fclose(arquivo);
-}
-#endif
 
 /* Posição no vetor do equipamento com este id (-1 se não existir) */
 int buscarEquipamentoPorId(int id)
