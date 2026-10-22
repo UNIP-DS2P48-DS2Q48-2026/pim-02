@@ -1,3 +1,82 @@
+#if USAR_SQLSERVER
+/* Quantas posições do vetor já estão gravadas no banco. Cadastro novo entra sempre no fim do vetor */
+int equipamentosNoBanco = 0;
+
+/* Grava o vetor na tabela equipamento: UPDATE do que já está no banco, INSERT do que é novo */
+int salvarEquipamentos()
+{
+    char sql[1500];
+    char categoria[30], tipo[90], marca[90], modelo[130], status[20], criado[50], atualizado[50];
+    int i, ok = 1;
+
+    /* deixa gravar o id que o programa escolheu, em vez de o banco gerar outro */
+    bdExecutar("SET IDENTITY_INSERT equipamento ON");
+    for (i = 0; i < totalEquipamentos && ok; i++)
+    {
+        sqlTexto(categoria, equipamentos[i].categoria);
+        sqlTexto(tipo, equipamentos[i].tipo);
+        sqlTexto(marca, equipamentos[i].marca);
+        sqlTexto(modelo, equipamentos[i].modelo_numero_serie);
+        sqlTexto(status, equipamentos[i].status);
+        sqlTexto(criado, equipamentos[i].criado_em);
+        sqlTexto(atualizado, equipamentos[i].atualizado_em);
+
+        if (i < equipamentosNoBanco)
+        {
+            sprintf(sql, "UPDATE equipamento SET id_cliente = %d, categoria = %s, tipo = %s, marca = %s, "
+                         "modelo_numero_serie = %s, status = %s, criado_em = %s, atualizado_em = %s WHERE id_equipamento = %d",
+                    equipamentos[i].id_cliente, categoria, tipo, marca, modelo, status, criado, atualizado,
+                    equipamentos[i].id_equipamento);
+        }
+        else
+        {
+            sprintf(sql, "INSERT INTO equipamento (id_equipamento, id_cliente, categoria, tipo, marca, modelo_numero_serie, "
+                         "status, criado_em, atualizado_em) VALUES (%d, %d, %s, %s, %s, %s, %s, %s, %s)",
+                    equipamentos[i].id_equipamento, equipamentos[i].id_cliente, categoria, tipo, marca, modelo,
+                    status, criado, atualizado);
+        }
+        ok = bdExecutar(sql);
+    }
+    bdExecutar("SET IDENTITY_INSERT equipamento OFF");
+
+    if (ok)
+        equipamentosNoBanco = totalEquipamentos;
+    return ok;
+}
+
+/* Lê a tabela equipamento para o vetor */
+void carregarEquipamentos()
+{
+    char numero[20];
+    int n;
+
+    totalEquipamentos = 0;
+    equipamentosNoBanco = 0;
+    if (!bdConsultar("SELECT id_equipamento, id_cliente, categoria, tipo, marca, modelo_numero_serie, status, "
+                     "CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
+                     "FROM equipamento ORDER BY id_equipamento"))
+    {
+        return;
+    }
+    while (totalEquipamentos < MAX_EQUIPAMENTOS && bdProximaLinha())
+    {
+        n = totalEquipamentos;
+        bdLerTexto(1, numero, sizeof(numero));
+        equipamentos[n].id_equipamento = atoi(numero);
+        bdLerTexto(2, numero, sizeof(numero));
+        equipamentos[n].id_cliente = atoi(numero);
+        bdLerTexto(3, equipamentos[n].categoria, sizeof(equipamentos[n].categoria));
+        bdLerTexto(4, equipamentos[n].tipo, sizeof(equipamentos[n].tipo));
+        bdLerTexto(5, equipamentos[n].marca, sizeof(equipamentos[n].marca));
+        bdLerTexto(6, equipamentos[n].modelo_numero_serie, sizeof(equipamentos[n].modelo_numero_serie));
+        bdLerTexto(7, equipamentos[n].status, sizeof(equipamentos[n].status));
+        bdLerTexto(8, equipamentos[n].criado_em, sizeof(equipamentos[n].criado_em));
+        bdLerTexto(9, equipamentos[n].atualizado_em, sizeof(equipamentos[n].atualizado_em));
+        totalEquipamentos++;
+    }
+    equipamentosNoBanco = totalEquipamentos;
+}
+#else
 /* Regrava o equipamento.txt inteiro com o que está no vetor */
 int salvarEquipamentos()
 {
@@ -58,6 +137,7 @@ void carregarEquipamentos()
     }
     fclose(arquivo);
 }
+#endif
 
 /* Posição no vetor do equipamento com este id (-1 se não existir) */
 int buscarEquipamentoPorId(int id)
