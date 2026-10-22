@@ -8,6 +8,56 @@ int perfilLogado(char perfil[])
     return 0;
 }
 
+#if USAR_SQLSERVER
+/* Quantas posições do vetor já estão gravadas no banco. Cadastro novo entra sempre no fim do vetor */
+int usuariosNoBanco = 0;
+
+/* Grava o vetor na tabela usuario: UPDATE de quem já está no banco, INSERT de quem é novo */
+int salvarUsuarios()
+{
+    char sql[2500];
+    char nome[130], email[130], telefone[50], senha[40], perfil[40], cpf[40];
+    char especialidade[90], status[20], criado[50], atualizado[50];
+    int i, ok = 1;
+
+    /* deixa gravar o id que o programa escolheu, em vez de o banco gerar outro */
+    bdExecutar("SET IDENTITY_INSERT usuario ON");
+    for (i = 0; i < totalUsuarios && ok; i++)
+    {
+        sqlTexto(nome, usuarios[i].nome);
+        sqlTexto(email, usuarios[i].email);
+        sqlTexto(telefone, usuarios[i].telefone);
+        sqlTexto(senha, usuarios[i].senha);
+        sqlTexto(perfil, usuarios[i].perfil);
+        sqlTexto(cpf, usuarios[i].cpf);
+        sqlTexto(especialidade, usuarios[i].especialidade);
+        sqlTexto(status, usuarios[i].status);
+        sqlTexto(criado, usuarios[i].criado_em);
+        sqlTexto(atualizado, usuarios[i].atualizado_em);
+
+        if (i < usuariosNoBanco)
+        {
+            sprintf(sql, "UPDATE usuario SET nome = %s, email = %s, telefone = %s, senha = %s, perfil = %s, cpf = %s, "
+                         "especialidade = %s, status = %s, criado_em = %s, atualizado_em = %s WHERE id_usuario = %d",
+                    nome, email, telefone, senha, perfil, cpf, especialidade, status, criado, atualizado,
+                    usuarios[i].id_usuario);
+        }
+        else
+        {
+            sprintf(sql, "INSERT INTO usuario (id_usuario, nome, email, telefone, senha, perfil, cpf, especialidade, "
+                         "status, criado_em, atualizado_em) VALUES (%d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    usuarios[i].id_usuario, nome, email, telefone, senha, perfil, cpf, especialidade, status,
+                    criado, atualizado);
+        }
+        ok = bdExecutar(sql);
+    }
+    bdExecutar("SET IDENTITY_INSERT usuario OFF");
+
+    if (ok)
+        usuariosNoBanco = totalUsuarios;
+    return ok;
+}
+#else
 /* Regrava o usuario.txt inteiro com o que está no vetor */
 int salvarUsuarios()
 {
@@ -31,6 +81,7 @@ int salvarUsuarios()
     fclose(arquivo);
     return 1;
 }
+#endif
 
 /* Coloca um usuário de teste no fim do vetor, com a senha byte123 */
 void adicionarUsuarioInicial(char nome[], char email[], char telefone[], char perfil[], char cpf[], char especialidade[])
@@ -51,6 +102,51 @@ void adicionarUsuarioInicial(char nome[], char email[], char telefone[], char pe
     totalUsuarios++;
 }
 
+#if USAR_SQLSERVER
+/* Lê a tabela usuario para o vetor; se ela estiver vazia, cria os usuários de teste do grupo */
+void carregarUsuarios()
+{
+    char numero[20];
+    int n;
+
+    totalUsuarios = 0;
+    usuariosNoBanco = 0;
+    /* CONVERT 120 devolve a data como AAAA-MM-DD HH:MM:SS, igual ao dataHoraAgora */
+    if (!bdConsultar("SELECT id_usuario, nome, email, telefone, senha, perfil, cpf, especialidade, status, "
+                     "CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
+                     "FROM usuario ORDER BY id_usuario"))
+    {
+        return;
+    }
+    while (totalUsuarios < MAX_USUARIOS && bdProximaLinha())
+    {
+        n = totalUsuarios;
+        bdLerTexto(1, numero, sizeof(numero));
+        usuarios[n].id_usuario = atoi(numero);
+        bdLerTexto(2, usuarios[n].nome, sizeof(usuarios[n].nome));
+        bdLerTexto(3, usuarios[n].email, sizeof(usuarios[n].email));
+        bdLerTexto(4, usuarios[n].telefone, sizeof(usuarios[n].telefone));
+        bdLerTexto(5, usuarios[n].senha, sizeof(usuarios[n].senha));
+        bdLerTexto(6, usuarios[n].perfil, sizeof(usuarios[n].perfil));
+        bdLerTexto(7, usuarios[n].cpf, sizeof(usuarios[n].cpf));
+        bdLerTexto(8, usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
+        bdLerTexto(9, usuarios[n].status, sizeof(usuarios[n].status));
+        bdLerTexto(10, usuarios[n].criado_em, sizeof(usuarios[n].criado_em));
+        bdLerTexto(11, usuarios[n].atualizado_em, sizeof(usuarios[n].atualizado_em));
+        totalUsuarios++;
+    }
+    usuariosNoBanco = totalUsuarios;
+
+    if (totalUsuarios == 0)
+    {
+        adicionarUsuarioInicial("Ana", "ana@bytetech.com", "", "admin", "", "");
+        adicionarUsuarioInicial("Carla", "carla@bytetech.com", "", "recepcionista", "", "");
+        adicionarUsuarioInicial("Rafael", "rafael@bytetech.com", "", "tecnico", "", "Hardware");
+        adicionarUsuarioInicial("Joao Pereira", "joao.pereira@email.com", "(11) 90000-0000", "cliente", "111.111.111-11", "");
+        salvarUsuarios();
+    }
+}
+#else
 /* Lê o usuario.txt para o vetor; se o arquivo não existir, cria os usuários de teste do grupo */
 void carregarUsuarios()
 {
@@ -95,6 +191,7 @@ void carregarUsuarios()
     }
     fclose(arquivo);
 }
+#endif
 
 /* ---------- Funções comuns aos cadastros de usuário (UC04 a UC19) ---------- */
 

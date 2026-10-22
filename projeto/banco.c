@@ -1,161 +1,154 @@
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sql.h>
-#include <sqlext.h>
-#include <string.h>
+/* Conexão com o SQL Server pela API ODBC (sql.h / sqlext.h).
+   Compilar com: gcc main.c -o output/main.exe -lodbc32
+   Antes de usar: rodar docs/Modelagem_DB/schema_sqlserver.sql e dados_exemplo_sqlserver.sql */
 
-#define CONNECTION_STRING "DRIVER={ODBC Driver 18 for SQL Server};" \
+/* Banco bytetech na instância padrão da máquina, com o login do Windows (sem senha no código).
+   Se a máquina só tiver o driver 17, troque "ODBC Driver 18" por "ODBC Driver 17" */
+#define CONEXAO_SQLSERVER "DRIVER={ODBC Driver 18 for SQL Server};" \
                           "SERVER=localhost;"                        \
                           "DATABASE=bytetech;"                       \
                           "Trusted_Connection=yes;"                  \
                           "Encrypt=yes;"                             \
                           "TrustServerCertificate=yes;"
-           
-                          
 
-#define RESULT_LEN  256
+SQLHENV  bdAmbiente = SQL_NULL_HENV;
+SQLHDBC  bdConexao = SQL_NULL_HDBC;
+SQLHSTMT bdComando = SQL_NULL_HSTMT;
 
-#define CHECK_ERROR(e, s, h, t) ({\
-            if (e!=SQL_SUCCESS && e != SQL_SUCCESS_WITH_INFO) {extract_error(s, h, t); goto exit;} \
-})
-void extract_error(char *fn, SQLHANDLE handle, SQLSMALLINT type)
+/* Mostra a mensagem de erro que o SQL Server devolveu */
+void bdMostrarErro(SQLSMALLINT tipo, SQLHANDLE handle)
 {
-	SQLINTEGER i = 0;
-	SQLINTEGER NativeError;
-	SQLCHAR SQLState[7];
-	SQLCHAR MessageText[256];
-	SQLSMALLINT TextLength;
-	SQLRETURN ret;
+    SQLCHAR estado[7];
+    SQLCHAR mensagem[512];
+    SQLINTEGER erroNativo;
+    SQLSMALLINT tamanho;
+    SQLSMALLINT i = 1;
 
-	fprintf(stderr, "\nThe driver reported the following error %s\n", fn);
-	do
-	{
-		ret = SQLGetDiagRec(type, handle, ++i, SQLState, &NativeError,
-			MessageText, sizeof(MessageText), &TextLength);
-		if (SQL_SUCCEEDED(ret)) {
-			printf("%s:%ld:%ld:%s\n",
-				SQLState, (long)i, (long)NativeError, MessageText);
-		}
-	} while (ret == SQL_SUCCESS);
+    while (SQLGetDiagRec(tipo, handle, i, estado, &erroNativo, mensagem, sizeof(mensagem), &tamanho) == SQL_SUCCESS)
+    {
+        printf("\n[!] Banco de dados: %s\n", mensagem);
+        i++;
+    }
 }
 
+/* Abre a conexão com o banco; devolve 1 se conectou */
+int bdConectar()
+{
+    SQLRETURN ret;
 
-int main (){
-	
-	SQLHENV   henv = SQL_NULL_HENV;   // Environment
-	SQLHDBC   hdbc = SQL_NULL_HDBC;   // Connection handle
-	SQLHSTMT  hstmt = SQL_NULL_HSTMT;  // Statement handle
-	SQLRETURN retcode;
-	SQLCHAR outstr[1024];
-	SQLSMALLINT outstrlen;
+    SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &bdAmbiente);
+    SQLSetEnvAttr(bdAmbiente, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0);
+    SQLAllocHandle(SQL_HANDLE_DBC, bdAmbiente, &bdConexao);
+    SQLSetConnectAttr(bdConexao, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
 
-    
-	// Allocate environment handle
-	retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
-	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_ENV)",
-		henv, SQL_HANDLE_ENV);
-
-
-
-	// Set the ODBC version environment attribute
-	retcode = SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION,
-		(SQLPOINTER*)SQL_OV_ODBC3, 0);
-	CHECK_ERROR(retcode, "SQLSetEnvAttr(SQL_ATTR_ODBC_VERSION)",
-		henv, SQL_HANDLE_ENV);
-
-	// Allocate connection handle
-	retcode = SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc);
-	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_DBC)",
-		hdbc, SQL_HANDLE_DBC);
-
-
-
-	// Set login timeout to 5 seconds
-	retcode = SQLSetConnectAttr(hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
-	CHECK_ERROR(retcode, "SQLSetConnectAttr(SQL_LOGIN_TIMEOUT)",
-		hdbc, SQL_HANDLE_DBC);
-
-
-
-	// Connect to data source, replace with your connection string
-	retcode = SQLDriverConnect(hdbc, NULL, (SQLCHAR*) CONNECTION_STRING, SQL_NTS, outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT);
-	CHECK_ERROR(retcode, "SQLDriverConnect()", hdbc, SQL_HANDLE_DBC);
-
-
-	// Allocate statement handle
-	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
-	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_STMT)",
-		hstmt, SQL_HANDLE_STMT);
-
-
-	retcode = SQLExecDirect(hstmt,
-		(SQLCHAR*) "SELECT id_usuario, nome, email, perfil, status FROM usuario;", SQL_NTS);
-	CHECK_ERROR(retcode, "SQLExecDirect()", hstmt, SQL_HANDLE_STMT);
-
-	SQLSMALLINT columns;
-
-	SQLNumResultCols(hstmt, &columns);
-
-	SQLCHAR buf[5][64];
-	SQLLEN indicator[5];
-
-	// Bind columns
-	for (int i = 0; i < columns; i++) {
-		SQLBindCol(hstmt, i+1, SQL_C_CHAR, buf[i], sizeof(buf[i]), &indicator[i]);
-	}
-	
-
-	// Fetch and print each row of data until SQL_NO_DATA returned.
-	while (SQL_SUCCEEDED(SQLFetch(hstmt))) {
-		for (int i = 0; i < columns; i++) {
-			if (indicator[i] == SQL_NULL_DATA)
-				printf("| NULL |");
-			else
-				printf("| %s |", buf[i]);
-		}
-		printf("\n");
-	}
-
-exit:
-	printf("\nComplete.\n");
-	// Free handles
-	// Statement
-	if (hstmt != SQL_NULL_HSTMT)
-		SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
-	// Connection
-	if (hdbc != SQL_NULL_HDBC) {
-		SQLDisconnect(hdbc);
-		SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
-	}
-	// Environment
-	if (henv != SQL_NULL_HENV)
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
-	return 0;
-
+    ret = SQLDriverConnect(bdConexao, NULL, (SQLCHAR *)CONEXAO_SQLSERVER, SQL_NTS,
+                           NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        bdMostrarErro(SQL_HANDLE_DBC, bdConexao);
+        return 0;
+    }
+    return 1;
 }
 
-
-/*
-void bdMostrarErro(int tipo, int handle) {
-
+/* Fecha a conexão e libera os handles */
+void bdDesconectar()
+{
+    if (bdComando != SQL_NULL_HSTMT)
+        SQLFreeHandle(SQL_HANDLE_STMT, bdComando);
+    SQLDisconnect(bdConexao);
+    SQLFreeHandle(SQL_HANDLE_DBC, bdConexao);
+    SQLFreeHandle(SQL_HANDLE_ENV, bdAmbiente);
 }
 
-int bdConectar(void) {
+/* Roda um comando que não devolve linhas (INSERT, UPDATE, SET); devolve 1 se deu certo */
+int bdExecutar(char sql[])
+{
+    SQLHSTMT comando;
+    SQLRETURN ret;
+
+    /* fecha o SELECT anterior: o SQL Server não roda outro comando com um SELECT aberto */
+    if (bdComando != SQL_NULL_HSTMT)
+    {
+        SQLFreeHandle(SQL_HANDLE_STMT, bdComando);
+        bdComando = SQL_NULL_HSTMT;
+    }
+    SQLAllocHandle(SQL_HANDLE_STMT, bdConexao, &comando);
+    ret = SQLExecDirect(comando, (SQLCHAR *)sql, SQL_NTS);
+    /* SQL_NO_DATA: o comando rodou, mas não mudou nenhuma linha */
+    if (!SQL_SUCCEEDED(ret) && ret != SQL_NO_DATA)
+    {
+        bdMostrarErro(SQL_HANDLE_STMT, comando);
+        SQLFreeHandle(SQL_HANDLE_STMT, comando);
+        return 0;
+    }
+    SQLFreeHandle(SQL_HANDLE_STMT, comando);
+    return 1;
 }
 
-int bdExecutar(const char *sql) {
+/* Roda um SELECT; as linhas são lidas depois com bdProximaLinha e bdLerTexto */
+int bdConsultar(char sql[])
+{
+    SQLRETURN ret;
+
+    if (bdComando != SQL_NULL_HSTMT)
+        SQLFreeHandle(SQL_HANDLE_STMT, bdComando);
+    SQLAllocHandle(SQL_HANDLE_STMT, bdConexao, &bdComando);
+    ret = SQLExecDirect(bdComando, (SQLCHAR *)sql, SQL_NTS);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        bdMostrarErro(SQL_HANDLE_STMT, bdComando);
+        return 0;
+    }
+    return 1;
 }
 
-int bdConsultar(const char *sql) {
+/* Avança para a próxima linha do SELECT; devolve 0 quando acabou */
+int bdProximaLinha()
+{
+    if (SQL_SUCCEEDED(SQLFetch(bdComando)))
+        return 1;
+    return 0;
 }
 
-int bdProximaLinha(void) {
+/* Copia a coluna (1, 2, 3...) da linha atual para destino. NULL no banco vira texto vazio */
+void bdLerTexto(int coluna, char destino[], int tamanho)
+{
+    SQLLEN indicador;
+
+    destino[0] = '\0';
+    SQLGetData(bdComando, coluna, SQL_C_CHAR, destino, tamanho, &indicador);
+    if (indicador == SQL_NULL_DATA)
+        destino[0] = '\0';
 }
 
-void bdLerTexto(int coluna, char *destino, int tamanho) {
+/* Prepara um texto para entrar no SQL: N'texto' com ' dobrado, ou NULL se estiver vazio */
+void sqlTexto(char destino[], char texto[])
+{
+    int i, j = 0;
+
+    if (texto[0] == '\0')
+    {
+        strcpy(destino, "NULL");
+        return;
+    }
+    destino[j++] = 'N';
+    destino[j++] = '\'';
+    for (i = 0; texto[i] != '\0'; i++)
+    {
+        if (texto[i] == '\'')
+            destino[j++] = '\'';
+        destino[j++] = texto[i];
+    }
+    destino[j++] = '\'';
+    destino[j] = '\0';
 }
 
-void sqlTexto(char *destino, const char *texto) {
+/* Prepara um valor em dinheiro: -1 (ainda não informado) vira NULL */
+void sqlDinheiro(char destino[], double valor)
+{
+    if (valor < 0)
+        strcpy(destino, "NULL");
+    else
+        sprintf(destino, "%.2f", valor);
 }
-*/
