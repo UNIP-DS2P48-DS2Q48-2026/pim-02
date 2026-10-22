@@ -41,7 +41,7 @@ void extract_error(char *fn, SQLHANDLE handle, SQLSMALLINT type)
 }
 
 
-int main (){
+int consul_user (char tabela[], int id){
 	
 	SQLHENV   henv = SQL_NULL_HENV;   // Environment
 	SQLHDBC   hdbc = SQL_NULL_HDBC;   // Connection handle
@@ -87,9 +87,20 @@ int main (){
 	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_STMT)",
 		hstmt, SQL_HANDLE_STMT);
 
+		char stringId[5];
+		sprintf(stringId, "%d", id);
+
+		char query[80] = "SELECT * FROM ";
+		
+		strcat(query, tabela);
+
+		strcat(query, " WHERE ID = ");
+
+		strcat(query, stringId);
+		
 
 	retcode = SQLExecDirect(hstmt,
-		(SQLCHAR*) "SELECT * From Alunos;", SQL_NTS);
+		(SQLCHAR*) query, SQL_NTS);
 	CHECK_ERROR(retcode, "SQLExecDirect()", hstmt, SQL_HANDLE_STMT);
 
 	SQLSMALLINT columns;
@@ -112,9 +123,9 @@ int main (){
 		}
 		printf("\n");
 	}
-
+	
 exit:
-	printf("\nComplete.\n");
+	printf("\nComplete.\n\n\n");
 	// Free handles
 	// Statement
 	if (hstmt != SQL_NULL_HSTMT)

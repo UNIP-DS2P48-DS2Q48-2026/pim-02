@@ -1,3 +1,5 @@
+#include "banco.c"
+
 /* UC08 - Cadastrar Recepcionista: cadastra uma nova recepcionista */
 void cadastrarRecepcionista()
 {
@@ -7,9 +9,12 @@ void cadastrarRecepcionista()
 /* UC09 - Consultar Recepcionista: lista e busca as recepcionistas */
 void consultarRecepcionista()
 {
-    consultarUsuarios("recepcionista", "Recepcionistas > Consultar");
-}
+    int id;
+    scanf("%d", &id);
+    consul_user("Recepcionistas", id);
+    getchar();
 
+}
 /* UC10 - Editar Recepcionista: altera os dados de uma recepcionista */
 void editarRecepcionista()
 {
