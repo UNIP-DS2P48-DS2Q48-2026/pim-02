@@ -663,7 +663,7 @@ void registrarEntrega()
     /* Exceção 7a: valor diferente do orçamento aprovado. O atendente confirma ou digita o valor de novo */
     do
     {
-        valor = lerValor("Valor recebido em R$ (ENTER para voltar): ");
+        valor = lerValor("Valor recebido em R$ (ex: 95.50, ENTER para voltar): ");
         if (valor < 0)
         {
             printf("\nNada foi gravado.");

@@ -13,7 +13,7 @@ void registrarOrcamento()
 
     printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
     printf("Se nao houve defeito, informe 0 (RN18).\n");
-    valor = lerValor("Valor da proposta em R$: ");
+    valor = lerValor("Valor da proposta em R$ (ex: 95.50): ");
     if (valor < 0)
     {
         printf("\n[!] Valor invalido. Nada foi gravado.");
@@ -43,7 +43,7 @@ void editarOrcamento()
         return;
 
     printf("\nValor recusado: R$ %.2f\n", ordens[i].orcamento);
-    valor = lerValor("Novo valor em R$: ");
+    valor = lerValor("Novo valor em R$ (ex: 95.50): ");
     if (valor < 0)
     {
         printf("\n[!] Valor invalido. Nada foi alterado.");

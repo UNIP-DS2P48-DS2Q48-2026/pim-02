@@ -146,19 +146,13 @@ int lerInteiro(char rotulo[])
     return valor;
 }
 
-/* Lê um valor em reais (aceita vírgula ou ponto); devolve -1 se ficou vazio ou não é valor */
+/* Lê um valor em reais, com ponto nos centavos (ex: 95.50); devolve -1 se ficou vazio ou não é valor */
 double lerValor(char rotulo[])
 {
     char texto[30];
     double valor;
-    int i;
 
     lerTexto(rotulo, texto, sizeof(texto));
-    for (i = 0; texto[i] != '\0'; i++)
-    {
-        if (texto[i] == ',')
-            texto[i] = '.';
-    }
     if (sscanf(texto, "%lf", &valor) != 1 || valor < 0)
         return -1;
     return valor;
