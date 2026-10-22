@@ -24,13 +24,8 @@ void registrarOrcamento()
     ordens[i].orcamento = valor;
     strcpy(ordens[i].resultado_resposta_cliente, "");
     dataHoraAgora(ordens[i].atualizado_em);
-    if (!salvarOrdens())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Orcamento de R$ %.2f enviado! A OS %d aguarda a resposta do cliente.", valor, ordens[i].id_os);
+    if (salvarOrdens())
+        printf("\n[+] Orcamento de R$ %.2f enviado! A OS %d aguarda a resposta do cliente.", valor, ordens[i].id_os);
     pausar();
 }
 
@@ -60,13 +55,8 @@ void editarOrcamento()
     ordens[i].orcamento = valor;
     strcpy(ordens[i].resultado_resposta_cliente, "");
     dataHoraAgora(ordens[i].atualizado_em);
-    if (!salvarOrdens())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Orcamento reenviado com o valor de R$ %.2f! A OS %d aguarda nova resposta.", valor, ordens[i].id_os);
+    if (salvarOrdens())
+        printf("\n[+] Orcamento reenviado com o valor de R$ %.2f! A OS %d aguarda nova resposta.", valor, ordens[i].id_os);
     pausar();
 }
 
@@ -80,36 +70,24 @@ void consultarOrcamento()
 
     for (i = 0; i < totalOrdens; i++)
     {
-        /* O cliente só vê os orçamentos das próprias OS (RI10) */
-        if (!podeVerOS(i) || ordens[i].orcamento < 0)
-            continue;
+        /* O cliente só vê os orçamentos das próprias OS (RI10); -1 = OS ainda sem orçamento */
+        if (podeVerOS(i) && ordens[i].orcamento >= 0)
+        {
+            nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
 
-        if (mostrados == 0)
-        {
-            printf("\n  %-4s %-20s %-12s %-12s %s\n", "OS", "Cliente", "Valor (R$)", "Resposta", "Status da OS");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-        nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
-
-        /* Situação do orçamento (passo 5): resposta vazia = o cliente ainda não respondeu */
-        if (strlen(ordens[i].resultado_resposta_cliente) == 0)
-        {
-            strcpy(resposta, "aguardando");
-        }
-        else
-        {
+            /* Passo 5: resposta vazia = o cliente ainda não respondeu */
             strcpy(resposta, ordens[i].resultado_resposta_cliente);
-        }
+            if (strlen(resposta) == 0)
+                strcpy(resposta, "aguardando");
 
-        printf("  %-4d %-20.20s %-12.2f %-12s %s\n", ordens[i].id_os, dono, ordens[i].orcamento, resposta,
-               ordens[i].status);
-        mostrados++;
+            printf("OS %d - %s - R$ %.2f - %s - %s\n", ordens[i].id_os, dono, ordens[i].orcamento, resposta,
+                   ordens[i].status);
+            mostrados++;
+        }
     }
 
     if (mostrados == 0)
-    {
         printf("\n[!] Nenhuma OS com orcamento registrado.\n");
-    }
     pausar();
 }
 
@@ -126,7 +104,7 @@ void responderOrcamento(char resposta[], char titulo[])
         return;
 
     printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
-    printf("Valor:       R$ %.2f\n", ordens[i].orcamento);
+    printf("Valor: R$ %.2f\n", ordens[i].orcamento);
     if (!confirmar("\nConfirma a resposta?"))
     {
         printf("\nOperacao cancelada. O orcamento continua aguardando resposta.");
@@ -136,13 +114,8 @@ void responderOrcamento(char resposta[], char titulo[])
 
     strcpy(ordens[i].resultado_resposta_cliente, resposta);
     dataHoraAgora(ordens[i].atualizado_em);
-    if (!salvarOrdens())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Orcamento %s na OS %d.", resposta, ordens[i].id_os);
+    if (salvarOrdens())
+        printf("\n[+] Orcamento %s na OS %d.", resposta, ordens[i].id_os);
     pausar();
 }
 
@@ -180,12 +153,7 @@ void arquivarOrcamento()
     /* "Arquivada" é a OS cancelada por recusa: o registro continua no histórico (RN09) */
     strcpy(ordens[i].status, "cancelada");
     dataHoraAgora(ordens[i].atualizado_em);
-    if (!salvarOrdens())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] OS %d arquivada. O historico foi preservado.", ordens[i].id_os);
+    if (salvarOrdens())
+        printf("\n[+] OS %d arquivada. O historico foi preservado.", ordens[i].id_os);
     pausar();
 }

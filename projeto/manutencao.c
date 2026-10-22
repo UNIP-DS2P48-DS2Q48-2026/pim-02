@@ -1,22 +1,9 @@
 /* ---------- Casos de uso da manutenção ---------- */
 
-/* Confere se algum técnico da OS já registrou o reparo (UC33 grava "Reparo: ...") */
-int osTemReparo(int idOS)
-{
-    int i;
-
-    for (i = 0; i < totalTecnicosOS; i++)
-    {
-        if (tecnicosOS[i].id_os == idOS && contemTexto(tecnicosOS[i].observacoes_tecnicas, "reparo:"))
-            return 1;
-    }
-    return 0;
-}
-
 /* UC31 - Registrar Observacao Tecnica sobre Equipamento: o tecnico anota a vistoria na OS */
 void registrarObservacao()
 {
-    char observacao[300], texto[600];
+    char observacao[300], texto[610];
     int i, k;
 
     imprimirCabecalho("Manutencao > Registrar Observacao Tecnica");
@@ -35,21 +22,21 @@ void registrarObservacao()
 
     /* Cada técnico tem a sua observação na OS (tabela tecnico_os) */
     k = buscarTecnicoNaOS(usuarios[usuarioLogado].id_usuario, ordens[i].id_os);
-    if (k >= 0 && strlen(tecnicosOS[k].observacoes_tecnicas) > 0)
-    {
+    if (k >= 0)
         printf("Sua observacao atual: %s\n", tecnicosOS[k].observacoes_tecnicas);
-    }
 
     lerTexto("\nObservacao tecnica (ENTER para voltar): ", observacao, sizeof(observacao));
     if (strlen(observacao) == 0)
         return;
 
     /* Se o reparo (UC33) já foi registrado, a nova observação entra no fim, para o reparo não se perder */
-    if (k >= 0 && contemTexto(tecnicosOS[k].observacoes_tecnicas, "reparo:"))
-        sprintf(texto, "%s | %s", tecnicosOS[k].observacoes_tecnicas, observacao);
-    else
-        strcpy(texto, observacao);
-
+    strcpy(texto, observacao);
+    if (k >= 0 && strstr(tecnicosOS[k].observacoes_tecnicas, "Reparo:") != NULL)
+    {
+        strcpy(texto, tecnicosOS[k].observacoes_tecnicas);
+        strcat(texto, " | ");
+        strcat(texto, observacao);
+    }
     if (strlen(texto) >= sizeof(tecnicosOS[0].observacoes_tecnicas))
     {
         printf("\n[!] O texto ficou maior que o espaco das observacoes. Escreva de forma mais curta.");
@@ -57,6 +44,7 @@ void registrarObservacao()
         return;
     }
 
+    /* Admin cobrindo o técnico (RN11) ainda não está na OS: ganha a linha dele */
     if (k < 0)
     {
         k = novaLinhaTecnicoOS(usuarios[usuarioLogado].id_usuario, ordens[i].id_os);
@@ -66,13 +54,8 @@ void registrarObservacao()
 
     strcpy(tecnicosOS[k].observacoes_tecnicas, texto);
     dataHoraAgora(tecnicosOS[k].atualizado_em);
-    if (!salvarTecnicosOS())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Observacao registrada na OS %d!", ordens[i].id_os);
+    if (salvarTecnicosOS())
+        printf("\n[+] Observacao registrada na OS %d!", ordens[i].id_os);
     pausar();
 }
 
@@ -111,10 +94,7 @@ void registrarDiagnostico()
         if (tecnicosOS[k].id_os == ordens[i].id_os && strlen(tecnicosOS[k].observacoes_tecnicas) > 0)
         {
             t = buscarUsuarioPorId(tecnicosOS[k].id_tecnico);
-            if (t >= 0)
-                printf("  - %s: %s\n", usuarios[t].nome, tecnicosOS[k].observacoes_tecnicas);
-            else
-                printf("  - ?: %s\n", tecnicosOS[k].observacoes_tecnicas);
+            printf("- %s: %s\n", usuarios[t].nome, tecnicosOS[k].observacoes_tecnicas);
             observacoes++;
         }
     }
@@ -122,45 +102,37 @@ void registrarDiagnostico()
     /* A observação é opcional (RF05): só avisa */
     if (observacoes == 0)
     {
-        printf("  (nenhuma observacao registrada)\n");
+        printf("(nenhuma observacao registrada)\n");
         if (!confirmar("\nA observacao tecnica e opcional. Deseja continuar mesmo assim?"))
             return;
     }
 
-    if (strlen(ordens[i].diagnostico) > 0)
-    {
-        printf("\nDiagnostico atual: %s\n", ordens[i].diagnostico);
-    }
-
-    printf("\n  1 - Defeito encontrado\n");
-    printf("  2 - Nenhum defeito encontrado\n");
-    printf("  0 - Voltar\n\n");
+    printf("\nDiagnostico atual: %s\n", ordens[i].diagnostico);
+    printf("1 - Defeito encontrado\n");
+    printf("2 - Nenhum defeito encontrado\n");
+    printf("0 - Voltar\n");
     opcao = lerInteiro("Opcao: ");
 
-    switch (opcao)
+    if (opcao == 1)
     {
-    case 1:
         lerTexto("\nDiagnostico (situacao e servico necessario, ENTER para voltar): ", diagnostico, sizeof(diagnostico));
         if (strlen(diagnostico) == 0)
             return;
-        break;
-    case 2:
+    }
+    else if (opcao == 2)
+    {
         /* RN18: sem defeito, a OS segue o fluxo normal com orçamento zero */
         strcpy(diagnostico, "Nenhum defeito encontrado, nenhum servico necessario");
-        break;
-    default:
+    }
+    else
+    {
         return;
     }
 
     strcpy(ordens[i].diagnostico, diagnostico);
     dataHoraAgora(ordens[i].atualizado_em);
-    if (!salvarOrdens())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Diagnostico registrado! A OS %d esta liberada para o orcamento.", ordens[i].id_os);
+    if (salvarOrdens())
+        printf("\n[+] Diagnostico registrado! A OS %d esta liberada para o orcamento.", ordens[i].id_os);
     pausar();
 }
 
@@ -192,13 +164,9 @@ void executarManutencao()
 
     printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
     if (ordens[i].orcamento == 0)
-    {
         printf("Orcamento de valor zero: registre que nenhum reparo foi necessario (RN18).\n");
-    }
     if (strcmp(ordens[i].resultado_teste, "reprovado") == 0)
-    {
         printf("O ultimo teste foi reprovado: registre o novo reparo.\n");
-    }
 
     lerTexto("\nAcoes realizadas (ENTER para voltar): ", acoes, sizeof(acoes));
     if (strlen(acoes) == 0)
@@ -206,11 +174,14 @@ void executarManutencao()
 
     /* As ações ficam no mesmo campo das observações, depois do que já foi anotado */
     k = buscarTecnicoNaOS(usuarios[usuarioLogado].id_usuario, ordens[i].id_os);
+    strcpy(texto, "");
     if (k >= 0 && strlen(tecnicosOS[k].observacoes_tecnicas) > 0)
-        sprintf(texto, "%s | Reparo: %s", tecnicosOS[k].observacoes_tecnicas, acoes);
-    else
-        sprintf(texto, "Reparo: %s", acoes);
-
+    {
+        strcpy(texto, tecnicosOS[k].observacoes_tecnicas);
+        strcat(texto, " | ");
+    }
+    strcat(texto, "Reparo: ");
+    strcat(texto, acoes);
     if (strlen(texto) >= sizeof(tecnicosOS[0].observacoes_tecnicas))
     {
         printf("\n[!] O texto ficou maior que o espaco das observacoes. Escreva as acoes de forma mais curta.");
@@ -252,7 +223,7 @@ void executarManutencao()
 /* UC34 - Registrar Teste de Funcionamento: aprova ou reprova o reparo antes da entrega */
 void registrarTeste()
 {
-    int i, opcao;
+    int i, k, temReparo = 0, opcao;
 
     imprimirCabecalho("Manutencao > Registrar Teste");
 
@@ -261,8 +232,13 @@ void registrarTeste()
     if (i < 0)
         return;
 
-    /* Segue a ordem do fluxo: primeiro Executar Manutencao (UC33), depois o teste */
-    if (!osTemReparo(ordens[i].id_os))
+    /* Segue a ordem do fluxo: primeiro Executar Manutencao (UC33, grava "Reparo: ..."), depois o teste */
+    for (k = 0; k < totalTecnicosOS; k++)
+    {
+        if (tecnicosOS[k].id_os == ordens[i].id_os && strstr(tecnicosOS[k].observacoes_tecnicas, "Reparo:") != NULL)
+            temReparo = 1;
+    }
+    if (!temReparo)
     {
         printf("\n[!] Nenhum reparo registrado na OS %d. Use Executar Manutencao antes do teste.", ordens[i].id_os);
         pausar();
@@ -278,23 +254,18 @@ void registrarTeste()
     }
 
     printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
-    printf("\nResultado do teste:\n");
-    printf("  1 - Aprovado (os testes funcionaram e o desempenho esta bom)\n");
-    printf("  2 - Reprovado (o equipamento ainda tem problema)\n");
-    printf("  0 - Voltar\n\n");
+    printf("Resultado do teste:\n");
+    printf("1 - Aprovado (os testes funcionaram e o desempenho esta bom)\n");
+    printf("2 - Reprovado (o equipamento ainda tem problema)\n");
+    printf("0 - Voltar\n");
     opcao = lerInteiro("Opcao: ");
 
-    switch (opcao)
-    {
-    case 1:
+    if (opcao == 1)
         strcpy(ordens[i].resultado_teste, "aprovado");
-        break;
-    case 2:
+    else if (opcao == 2)
         strcpy(ordens[i].resultado_teste, "reprovado");
-        break;
-    default:
+    else
         return;
-    }
 
     dataHoraAgora(ordens[i].atualizado_em);
     if (!salvarOrdens())
@@ -322,18 +293,11 @@ void listarProntasParaEntrega()
     if (i < 0)
         return;
 
-    /* Passo 4: contato do cliente, obtido pelo dono do equipamento da OS */
+    /* Passo 4: contato do cliente, dono do equipamento da OS */
     c = buscarUsuarioPorId(donoDoEquipamento(ordens[i].id_equipamento));
-    if (c < 0)
-    {
-        printf("\n[!] Cliente da OS %d nao encontrado.", ordens[i].id_os);
-        pausar();
-        return;
-    }
-
     printf("\nContato para combinar a retirada da OS %d:\n", ordens[i].id_os);
-    printf("  Cliente:  %s\n", usuarios[c].nome);
-    printf("  Telefone: %s\n", usuarios[c].telefone);
-    printf("  E-mail:   %s\n", usuarios[c].email);
+    printf("Cliente: %s\n", usuarios[c].nome);
+    printf("Telefone: %s\n", usuarios[c].telefone);
+    printf("E-mail: %s\n", usuarios[c].email);
     pausar();
 }
