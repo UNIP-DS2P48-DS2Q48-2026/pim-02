@@ -190,7 +190,7 @@ int podeVerEquipamento(int i)
     return 1;
 }
 
-/* Copia para destino o nome do cliente com este id, para as listagens */
+/* Copia para destino o nome do cliente com este id */
 void nomeDoCliente(int idCliente, char destino[])
 {
     int i = buscarUsuarioPorId(idCliente);
@@ -201,7 +201,7 @@ void nomeDoCliente(int idCliente, char destino[])
         strcpy(destino, "?");
 }
 
-/* Lista os equipamentos visíveis que batem com o filtro (cliente, tipo, marca ou número de série); devolve quantos mostrou.
+/* Lista os equipamentos visíveis cujo cliente, tipo, marca ou número de série contém o filtro; devolve quantos mostrou.
    status: "ativo" ou "inativo" para listar só esses, ou "" para listar todos */
 int listarEquipamentos(char filtro[], char status[])
 {
@@ -216,20 +216,12 @@ int listarEquipamentos(char filtro[], char status[])
             continue;
 
         nomeDoCliente(equipamentos[i].id_cliente, dono);
-        if (!contemTexto(dono, filtro) && !contemTexto(equipamentos[i].tipo, filtro) &&
-            !contemTexto(equipamentos[i].marca, filtro) && !contemTexto(equipamentos[i].modelo_numero_serie, filtro))
+        if (strstr(dono, filtro) == NULL && strstr(equipamentos[i].tipo, filtro) == NULL &&
+            strstr(equipamentos[i].marca, filtro) == NULL && strstr(equipamentos[i].modelo_numero_serie, filtro) == NULL)
             continue;
 
-        /* Cabeçalho da tabela antes do primeiro da lista */
-        if (mostrados == 0)
-        {
-            printf("\n  %-4s %-14s %-8s %-14s %-10s %-15s %s\n", "ID", "Cliente", "Categ.", "Tipo", "Marca",
-                   "Modelo/Serie", "Status");
-            printf("  ----------------------------------------------------------------------------\n");
-        }
-        printf("  %-4d %-14.14s %-8s %-14.14s %-10.10s %-15.15s %s\n", equipamentos[i].id_equipamento, dono,
-               equipamentos[i].categoria, equipamentos[i].tipo, equipamentos[i].marca,
-               equipamentos[i].modelo_numero_serie, equipamentos[i].status);
+        printf("ID %d - %s - %s - %s %s - %s - %s\n", equipamentos[i].id_equipamento, dono, equipamentos[i].categoria,
+               equipamentos[i].tipo, equipamentos[i].marca, equipamentos[i].modelo_numero_serie, equipamentos[i].status);
         mostrados++;
     }
     return mostrados;
@@ -269,7 +261,7 @@ int selecionarEquipamento(char status[])
 /* UC20 - Cadastrar Equipamento: cadastra um hardware ou software de um cliente */
 void cadastrarEquipamento()
 {
-    int i, n, iCliente, categoria, maiorId = 0;
+    int n, iCliente, categoria;
 
     imprimirCabecalho("Equipamentos > Cadastrar");
 
@@ -280,13 +272,13 @@ void cadastrarEquipamento()
         return;
     }
 
-    /* Vinculação do equipamento a um cliente ativo (RN01, RN14) */
+    /* O equipamento é de um cliente ativo (RN01, RN14) */
     printf("\nCliente proprietario:");
     iCliente = selecionarUsuario("cliente", "ativo");
     if (iCliente < 0)
         return;
 
-    printf("\nSelecione a Categoria do Equipamento:\n");
+    printf("\nCategoria do equipamento:\n");
     printf("1 - Hardware\n");
     printf("2 - Software\n");
     categoria = lerInteiro("Opcao: ");
@@ -312,31 +304,25 @@ void cadastrarEquipamento()
         lerTexto("Chave de Licenca: ", equipamentos[n].modelo_numero_serie, sizeof(equipamentos[n].modelo_numero_serie));
     }
 
-    /* Validação de campos obrigatórios (RNF09) */
+    /* Campos obrigatórios (RNF09) */
     if (!campoPreenchido(equipamentos[n].tipo, "Tipo") || !campoPreenchido(equipamentos[n].marca, "Marca") ||
         !campoPreenchido(equipamentos[n].modelo_numero_serie, "Modelo / Numero de Serie / Chave"))
         return;
 
-    for (i = 0; i < totalEquipamentos; i++)
-    {
-        if (equipamentos[i].id_equipamento > maiorId)
-            maiorId = equipamentos[i].id_equipamento;
-    }
-    equipamentos[n].id_equipamento = maiorId + 1;
+    /* O vetor está em ordem de id: o novo id é o id do último + 1 */
+    equipamentos[n].id_equipamento = 1;
+    if (n > 0)
+        equipamentos[n].id_equipamento = equipamentos[n - 1].id_equipamento + 1;
     equipamentos[n].id_cliente = usuarios[iCliente].id_usuario;
     strcpy(equipamentos[n].status, "ativo");
     dataHoraAgora(equipamentos[n].criado_em);
     strcpy(equipamentos[n].atualizado_em, equipamentos[n].criado_em);
 
     totalEquipamentos++;
-    if (!salvarEquipamentos())
-    {
+    if (salvarEquipamentos())
+        printf("\n[+] Equipamento cadastrado e vinculado a %s! ID: %d", usuarios[iCliente].nome, equipamentos[n].id_equipamento);
+    else
         totalEquipamentos--; /* não gravou: desfaz o cadastro */
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Equipamento cadastrado e vinculado a %s! ID: %d", usuarios[iCliente].nome, equipamentos[n].id_equipamento);
     pausar();
 }
 
@@ -358,9 +344,7 @@ void consultarEquipamento()
         /* Ativos e inativos aparecem, com o status, para preservar o histórico */
         mostrados = listarEquipamentos(filtro, "");
         if (mostrados == 0)
-        {
             printf("\n[!] Nenhum equipamento encontrado para o filtro informado. Tente outro filtro.\n");
-        }
     } while (mostrados == 0);
     pausar();
 }
@@ -368,7 +352,7 @@ void consultarEquipamento()
 /* UC22 - Editar Equipamento: altera tipo, marca e modelo/numero de serie */
 void editarEquipamento()
 {
-    char tipo[40], marca[40], serie[60], dono[60];
+    char tipo[40], marca[40], serie[60];
     int i;
 
     imprimirCabecalho("Equipamentos > Editar");
@@ -377,8 +361,7 @@ void editarEquipamento()
     if (i < 0)
         return;
 
-    nomeDoCliente(equipamentos[i].id_cliente, dono);
-    printf("\nEquipamento de %s (%s). Deixe em branco para manter o valor atual.\n\n", dono, equipamentos[i].categoria);
+    printf("\nDeixe em branco para manter o valor atual.\n");
     lerOuManter("Tipo", equipamentos[i].tipo, tipo, sizeof(tipo));
     lerOuManter("Marca", equipamentos[i].marca, marca, sizeof(marca));
     if (strcmp(equipamentos[i].categoria, "software") == 0)
@@ -390,13 +373,8 @@ void editarEquipamento()
     strcpy(equipamentos[i].marca, marca);
     strcpy(equipamentos[i].modelo_numero_serie, serie);
     dataHoraAgora(equipamentos[i].atualizado_em);
-    if (!salvarEquipamentos())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Equipamento ID %d atualizado com sucesso!", equipamentos[i].id_equipamento);
+    if (salvarEquipamentos())
+        printf("\n[+] Equipamento ID %d atualizado com sucesso!", equipamentos[i].id_equipamento);
     pausar();
 }
 
@@ -412,7 +390,7 @@ void inativarEquipamento()
     if (i < 0)
         return;
 
-    /* Bloqueio caso o equipamento tenha OS "aberta" ou "em andamento" (RN14) */
+    /* RN14: bloqueia se o equipamento tem OS aberta ou em andamento */
     if (equipamentoTemOSEmAndamento(equipamentos[i].id_equipamento))
     {
         printf("\n[!] O equipamento ID %d tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).",
@@ -430,23 +408,17 @@ void inativarEquipamento()
         return;
     }
 
-    /* Inativação preservando o histórico (RN12) */
+    /* Inativa sem apagar, preservando o histórico (RN12) */
     strcpy(equipamentos[i].status, "inativo");
     dataHoraAgora(equipamentos[i].atualizado_em);
-    if (!salvarEquipamentos())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
+    if (salvarEquipamentos())
+        printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
     pausar();
 }
 
 /* UC49 - Reativar Equipamento: volta um equipamento inativo para ativo (RF03) */
 void reativarEquipamento()
 {
-    char dono[60];
     int i, c, inativos = 0;
 
     imprimirCabecalho("Equipamentos > Reativar");
@@ -471,10 +443,9 @@ void reativarEquipamento()
 
     /* RN01 e RN14: o equipamento só volta se o cliente dono estiver ativo */
     c = buscarUsuarioPorId(equipamentos[i].id_cliente);
-    if (c < 0 || strcmp(usuarios[c].status, "ativo") != 0)
+    if (strcmp(usuarios[c].status, "ativo") != 0)
     {
-        nomeDoCliente(equipamentos[i].id_cliente, dono);
-        printf("\n[!] O cliente %s esta inativo. Reative o cliente antes do equipamento (RN14).", dono);
+        printf("\n[!] O cliente %s esta inativo. Reative o cliente antes do equipamento (RN14).", usuarios[c].nome);
         pausar();
         return;
     }
@@ -490,12 +461,7 @@ void reativarEquipamento()
 
     strcpy(equipamentos[i].status, "ativo");
     dataHoraAgora(equipamentos[i].atualizado_em);
-    if (!salvarEquipamentos())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Equipamento reativado. Ele volta a poder receber novas OS.");
+    if (salvarEquipamentos())
+        printf("\n[+] Equipamento reativado. Ele volta a poder receber novas OS.");
     pausar();
 }

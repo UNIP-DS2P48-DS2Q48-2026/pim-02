@@ -2,9 +2,7 @@
 int perfilLogado(char perfil[])
 {
     if (usuarioLogado >= 0 && strcmp(usuarios[usuarioLogado].perfil, perfil) == 0)
-    {
         return 1;
-    }
     return 0;
 }
 
@@ -57,6 +55,40 @@ int salvarUsuarios()
         usuariosNoBanco = totalUsuarios;
     return ok;
 }
+
+/* Lê a tabela usuario para o vetor */
+void carregarUsuarios()
+{
+    char numero[20];
+    int n;
+
+    totalUsuarios = 0;
+    usuariosNoBanco = 0;
+    /* CONVERT 120 devolve a data como AAAA-MM-DD HH:MM:SS, igual ao dataHoraAgora */
+    if (!bdConsultar("SELECT id_usuario, nome, email, telefone, senha, perfil, cpf, especialidade, status, "
+                     "CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
+                     "FROM usuario ORDER BY id_usuario"))
+        return;
+
+    while (totalUsuarios < MAX_USUARIOS && bdProximaLinha())
+    {
+        n = totalUsuarios;
+        bdLerTexto(1, numero, sizeof(numero));
+        usuarios[n].id_usuario = atoi(numero);
+        bdLerTexto(2, usuarios[n].nome, sizeof(usuarios[n].nome));
+        bdLerTexto(3, usuarios[n].email, sizeof(usuarios[n].email));
+        bdLerTexto(4, usuarios[n].telefone, sizeof(usuarios[n].telefone));
+        bdLerTexto(5, usuarios[n].senha, sizeof(usuarios[n].senha));
+        bdLerTexto(6, usuarios[n].perfil, sizeof(usuarios[n].perfil));
+        bdLerTexto(7, usuarios[n].cpf, sizeof(usuarios[n].cpf));
+        bdLerTexto(8, usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
+        bdLerTexto(9, usuarios[n].status, sizeof(usuarios[n].status));
+        bdLerTexto(10, usuarios[n].criado_em, sizeof(usuarios[n].criado_em));
+        bdLerTexto(11, usuarios[n].atualizado_em, sizeof(usuarios[n].atualizado_em));
+        totalUsuarios++;
+    }
+    usuariosNoBanco = totalUsuarios;
+}
 #else
 /* Regrava o usuario.txt inteiro com o que está no vetor */
 int salvarUsuarios()
@@ -81,73 +113,8 @@ int salvarUsuarios()
     fclose(arquivo);
     return 1;
 }
-#endif
 
-/* Coloca um usuário de teste no fim do vetor, com a senha byte123 */
-void adicionarUsuarioInicial(char nome[], char email[], char telefone[], char perfil[], char cpf[], char especialidade[])
-{
-    int n = totalUsuarios;
-
-    usuarios[n].id_usuario = n + 1;
-    strcpy(usuarios[n].nome, nome);
-    strcpy(usuarios[n].email, email);
-    strcpy(usuarios[n].telefone, telefone);
-    gerarHash("byte123", usuarios[n].senha);
-    strcpy(usuarios[n].perfil, perfil);
-    strcpy(usuarios[n].cpf, cpf);
-    strcpy(usuarios[n].especialidade, especialidade);
-    strcpy(usuarios[n].status, "ativo");
-    dataHoraAgora(usuarios[n].criado_em);
-    strcpy(usuarios[n].atualizado_em, usuarios[n].criado_em);
-    totalUsuarios++;
-}
-
-#if USAR_SQLSERVER
-/* Lê a tabela usuario para o vetor; se ela estiver vazia, cria os usuários de teste do grupo */
-void carregarUsuarios()
-{
-    char numero[20];
-    int n;
-
-    totalUsuarios = 0;
-    usuariosNoBanco = 0;
-    /* CONVERT 120 devolve a data como AAAA-MM-DD HH:MM:SS, igual ao dataHoraAgora */
-    if (!bdConsultar("SELECT id_usuario, nome, email, telefone, senha, perfil, cpf, especialidade, status, "
-                     "CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
-                     "FROM usuario ORDER BY id_usuario"))
-    {
-        return;
-    }
-    while (totalUsuarios < MAX_USUARIOS && bdProximaLinha())
-    {
-        n = totalUsuarios;
-        bdLerTexto(1, numero, sizeof(numero));
-        usuarios[n].id_usuario = atoi(numero);
-        bdLerTexto(2, usuarios[n].nome, sizeof(usuarios[n].nome));
-        bdLerTexto(3, usuarios[n].email, sizeof(usuarios[n].email));
-        bdLerTexto(4, usuarios[n].telefone, sizeof(usuarios[n].telefone));
-        bdLerTexto(5, usuarios[n].senha, sizeof(usuarios[n].senha));
-        bdLerTexto(6, usuarios[n].perfil, sizeof(usuarios[n].perfil));
-        bdLerTexto(7, usuarios[n].cpf, sizeof(usuarios[n].cpf));
-        bdLerTexto(8, usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
-        bdLerTexto(9, usuarios[n].status, sizeof(usuarios[n].status));
-        bdLerTexto(10, usuarios[n].criado_em, sizeof(usuarios[n].criado_em));
-        bdLerTexto(11, usuarios[n].atualizado_em, sizeof(usuarios[n].atualizado_em));
-        totalUsuarios++;
-    }
-    usuariosNoBanco = totalUsuarios;
-
-    if (totalUsuarios == 0)
-    {
-        adicionarUsuarioInicial("Ana", "ana@bytetech.com", "", "admin", "", "");
-        adicionarUsuarioInicial("Carla", "carla@bytetech.com", "", "recepcionista", "", "");
-        adicionarUsuarioInicial("Rafael", "rafael@bytetech.com", "", "tecnico", "", "Hardware");
-        adicionarUsuarioInicial("Joao Pereira", "joao.pereira@email.com", "(11) 90000-0000", "cliente", "111.111.111-11", "");
-        salvarUsuarios();
-    }
-}
-#else
-/* Lê o usuario.txt para o vetor; se o arquivo não existir, cria os usuários de teste do grupo */
+/* Lê o usuario.txt para o vetor (sem arquivo = nenhum usuário ainda) */
 void carregarUsuarios()
 {
     FILE *arquivo;
@@ -158,19 +125,11 @@ void carregarUsuarios()
     totalUsuarios = 0;
     arquivo = fopen(ARQ_USUARIO, "r");
     if (arquivo == NULL)
-    {
-        adicionarUsuarioInicial("Ana", "ana@bytetech.com", "", "admin", "", "");
-        adicionarUsuarioInicial("Carla", "carla@bytetech.com", "", "recepcionista", "", "");
-        adicionarUsuarioInicial("Rafael", "rafael@bytetech.com", "", "tecnico", "", "Hardware");
-        adicionarUsuarioInicial("Joao Pereira", "joao.pereira@email.com", "(11) 90000-0000", "cliente", "111.111.111-11", "");
-        salvarUsuarios();
         return;
-    }
 
-    /* Uma linha por usuário, campos na mesma ordem do salvarUsuarios */
     while (totalUsuarios < MAX_USUARIOS && fgets(linha, sizeof(linha), arquivo) != NULL)
     {
-        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
+        /* Pula o cabeçalho: toda linha de dados começa com o id (um número) */
         if (linha[0] < '0' || linha[0] > '9')
             continue;
 
@@ -193,7 +152,26 @@ void carregarUsuarios()
 }
 #endif
 
-/* ---------- Funções comuns aos cadastros de usuário (UC04 a UC19) ---------- */
+/* Coloca um usuário de teste no fim do vetor, com a senha byte123 (usado no main na primeira vez) */
+void adicionarUsuarioInicial(char nome[], char email[], char telefone[], char perfil[], char cpf[], char especialidade[])
+{
+    int n = totalUsuarios;
+
+    usuarios[n].id_usuario = n + 1;
+    strcpy(usuarios[n].nome, nome);
+    strcpy(usuarios[n].email, email);
+    strcpy(usuarios[n].telefone, telefone);
+    gerarHash("byte123", usuarios[n].senha);
+    strcpy(usuarios[n].perfil, perfil);
+    strcpy(usuarios[n].cpf, cpf);
+    strcpy(usuarios[n].especialidade, especialidade);
+    strcpy(usuarios[n].status, "ativo");
+    dataHoraAgora(usuarios[n].criado_em);
+    strcpy(usuarios[n].atualizado_em, usuarios[n].criado_em);
+    totalUsuarios++;
+}
+
+/* ---------- Funções comuns aos cadastros de usuário (UC04 a UC19, UC45 a UC48) ---------- */
 
 /* Posição no vetor do usuário com este id (-1 se não existir) */
 int buscarUsuarioPorId(int id)
@@ -208,7 +186,7 @@ int buscarUsuarioPorId(int id)
     return -1;
 }
 
-/* RN13: e-mail já usado por outro usuário? ignorar = posição que está sendo editada (-1 no cadastro) */
+/* RN13: e-mail já usado por outro usuário? ignorar = posição que está sendo cadastrada ou editada */
 int emailEmUso(char email[], int ignorar)
 {
     int i;
@@ -231,25 +209,6 @@ int cpfEmUso(char cpf[], int ignorar)
         if (i != ignorar && strcmp(usuarios[i].cpf, cpf) == 0)
             return 1;
     }
-    return 0;
-}
-
-/* E-mail válido: não começa com @, tem um @ e um ponto depois dele */
-int emailValido(char email[])
-{
-    int i, temArroba = 0, temPonto = 0;
-
-    if (email[0] == '@')
-        return 0;
-    for (i = 0; email[i] != '\0'; i++)
-    {
-        if (email[i] == '@')
-            temArroba = 1;
-        else if (email[i] == '.' && temArroba == 1)
-            temPonto = 1;
-    }
-    if (temArroba == 1 && temPonto == 1)
-        return 1;
     return 0;
 }
 
@@ -311,30 +270,26 @@ int temOSEmAndamento(int idUsuario)
     return 0;
 }
 
-/* RN10: o técnico tem alguma OS atribuída a ele com equipamento deste cliente? */
-int tecnicoAtendeCliente(int idTecnico, int idCliente)
+/* RN10: o usuário logado pode ver este cadastro? O técnico só vê os clientes das OS dele */
+int podeVerUsuario(int i, char perfil[])
 {
-    int i;
+    int k;
 
-    for (i = 0; i < totalOrdens; i++)
+    if (strcmp(usuarios[i].perfil, perfil) != 0)
+        return 0;
+    if (!perfilLogado("tecnico"))
+        return 1;
+
+    for (k = 0; k < totalOrdens; k++)
     {
-        if (donoDoEquipamento(ordens[i].id_equipamento) == idCliente && buscarTecnicoNaOS(idTecnico, ordens[i].id_os) >= 0)
+        if (donoDoEquipamento(ordens[k].id_equipamento) == usuarios[i].id_usuario &&
+            buscarTecnicoNaOS(usuarios[usuarioLogado].id_usuario, ordens[k].id_os) >= 0)
             return 1;
     }
     return 0;
 }
 
-/* RN10: o usuário logado pode ver este cadastro? (técnico só vê clientes das OS dele) */
-int podeVerUsuario(int i, char perfil[])
-{
-    if (strcmp(usuarios[i].perfil, perfil) != 0)
-        return 0;
-    if (perfilLogado("tecnico"))
-        return tecnicoAtendeCliente(usuarios[usuarioLogado].id_usuario, usuarios[i].id_usuario);
-    return 1;
-}
-
-/* Lista os usuários do perfil que batem com o filtro (nome, e-mail ou CPF); devolve quantos mostrou.
+/* Lista os usuários do perfil cujo nome, e-mail ou CPF contém o filtro; devolve quantos mostrou.
    status: "ativo" ou "inativo" para listar só esses, ou "" para listar todos */
 int listarUsuarios(char perfil[], char filtro[], char status[])
 {
@@ -346,32 +301,23 @@ int listarUsuarios(char perfil[], char filtro[], char status[])
             continue;
         if (strlen(status) > 0 && strcmp(usuarios[i].status, status) != 0)
             continue;
-        if (!contemTexto(usuarios[i].nome, filtro) && !contemTexto(usuarios[i].email, filtro) &&
-            !contemTexto(usuarios[i].cpf, filtro))
+        /* strstr procura o filtro dentro do texto (filtro vazio aparece em qualquer texto) */
+        if (strstr(usuarios[i].nome, filtro) == NULL && strstr(usuarios[i].email, filtro) == NULL &&
+            strstr(usuarios[i].cpf, filtro) == NULL)
             continue;
 
-        /* Cabeçalho da tabela antes do primeiro da lista */
-        if (mostrados == 0)
-        {
-            printf("\n  %-4s %-22s %-26s %-15s %s\n", "ID", "Nome", "E-mail", "CPF/Especial.", "Status");
-            printf("  ---------------------------------------------------------------------------\n");
-        }
-
-        printf("  %-4d %-22.22s %-26.26s ", usuarios[i].id_usuario, usuarios[i].nome, usuarios[i].email);
+        printf("ID %d - %s - %s - %s", usuarios[i].id_usuario, usuarios[i].nome, usuarios[i].email, usuarios[i].status);
         if (strcmp(perfil, "cliente") == 0)
-            printf("%-15.15s %s\n", usuarios[i].cpf, usuarios[i].status);
-        else
-            printf("%-15.15s %s\n", usuarios[i].especialidade, usuarios[i].status);
-
-        if (strlen(usuarios[i].telefone) > 0)
-            printf("       Telefone: %s\n", usuarios[i].telefone);
+            printf(" - CPF %s - Telefone %s", usuarios[i].cpf, usuarios[i].telefone);
+        if (strcmp(perfil, "tecnico") == 0)
+            printf(" - %s", usuarios[i].especialidade);
+        printf("\n");
         mostrados++;
     }
     return mostrados;
 }
 
-/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido).
-   status: "ativo", "inativo" ou "" (todos), como no listarUsuarios */
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
 int selecionarUsuario(char perfil[], char status[])
 {
     char filtro[60];
@@ -402,22 +348,20 @@ int selecionarUsuario(char perfil[], char status[])
     return i;
 }
 
-/* Mostra o valor atual entre colchetes e lê o novo em destino; ENTER mantém o atual */
+/* Mostra o valor atual entre colchetes e lê o novo; ENTER mantém o atual */
 void lerOuManter(char rotulo[], char atual[], char destino[], int tamanho)
 {
     printf("%s [%s]: ", rotulo, atual);
     lerTexto("", destino, tamanho);
     if (strlen(destino) == 0)
-    {
         strcpy(destino, atual);
-    }
 }
 
 /* Cadastrar (UC04, UC08, UC12, UC16): nome, e-mail e senha; cliente com telefone e CPF; técnico com especialidade */
 void cadastrarUsuario(char perfil[], char titulo[])
 {
     char senha[50];
-    int i, n, maiorId = 0;
+    int n;
 
     imprimirCabecalho(titulo);
 
@@ -444,24 +388,16 @@ void cadastrarUsuario(char perfil[], char titulo[])
         lerTexto("CPF: ", usuarios[n].cpf, sizeof(usuarios[n].cpf));
     }
     if (strcmp(perfil, "tecnico") == 0)
-    {
         lerTexto("Especialidade: ", usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
-    }
     lerTexto("Senha: ", senha, sizeof(senha));
 
-    /* Validações antes de gravar (RNF09, RN13) */
+    /* Campos obrigatórios (RNF09) e e-mail/CPF únicos (RN13) */
     if (!campoPreenchido(usuarios[n].email, "E-mail") || !campoPreenchido(senha, "Senha"))
         return;
     if (strcmp(perfil, "cliente") == 0 && !campoPreenchido(usuarios[n].cpf, "CPF"))
         return;
     if (strcmp(perfil, "tecnico") == 0 && !campoPreenchido(usuarios[n].especialidade, "Especialidade"))
         return;
-    if (!emailValido(usuarios[n].email))
-    {
-        printf("\n[!] E-mail invalido. Nada foi gravado.");
-        pausar();
-        return;
-    }
     if (emailEmUso(usuarios[n].email, n))
     {
         printf("\n[!] Este e-mail ja pertence a outro usuario (RN13). Nada foi gravado.");
@@ -475,13 +411,8 @@ void cadastrarUsuario(char perfil[], char titulo[])
         return;
     }
 
-    /* O novo id é o maior id existente + 1 */
-    for (i = 0; i < totalUsuarios; i++)
-    {
-        if (usuarios[i].id_usuario > maiorId)
-            maiorId = usuarios[i].id_usuario;
-    }
-    usuarios[n].id_usuario = maiorId + 1;
+    /* O vetor está em ordem de id: o novo id é o id do último + 1 */
+    usuarios[n].id_usuario = usuarios[n - 1].id_usuario + 1;
     strcpy(usuarios[n].perfil, perfil);
     strcpy(usuarios[n].status, "ativo");
     gerarHash(senha, usuarios[n].senha);
@@ -489,14 +420,10 @@ void cadastrarUsuario(char perfil[], char titulo[])
     strcpy(usuarios[n].atualizado_em, usuarios[n].criado_em);
 
     totalUsuarios++;
-    if (!salvarUsuarios())
-    {
+    if (salvarUsuarios())
+        printf("\n[+] Cadastro realizado com sucesso! ID: %d", usuarios[n].id_usuario);
+    else
         totalUsuarios--; /* não gravou: desfaz o cadastro */
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Cadastro realizado com sucesso! ID: %d", usuarios[n].id_usuario);
     pausar();
 }
 
@@ -504,7 +431,6 @@ void cadastrarUsuario(char perfil[], char titulo[])
 void consultarUsuarios(char perfil[], char titulo[])
 {
     char filtro[60];
-
     int mostrados;
 
     imprimirCabecalho(titulo);
@@ -518,9 +444,7 @@ void consultarUsuarios(char perfil[], char titulo[])
 
         mostrados = listarUsuarios(perfil, filtro, "");
         if (mostrados == 0)
-        {
             printf("\n[!] Nenhum cadastro encontrado para o filtro informado. Tente outro filtro.\n");
-        }
     } while (mostrados == 0);
     pausar();
 }
@@ -538,7 +462,7 @@ void editarUsuario(char perfil[], char titulo[])
         return;
 
     /* Lê tudo em variáveis locais; o cadastro só muda depois das validações */
-    printf("\nDeixe em branco para manter o valor atual.\n\n");
+    printf("\nDeixe em branco para manter o valor atual.\n");
     lerOuManter("Nome", usuarios[i].nome, nome, sizeof(nome));
     lerOuManter("E-mail", usuarios[i].email, email, sizeof(email));
     strcpy(telefone, usuarios[i].telefone);
@@ -550,17 +474,9 @@ void editarUsuario(char perfil[], char titulo[])
         lerOuManter("CPF", usuarios[i].cpf, cpf, sizeof(cpf));
     }
     if (strcmp(perfil, "tecnico") == 0)
-    {
         lerOuManter("Especialidade", usuarios[i].especialidade, especialidade, sizeof(especialidade));
-    }
     lerTexto("Nova senha [manter]: ", senha, sizeof(senha));
 
-    if (!emailValido(email))
-    {
-        printf("\n[!] E-mail invalido. Nada foi alterado.");
-        pausar();
-        return;
-    }
     if (emailEmUso(email, i))
     {
         printf("\n[!] Este e-mail ja pertence a outro usuario (RN13). Nada foi alterado.");
@@ -580,17 +496,10 @@ void editarUsuario(char perfil[], char titulo[])
     strcpy(usuarios[i].cpf, cpf);
     strcpy(usuarios[i].especialidade, especialidade);
     if (strlen(senha) > 0)
-    {
         gerarHash(senha, usuarios[i].senha);
-    }
     dataHoraAgora(usuarios[i].atualizado_em);
-    if (!salvarUsuarios())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Cadastro de %s atualizado com sucesso!", usuarios[i].nome);
+    if (salvarUsuarios())
+        printf("\n[+] Cadastro de %s atualizado com sucesso!", usuarios[i].nome);
     pausar();
 }
 
@@ -629,17 +538,12 @@ void inativarUsuario(char perfil[], char titulo[])
 
     strcpy(usuarios[i].status, "inativo");
     dataHoraAgora(usuarios[i].atualizado_em);
-    if (!salvarUsuarios())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado (RN12).", usuarios[i].nome);
+    if (salvarUsuarios())
+        printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado (RN12).", usuarios[i].nome);
     pausar();
 }
 
-/* Reativar (UC45, UC46, UC47, UC48): volta um cadastro inativo para ativo (RF02); o usuário volta a poder entrar */
+/* Reativar (UC45, UC46, UC47, UC48): volta um cadastro inativo para ativo (RF02) */
 void reativarUsuario(char perfil[], char titulo[])
 {
     int i, inativos = 0;
@@ -674,53 +578,23 @@ void reativarUsuario(char perfil[], char titulo[])
 
     strcpy(usuarios[i].status, "ativo");
     dataHoraAgora(usuarios[i].atualizado_em);
-    if (!salvarUsuarios())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] %s reativado(a). O acesso ao sistema foi liberado.", usuarios[i].nome);
+    if (salvarUsuarios())
+        printf("\n[+] %s reativado(a). O acesso ao sistema foi liberado.", usuarios[i].nome);
     pausar();
 }
 
-/* UC01 - Realizar Login: autentica por e-mail e senha e abre o menu do perfil */
+/* UC01 - Realizar Login: autentica por e-mail e senha; devolve a posição do usuário ou -1 */
 int realizarLogin()
 {
-    char email[60];
-    char senha[50];
-    char hash[TAM_HASH];
+    char email[60], senha[50], hash[TAM_HASH];
     int i;
 
-    /* --- PASSO 1: E-MAIL --- */
     imprimirCabecalho("Entrar");
-
-    for (i = 0; i < 15; i++)
-    {
-        printf("\n");
-    }
-
     lerTexto("E-mail (ENTER para voltar): ", email, sizeof(email));
     if (strlen(email) == 0)
-    {
         return -1;
-    }
-
-    /* --- PASSO 2: SENHA --- */
-    imprimirCabecalho("Entrar");
-
-    /* O e-mail fica agora fixo no topo, logo abaixo do cabeçalho */
-    printf("\nE-mail: %s\n", email);
-
-    /* Espaçamento para o campo de senha na zona inferior */
-    for (i = 0; i < 13; i++)
-    {
-        printf("\n");
-    }
-
     lerTexto("Senha: ", senha, sizeof(senha));
 
-    /* --- VALIDAÇÃO --- */
     gerarHash(senha, hash);
     for (i = 0; i < totalUsuarios; i++)
     {
@@ -732,7 +606,7 @@ int realizarLogin()
                 pausar();
                 return -1;
             }
-            return i; /* Retorna o índice do usuário autenticado */
+            return i;
         }
     }
 
@@ -742,45 +616,42 @@ int realizarLogin()
     return -1;
 }
 
-/* UC02 - Fazer Logout: encerra a sessao e volta para a tela inicial */
+/* UC02 - Fazer Logout: encerra a sessão e volta para a tela inicial */
 void fazerLogout()
 {
     usuarioLogado = -1;
     printf("\nEncerrando a sessao...\n");
 }
 
-/* UC03 - Consultar Meus Dados: mostra o cadastro do usuario logado */
+/* UC03 - Consultar Meus Dados: mostra o cadastro do usuário logado */
 void consultarMeusDados()
 {
     int i = usuarioLogado;
 
     imprimirCabecalho("Meus Dados");
-
-    printf("\n  Nome:     %s\n", usuarios[i].nome);
-    printf("  E-mail:   %s\n", usuarios[i].email);
-    if (strlen(usuarios[i].telefone) > 0)
-        printf("  Telefone: %s\n", usuarios[i].telefone);
-    printf("  Perfil:   %s\n", usuarios[i].perfil);
-    if (strlen(usuarios[i].cpf) > 0)
-        printf("  CPF:      %s\n", usuarios[i].cpf);
-    if (strlen(usuarios[i].especialidade) > 0)
-        printf("  Especialidade: %s\n", usuarios[i].especialidade);
+    printf("Nome: %s\n", usuarios[i].nome);
+    printf("E-mail: %s\n", usuarios[i].email);
+    printf("Perfil: %s\n", usuarios[i].perfil);
+    if (strcmp(usuarios[i].perfil, "cliente") == 0)
+    {
+        printf("Telefone: %s\n", usuarios[i].telefone);
+        printf("CPF: %s\n", usuarios[i].cpf);
+    }
+    if (strcmp(usuarios[i].perfil, "tecnico") == 0)
+        printf("Especialidade: %s\n", usuarios[i].especialidade);
     pausar();
 }
 
-/* UC44 - Alterar Senha: troca a propria senha, confirmando a senha atual */
+/* UC44 - Alterar Senha: troca a própria senha, confirmando a senha atual */
 void alterarSenha()
 {
-    char atual[50], nova[50], confirmacao[50];
-    char hash[TAM_HASH];
+    char atual[50], nova[50], confirmacao[50], hash[TAM_HASH];
 
     imprimirCabecalho("Alterar Senha");
 
     lerTexto("\nSenha atual (ENTER para voltar): ", atual, sizeof(atual));
     if (strlen(atual) == 0)
-    {
         return;
-    }
     gerarHash(atual, hash);
     if (strcmp(hash, usuarios[usuarioLogado].senha) != 0)
     {
@@ -801,19 +672,12 @@ void alterarSenha()
         }
         lerTexto("Confirme a nova senha: ", confirmacao, sizeof(confirmacao));
         if (strcmp(nova, confirmacao) != 0)
-        {
-            printf("\n[!] As senhas nao conferem. Digite novamente.\n\n");
-        }
+            printf("\n[!] As senhas nao conferem. Digite novamente.\n");
     } while (strcmp(nova, confirmacao) != 0);
 
     gerarHash(nova, usuarios[usuarioLogado].senha);
     dataHoraAgora(usuarios[usuarioLogado].atualizado_em);
-    if (!salvarUsuarios())
-    {
-        pausar();
-        return;
-    }
-
-    printf("\n[+] Senha alterada com sucesso!");
+    if (salvarUsuarios())
+        printf("\n[+] Senha alterada com sucesso!");
     pausar();
 }

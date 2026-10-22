@@ -13,10 +13,10 @@ void consultarHistorico()
         if (e < 0)
             return;
 
-        printf("\nEquipamento %d: %s %s (%s)\n", equipamentos[e].id_equipamento, equipamentos[e].tipo,
+        printf("\nEquipamento %d: %s %s - %s\n", equipamentos[e].id_equipamento, equipamentos[e].tipo,
                equipamentos[e].marca, equipamentos[e].modelo_numero_serie);
 
-        /* As OS do equipamento, inclusive finalizadas e canceladas (RN09), dentro do escopo do perfil:
+        /* Todas as OS do equipamento, inclusive finalizadas e canceladas (RN09);
            o técnico só vê as OS em que trabalhou (RN10) */
         mostrados = 0;
         for (i = 0; i < totalOrdens; i++)
@@ -29,9 +29,7 @@ void consultarHistorico()
         }
 
         if (mostrados == 0)
-        {
             printf("\n[!] Este equipamento ainda nao tem historico de atendimento. Escolha outro.\n");
-        }
     } while (mostrados == 0);
     pausar();
 }
@@ -42,17 +40,16 @@ void gerarRelatorio()
     /* Matriz: uma linha por mês (0 = janeiro ... 11 = dezembro), uma coluna por status */
     int contagem[12][4];
     char nomesMes[12][4] = {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"};
-    char ano[10], hoje[TAM_DATA], anoDaOS[5], mesDaOS[3];
-    int i, m, s, totalMes, satisfeitos = 0, comFeedback = 0;
+    char ano[TAM_DATA], anoDaOS[5], mesDaOS[3];
+    int i, m, s, satisfeitos = 0, comFeedback = 0;
 
     imprimirCabecalho("Relatorios");
 
     lerTexto("\nAno (AAAA, ENTER para o ano atual): ", ano, sizeof(ano));
     if (strlen(ano) == 0)
     {
-        dataHoje(hoje); /* AAAA-MM-DD: fica só com o AAAA */
-        hoje[4] = '\0';
-        strcpy(ano, hoje);
+        dataHoje(ano); /* AAAA-MM-DD: fica só com o AAAA */
+        ano[4] = '\0';
     }
 
     /* Zera a matriz */
@@ -67,7 +64,7 @@ void gerarRelatorio()
     /* Conta cada OS na linha do mês e na coluna do status */
     for (i = 0; i < totalOrdens; i++)
     {
-        /* data_abertura = AAAA-MM-DD: separa o ano (posições 0 a 3) e o mês (posições 5 e 6) */
+        /* data_abertura = AAAA-MM-DD: o ano são as posições 0 a 3 e o mês as posições 5 e 6 */
         anoDaOS[0] = ordens[i].data_abertura[0];
         anoDaOS[1] = ordens[i].data_abertura[1];
         anoDaOS[2] = ordens[i].data_abertura[2];
@@ -80,26 +77,16 @@ void gerarRelatorio()
         mesDaOS[1] = ordens[i].data_abertura[6];
         mesDaOS[2] = '\0';
         m = atoi(mesDaOS) - 1;
-        if (m < 0 || m > 11)
-            continue;
 
-        /* Coluna da matriz: 0 = aberta, 1 = em andamento, 2 = finalizada, 3 = cancelada */
-        s = 3; /* começa como cancelada (o arquivamento do orçamento também grava cancelada) */
-
+        /* Coluna: 0 = aberta, 1 = em andamento, 2 = finalizada, 3 = cancelada (o arquivamento também grava cancelada) */
         if (strcmp(ordens[i].status, "aberta") == 0)
-        {
             s = 0;
-        }
-
-        if (strcmp(ordens[i].status, "em_andamento") == 0)
-        {
+        else if (strcmp(ordens[i].status, "em_andamento") == 0)
             s = 1;
-        }
-
-        if (strcmp(ordens[i].status, "finalizada") == 0)
-        {
+        else if (strcmp(ordens[i].status, "finalizada") == 0)
             s = 2;
-        }
+        else
+            s = 3;
         contagem[m][s]++;
 
         if (strlen(ordens[i].satisfeito) > 0)
@@ -110,18 +97,16 @@ void gerarRelatorio()
         }
     }
 
-    /* Imprime a matriz como tabela, pulando os meses sem nenhuma OS */
-    printf("\n  Ordens de servico abertas em %s\n\n", ano);
-    printf("  %-5s %8s %12s %12s %11s %7s\n", "Mes", "Abertas", "Andamento", "Finalizadas", "Canceladas", "Total");
-    printf("  ----------------------------------------------------------\n");
+    /* Mostra a matriz, pulando os meses sem nenhuma OS */
+    printf("\nOrdens de servico abertas em %s\n", ano);
     for (m = 0; m < 12; m++)
     {
-        totalMes = contagem[m][0] + contagem[m][1] + contagem[m][2] + contagem[m][3];
-        if (totalMes == 0)
-            continue;
-        printf("  %-5s %8d %12d %12d %11d %7d\n", nomesMes[m], contagem[m][0], contagem[m][1], contagem[m][2],
-               contagem[m][3], totalMes);
+        if (contagem[m][0] + contagem[m][1] + contagem[m][2] + contagem[m][3] > 0)
+        {
+            printf("%s: abertas %d - em andamento %d - finalizadas %d - canceladas %d\n", nomesMes[m], contagem[m][0],
+                   contagem[m][1], contagem[m][2], contagem[m][3]);
+        }
     }
-    printf("\n  Clientes satisfeitos: %d de %d que deram feedback\n", satisfeitos, comFeedback);
+    printf("\nClientes satisfeitos: %d de %d que deram feedback\n", satisfeitos, comFeedback);
     pausar();
 }
