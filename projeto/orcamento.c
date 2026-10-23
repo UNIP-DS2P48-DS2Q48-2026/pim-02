@@ -1,5 +1,5 @@
-/* Funções do main.c usadas aqui: lerValor (linha 149), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 214), dataHoraAgora (linha 204) */
 /* orcamento.c - orçamento da OS: registrar, editar, consultar, aprovar, recusar e arquivar */
+/* Funções do main.c usadas aqui: lerValor (linha 149), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 215), dataHoraAgora (linha 204) */
 
 /* UC36 - Registrar Orcamento: valor da proposta para uma OS já diagnosticada */
 void registrarOrcamento()

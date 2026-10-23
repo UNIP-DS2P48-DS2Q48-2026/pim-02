@@ -1,5 +1,5 @@
-/* Funções do main.c usadas aqui: lerTexto (linha 121), lerInteiro (linha 137), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 214), dataHoraAgora (linha 204) */
 /* geral.c - usuários: login, logout, meus dados, senha e os cadastros dos 4 perfis */
+/* Funções do main.c usadas aqui: lerTexto (linha 121), lerInteiro (linha 137), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 215), dataHoraAgora (linha 204) */
 
 /* Devolve 1 se o usuário logado tem este perfil (RN10) */
 int perfilLogado(char perfil[])
