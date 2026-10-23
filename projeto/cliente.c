@@ -1,3 +1,5 @@
+/* cliente.c - casos de uso dos clientes; o trabalho é feito pelas funções de usuário do geral.c */
+
 /* UC16 - Cadastrar Cliente: cadastra um novo cliente com CPF e telefone */
 void cadastrarCliente()
 {
