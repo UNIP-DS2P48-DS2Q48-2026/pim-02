@@ -33,8 +33,8 @@ Todo fluxo principal começa pela opção do menu, escrita como caminho ("Client
 
 - **Precondition:** uma condição por linha. A primeira é sempre a autenticação, escrita como "Usuário autenticado (UC01) com perfil ..." e listando os perfis na ordem Cliente, Técnico, Recepcionista e Admin (o Admin sempre por último). As demais usam frases curtas no mesmo formato ("Cliente-alvo cadastrado (UC16).", "... cadastrado e com `status` ativo (UCnn).").
 - **Campos sem conteúdo:** escrever só "Não se aplica.". Explicações vão para a Note.
-- **Fluxo principal:** começa pela opção do menu (ver Mapa do menu), um passo por ação, alternando ator e sistema. Quando altera dados, termina com o sistema informando o resultado. A última linha é sempre "O caso de uso é encerrado." Operações que inativam, cancelam, arquivam ou respondem orçamento pedem confirmação antes de gravar; a desistência na confirmação é uma exceção.
-- **Extensões:** identificadas pelo passo em que ocorrem, em uma única linha já explicada: `2a: <situação>. <o que acontece>. <para onde volta / encerramento>.` `3a` é a primeira extensão do passo 3 e `3b` a segunda do mesmo passo. `*a` vale para qualquer passo: é usado para "Voltar ao menu", presente em todos os casos de uso (exceto Fazer Logout, que tem um passo só). Em operações que gravam dados, voltar descarta o que foi informado, sem gravar nada. Ele não substitui as extensões específicas de cada caso de uso. A letra não se repete no mesmo caso de uso, mesmo entre Branch e Exception.
+- **Fluxo principal:** começa pela opção do menu (ver Mapa do menu), um passo por ação, alternando ator e sistema. Quando altera dados, termina com o sistema informando o resultado. A última linha é sempre "O caso de uso é encerrado." Operações que inativam, cancelam, arquivam, respondem orçamento ou encerram a sessão (logout) pedem confirmação antes de gravar; a desistência na confirmação é uma exceção.
+- **Extensões:** identificadas pelo passo em que ocorrem, em uma única linha já explicada: `2a: <situação>. <o que acontece>. <para onde volta / encerramento>.` `3a` é a primeira extensão do passo 3 e `3b` a segunda do mesmo passo. `*a` vale para qualquer passo: é usado para "Voltar ao menu", presente em todos os casos de uso (exceto Fazer Logout, em que desistir da confirmação já volta ao menu). Em operações que gravam dados, voltar descarta o que foi informado, sem gravar nada. Ele não substitui as extensões específicas de cada caso de uso. A letra não se repete no mesmo caso de uso, mesmo entre Branch e Exception.
 - **Branch Sequence:** extensão que termina com sucesso por outro caminho. Termina dizendo para onde volta ("Retorna ao passo N.") ou, quando o processo segue em outro caso de uso (ex.: OS volta para novo reparo), com "O caso de uso é encerrado."
 - **Exception Sequence:** extensão que impede o objetivo. Termina sempre com "O caso de uso é encerrado."
 - **Regras:** usam a numeração oficial de [requisitos.md](../requisitos/requisitos.md) (RN01-RN19, RI01-RI17, RNF01-RNF10). Não criar numeração local por caso de uso.
@@ -109,15 +109,17 @@ Sessão encerrada.
 
 **Base Sequence**
 1. O usuário seleciona a opção "Sair" no menu principal.
-2. O sistema encerra a sessão, descartando os dados do usuário logado.
-3. O sistema retorna à tela inicial.
-4. O caso de uso é encerrado.
+2. O sistema solicita a confirmação da saída.
+3. O usuário confirma a saída.
+4. O sistema encerra a sessão, descartando os dados do usuário logado.
+5. O sistema retorna à tela inicial.
+6. O caso de uso é encerrado.
 
 **Branch Sequence**
 Não se aplica.
 
 **Exception Sequence**
-Não se aplica.
+3a: Usuário desiste da saída. O sistema mantém a sessão aberta e retorna ao menu principal. O caso de uso é encerrado.
 
 **Sub UseCase**
 Não se aplica.
