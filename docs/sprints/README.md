@@ -17,7 +17,7 @@ As Sprints 01 a 04 foram reconstruídas a partir do histórico do Git, pois não
 | [Sprint 05](./sprints/sprint-05.md) | 26/09 – 02/10/2026 | Persistência em SQL Server ou .txt e avanço da estrutura do código (prioridade); diagrama estendido e documentação acadêmica | Concluída (fechada em 16/10) |
 | [Sprint 06](./sprints/sprint-06.md) | 03/10 – 09/10/2026 | Login real, cadastros de usuários e equipamentos gravando em `.txt` e revisão do código no nível das aulas | Concluída (fechada em 16/10) |
 | [Sprint 07](./sprints/sprint-07.md) | 10/10 – 16/10/2026 | Os 44 casos de uso funcionando, testes, código simplificado para a apresentação e início do documento do PIM | Concluída |
-| [Sprint 08](./sprints/sprint-08.md) | 17/10 – 23/10/2026 | Etapas 3 a 8 do documento do PIM, protótipos no Figma e roteiro da apresentação | Planejada |
+| [Sprint 08](./sprints/sprint-08.md) | 17/10 – 23/10/2026 | Etapas 3 a 8 do documento do PIM, protótipos no Figma e roteiro da apresentação | Em andamento |
 
 A Sprint 01 tem 9 dias porque inclui a organização inicial do projeto; a partir da Sprint 02, todas vão de sábado a sexta-feira.
 

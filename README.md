@@ -19,7 +19,7 @@ Projeto acadêmico (PIM) desenvolvido em **linguagem C** com interface em **term
 
 **ByteTech** é uma empresa fictícia especializada em manutenção de **hardware** (conserto de computadores, notebooks, impressoras e demais equipamentos) e de **software** (licenças, instalação e manutenção de programas) para **pessoas físicas**.
 
-Atualmente o controle de clientes, equipamentos, técnicos e ordens de serviço é feito por planilhas e anotações, o que dificulta localizar ordens de serviço, saber quem é o responsável por cada uma, acompanhar o andamento do serviço (do diagnóstico à entrega) e consultar o histórico dos atendimentos. O objetivo do sistema é substituir esse controle manual por uma aplicação de console. Nesta versão os dados ficam em arquivos de texto (`.txt`); a gravação no banco de dados SQL Server é o próximo passo.
+Atualmente o controle de clientes, equipamentos, técnicos e ordens de serviço é feito por planilhas e anotações, o que dificulta localizar ordens de serviço, saber quem é o responsável por cada uma, acompanhar o andamento do serviço (do diagnóstico à entrega) e consultar o histórico dos atendimentos. O objetivo do sistema é substituir esse controle manual por uma aplicação de console. Os dados ficam no banco de dados SQL Server.
 
 Mais detalhes em [Requisitos do Sistema](./docs/requisitos/requisitos.md#identificação-do-projeto) e no [Levantamento de Dados](./docs/levantamento-de-dados/levantamento-de-dados.md).
 
@@ -86,7 +86,7 @@ Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrado
 
 | Documento | Conteúdo |
 |---|---|
-| [Diagrama Estendido](<./docs/Modalagem_casos_de_uso/2026-10-16-diagramas-de-casos-de-uso-e-estendido/Diagrama Estendido/Diagrama Estendido.png>) | Telas («boundary») e entidades («entity») do sistema, com seus relacionamentos. Feito a partir do diagrama de classes da UML: como C não tem classes, cada entidade é uma `struct` e cada tela é um arquivo `.c` com o seu menu |
+| [Diagrama Estendido](<./docs/Modalagem_casos_de_uso/2026-10-23-diagramas-de-casos-de-uso-e-estendido/Diagrama Estendido/Diagrama Estendido.png>) | Telas («boundary») e entidades («entity») do sistema, com seus relacionamentos. Feito a partir do diagrama de classes da UML: como C não tem classes, cada entidade é uma `struct` e cada tela é um arquivo `.c` com o seu menu |
 | [Diagrama de Casos de Uso (Astah)](./docs/Modalagem_casos_de_uso/diagramas.asta) | Casos de uso por ator, separados em pacotes (abrir com [Astah](https://astah.net/)) |
 | [Casos de Uso](./docs/Modalagem_casos_de_uso/descricoes-astah.md) | Descrição de cada elipse do diagrama no formato do Astah (ator, pré/pós-condição, fluxo principal, alternativo e de exceção), correlacionada com o fluxograma |
 
@@ -102,7 +102,8 @@ Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrado
 
 | Documento | Conteúdo |
 |---|---|
-| [Documento do PIM](./docs/documentacao-pim/20206-10-12/documentacao_pim_2_inicio.md) | Texto do trabalho em construção: resumo, introdução, caracterização da empresa, pesquisa, engenharia de software e planejamento ágil |
+| [Documento do PIM - início](./docs/documentacao-pim/2026-10-12/documentacao_pim_2_inicio.md) | Texto do trabalho em construção: resumo, introdução, caracterização da empresa, pesquisa, engenharia de software e planejamento ágil |
+| [Documento do PIM - continuação](./docs/documentacao-pim/2026-10-18/documentacao_pim_2_continuacao.md) | Continuação do texto do trabalho (versão de 18/10) |
 | [Manual PIM II - ADS (PDF)](<./docs/manual-pim/Manual_PIM_II - ADS.pdf>) | Manual acadêmico oficial exigido pela instituição |
 | [Manual PIM II - ADS (Word)](<./docs/manual-pim/Manual_PIM_II - ADS.docx>) | Versão editável do manual acadêmico |
 
