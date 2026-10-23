@@ -211,6 +211,7 @@ void dataHoraAgora(char destino[])
         bdLerTexto(1, destino, TAM_DATAHORA);
 }
 
+/* Mostra o nome do sistema e o título da tela */
 void imprimirCabecalho(char titulo[])
 {
     printf("\n========== BYTETECH - Sistema de Gestao de Manutencao ==========\n");
@@ -236,15 +237,15 @@ void menuAdministradores()
 
         switch (opcao)
         {
-        /* cadastrarAdmin está em admin.c, linha 2 */
+        /* cadastrarAdmin está em admin.c, linha 4 */
         case 1: cadastrarAdmin(); break;
-        /* consultarAdmin está em admin.c, linha 9 */
+        /* consultarAdmin está em admin.c, linha 11 */
         case 2: consultarAdmin(); break;
-        /* editarAdmin está em admin.c, linha 16 */
+        /* editarAdmin está em admin.c, linha 18 */
         case 3: editarAdmin(); break;
-        /* inativarAdmin está em admin.c, linha 23 */
+        /* inativarAdmin está em admin.c, linha 25 */
         case 4: inativarAdmin(); break;
-        /* reativarAdmin está em admin.c, linha 30 */
+        /* reativarAdmin está em admin.c, linha 32 */
         case 5: reativarAdmin(); break;
         case 0: break;
         default:
@@ -271,15 +272,15 @@ void menuRecepcionistas()
 
         switch (opcao)
         {
-        /* cadastrarRecepcionista está em recepcionista.c, linha 2 */
+        /* cadastrarRecepcionista está em recepcionista.c, linha 4 */
         case 1: cadastrarRecepcionista(); break;
-        /* consultarRecepcionista está em recepcionista.c, linha 9 */
+        /* consultarRecepcionista está em recepcionista.c, linha 11 */
         case 2: consultarRecepcionista(); break;
-        /* editarRecepcionista está em recepcionista.c, linha 16 */
+        /* editarRecepcionista está em recepcionista.c, linha 18 */
         case 3: editarRecepcionista(); break;
-        /* inativarRecepcionista está em recepcionista.c, linha 23 */
+        /* inativarRecepcionista está em recepcionista.c, linha 25 */
         case 4: inativarRecepcionista(); break;
-        /* reativarRecepcionista está em recepcionista.c, linha 30 */
+        /* reativarRecepcionista está em recepcionista.c, linha 32 */
         case 5: reativarRecepcionista(); break;
         case 0: break;
         default:
@@ -306,15 +307,15 @@ void menuTecnicos()
 
         switch (opcao)
         {
-        /* cadastrarTecnico está em tecnico.c, linha 2 */
+        /* cadastrarTecnico está em tecnico.c, linha 4 */
         case 1: cadastrarTecnico(); break;
-        /* consultarTecnico está em tecnico.c, linha 9 */
+        /* consultarTecnico está em tecnico.c, linha 11 */
         case 2: consultarTecnico(); break;
-        /* editarTecnico está em tecnico.c, linha 16 */
+        /* editarTecnico está em tecnico.c, linha 18 */
         case 3: editarTecnico(); break;
-        /* inativarTecnico está em tecnico.c, linha 23 */
+        /* inativarTecnico está em tecnico.c, linha 25 */
         case 4: inativarTecnico(); break;
-        /* reativarTecnico está em tecnico.c, linha 30 */
+        /* reativarTecnico está em tecnico.c, linha 32 */
         case 5: reativarTecnico(); break;
         case 0: break;
         default:
@@ -341,15 +342,15 @@ void menuClientes()
 
         switch (opcao)
         {
-        /* cadastrarCliente está em cliente.c, linha 2 */
+        /* cadastrarCliente está em cliente.c, linha 4 */
         case 1: cadastrarCliente(); break;
-        /* consultarCliente está em cliente.c, linha 9 */
+        /* consultarCliente está em cliente.c, linha 11 */
         case 2: consultarCliente(); break;
-        /* editarCliente está em cliente.c, linha 16 */
+        /* editarCliente está em cliente.c, linha 18 */
         case 3: editarCliente(); break;
-        /* inativarCliente está em cliente.c, linha 23 */
+        /* inativarCliente está em cliente.c, linha 25 */
         case 4: inativarCliente(); break;
-        /* reativarCliente está em cliente.c, linha 30 */
+        /* reativarCliente está em cliente.c, linha 32 */
         case 5: reativarCliente(); break;
         case 0: break;
         default:
@@ -536,21 +537,21 @@ void menuDoAdmin()
 
         switch (opcao)
         {
-        /* menuAdministradores está em main.c, linha 222 */
+        /* menuAdministradores está em main.c, linha 223 */
         case 1: menuAdministradores(); break;
-        /* menuRecepcionistas está em main.c, linha 257 */
+        /* menuRecepcionistas está em main.c, linha 258 */
         case 2: menuRecepcionistas(); break;
-        /* menuTecnicos está em main.c, linha 292 */
+        /* menuTecnicos está em main.c, linha 293 */
         case 3: menuTecnicos(); break;
-        /* menuClientes está em main.c, linha 327 */
+        /* menuClientes está em main.c, linha 328 */
         case 4: menuClientes(); break;
-        /* menuEquipamentos está em main.c, linha 362 */
+        /* menuEquipamentos está em main.c, linha 363 */
         case 5: menuEquipamentos(); break;
-        /* menuOrdensServico está em main.c, linha 397 */
+        /* menuOrdensServico está em main.c, linha 398 */
         case 6: menuOrdensServico(); break;
-        /* menuManutencao está em main.c, linha 477 */
+        /* menuManutencao está em main.c, linha 478 */
         case 7: menuManutencao(); break;
-        /* menuOrcamentos está em main.c, linha 438 */
+        /* menuOrcamentos está em main.c, linha 439 */
         case 8: menuOrcamentos(); break;
         /* consultarHistorico está em relatorio.c, linha 5 */
         case 9: consultarHistorico(); break;
@@ -590,15 +591,15 @@ void menuDaRecepcionista()
 
         switch (opcao)
         {
-        /* menuClientes está em main.c, linha 327 */
+        /* menuClientes está em main.c, linha 328 */
         case 1: menuClientes(); break;
-        /* menuEquipamentos está em main.c, linha 362 */
+        /* menuEquipamentos está em main.c, linha 363 */
         case 2: menuEquipamentos(); break;
-        /* menuOrdensServico está em main.c, linha 397 */
+        /* menuOrdensServico está em main.c, linha 398 */
         case 3: menuOrdensServico(); break;
         /* listarProntasParaEntrega está em manutencao.c, linha 303 */
         case 4: listarProntasParaEntrega(); break;
-        /* menuOrcamentos está em main.c, linha 438 */
+        /* menuOrcamentos está em main.c, linha 439 */
         case 5: menuOrcamentos(); break;
         /* consultarHistorico está em relatorio.c, linha 5 */
         case 6: consultarHistorico(); break;
@@ -639,7 +640,7 @@ void menuDoTecnico()
 
         switch (opcao)
         {
-        /* consultarCliente está em cliente.c, linha 9 */
+        /* consultarCliente está em cliente.c, linha 11 */
         case 1: consultarCliente(); break;
         /* consultarEquipamento está em equipamento.c, linha 312 */
         case 2: consultarEquipamento(); break;
@@ -718,6 +719,7 @@ void menuDoCliente()
     } while (usuarioLogado >= 0); /* sai só depois do logout */
 }
 
+/* Tela inicial: entra no sistema e abre o menu do perfil, ou encerra o programa */
 void menuPrincipal()
 {
     char perfil[15];
@@ -740,16 +742,16 @@ void menuPrincipal()
 
             /* guarda o perfil antes, porque o logout apaga o usuarioLogado */
             strcpy(perfil, usuarios[usuarioLogado].perfil);
-            /* menuDoAdmin está em main.c, linha 514 */
+            /* menuDoAdmin está em main.c, linha 515 */
             if (strcmp(perfil, "admin") == 0)
                 menuDoAdmin();
-            /* menuDaRecepcionista está em main.c, linha 572 */
+            /* menuDaRecepcionista está em main.c, linha 573 */
             if (strcmp(perfil, "recepcionista") == 0)
                 menuDaRecepcionista();
-            /* menuDoTecnico está em main.c, linha 619 */
+            /* menuDoTecnico está em main.c, linha 620 */
             if (strcmp(perfil, "tecnico") == 0)
                 menuDoTecnico();
-            /* menuDoCliente está em main.c, linha 672 */
+            /* menuDoCliente está em main.c, linha 673 */
             if (strcmp(perfil, "cliente") == 0)
                 menuDoCliente();
             break;
@@ -763,6 +765,7 @@ void menuPrincipal()
     } while (opcao != 0);
 }
 
+/* Conecta ao banco, carrega as 4 tabelas e abre a tela inicial */
 int main()
 {
     /* bdConectar está em banco.c, linha 29 */
@@ -795,7 +798,7 @@ int main()
         salvarUsuarios();
     }
 
-    /* menuPrincipal está em main.c, linha 721 */
+    /* menuPrincipal está em main.c, linha 723 */
     menuPrincipal();
 
     /* bdDesconectar está em banco.c, linha 50 */

@@ -1,3 +1,5 @@
+/* tecnico.c - casos de uso dos técnicos; o trabalho é feito pelas funções de usuário do geral.c */
+
 /* UC12 - Cadastrar Tecnico: cadastra um novo tecnico com a especialidade */
 void cadastrarTecnico()
 {

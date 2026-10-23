@@ -1,5 +1,5 @@
-/* Funções do main.c usadas aqui: lerTexto (linha 121), lerInteiro (linha 137), lerValor (linha 149), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 214), dataHoje (linha 193), dataHoraAgora (linha 204) */
 /* ordem_servico.c - ordens de serviço (tabela os) e técnicos de cada OS (tabela tecnico_os) */
+/* Funções do main.c usadas aqui: lerTexto (linha 121), lerInteiro (linha 137), lerValor (linha 149), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 215), dataHoje (linha 193), dataHoraAgora (linha 204) */
 
 /* Quantas OS e atribuições do vetor já estão no banco (as novas ficam no fim do vetor) */
 int ordensNoBanco = 0;
