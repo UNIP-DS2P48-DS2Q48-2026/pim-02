@@ -1,3 +1,5 @@
+/* admin.c - casos de uso dos administradores; o trabalho é feito pelas funções de usuário do geral.c */
+
 /* UC04 - Cadastrar Admin: cadastra um novo administrador */
 void cadastrarAdmin()
 {

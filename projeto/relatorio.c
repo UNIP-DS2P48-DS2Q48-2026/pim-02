@@ -1,5 +1,5 @@
-/* Funções do main.c usadas aqui: lerTexto (linha 121), pausar (linha 173), imprimirCabecalho (linha 214), dataHoje (linha 193) */
 /* relatorio.c - histórico do equipamento e relatório de OS por mês */
+/* Funções do main.c usadas aqui: lerTexto (linha 121), pausar (linha 173), imprimirCabecalho (linha 215), dataHoje (linha 193) */
 
 /* UC42 - Consultar Historico: todas as OS de um equipamento */
 void consultarHistorico()
@@ -83,14 +83,13 @@ void gerarRelatorio()
         mes = atoi(mesDaOS) - 1;
 
         /* Coluna: 0 = aberta, 1 = em andamento, 2 = finalizada, 3 = cancelada */
+        coluna = 3;
         if (strcmp(ordens[posicaoOS].status, "aberta") == 0)
             coluna = 0;
-        else if (strcmp(ordens[posicaoOS].status, "em_andamento") == 0)
+        if (strcmp(ordens[posicaoOS].status, "em_andamento") == 0)
             coluna = 1;
-        else if (strcmp(ordens[posicaoOS].status, "finalizada") == 0)
+        if (strcmp(ordens[posicaoOS].status, "finalizada") == 0)
             coluna = 2;
-        else
-            coluna = 3;
         contagem[mes][coluna]++;
 
         if (strlen(ordens[posicaoOS].satisfeito) > 0)

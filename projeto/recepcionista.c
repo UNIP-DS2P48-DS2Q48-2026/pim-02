@@ -1,3 +1,5 @@
+/* recepcionista.c - casos de uso das recepcionistas; o trabalho é feito pelas funções de usuário do geral.c */
+
 /* UC08 - Cadastrar Recepcionista: cadastra uma nova recepcionista */
 void cadastrarRecepcionista()
 {
