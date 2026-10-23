@@ -1,6 +1,6 @@
 # Sprint 08
 
-**Status:** Planejada - começa no sábado, 17/10/2026, e fecha na sexta-feira, 23/10/2026.
+**Status:** Em andamento - começou no sábado, 17/10/2026, e fecha na sexta-feira, 23/10/2026.
 
 **Período:** 17/10/2026 a 23/10/2026.
 
@@ -17,32 +17,42 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 ### Código (`projeto/`)
 
 - [x] UC24 a UC30 de volta, depois do PR #29, e código simplificado de novo, seguindo os PDFs das aulas (Unidades 1 a 6): branch `fix/volta-uc24-30` - 20/10.
-- [ ] Commit e PR da branch `fix/volta-uc24-30`.
+- [x] Commit e PR da branch `fix/volta-uc24-30` - 20/10 (PRs #30 e #31).
 - [x] Admin edita OS finalizada, como no diagrama de casos de uso (o Admin generaliza Recepcionista e Técnico, RN11) e no UC26 (exceção 4a, RN08, RI09): `selecionarOS(1)` inclui as finalizadas só no `editarOS` do Admin - 20/10.
-- [x] Desfazer as cadeias de `else if` grudadas: `switch` nas opções numéricas (diagnóstico, teste, menu inicial; Unidade 3) e `if` com chaves, um por caso e com comentário, onde a comparação é de texto (menu pelo perfil, coluna do relatório, `etapaDaOS`) - 20/10.
+- [x] Desfazer as cadeias de `else if` grudadas: `switch` nas opções numéricas (diagnóstico, teste, menu inicial; Unidade 3) e `if` com chaves, um por caso e com comentário, onde a comparação é de texto (menu pelo perfil, coluna do relatório, `etapaDaOS`) - 20/10. A coluna do relatório e a `etapaDaOS` foram revistas de novo em 23/10.
 - [x] Revisão do projeto inteiro contra os diagramas, as regras e as descrições dos casos de uso (ver "Decisões desta sprint") - 20/10.
+- [x] Vistoria final do código seguindo as descrições dos casos de uso - 20/10 (PR #32).
 - [x] Reativar usuário e equipamento (RF02, RF03): 5 casos de uso novos, UC45 a UC49 ("Reativar Admin", "Reativar Recepcionista", "Reativar Técnico", "Reativar Cliente" e "Reativar Equipamento"), no código, nas descrições e no Product Backlog - 20/10.
-- [ ] Acrescentar no Astah as 5 elipses novas (uma em cada pacote, ao lado do Inativar), as operações no Diagrama Estendido e exportar de novo os PNGs.
-- [x] Não apagar o texto do reparo quando o técnico registra uma nova observação; exigir o reparo registrado antes do teste (`osTemReparo` no `manutencao.c`) - 20/10.
-- [ ] Próximo passo (planejar): ligar o programa ao SQL Server (`schema_sqlserver.sql`). Definir se entra antes ou depois da entrega do PIM.
+- [x] Acrescentar no Astah as 5 elipses novas (uma em cada pacote, ao lado do Inativar), as operações no Diagrama Estendido e exportar de novo os PNGs - 20/10 (pasta `2026-10-20-...`; nova exportação em 23/10, pasta `2026-10-23-...`).
+- [x] Não apagar o texto do reparo quando o técnico registra uma nova observação; exigir o reparo registrado antes do teste - 20/10.
+- [x] Ligar o programa ao SQL Server (`schema_sqlserver.sql`) pela API ODBC, no `banco.c` - 21/10 (PR #33).
+- [x] Simplificar o código para a apresentação: menos funções de apoio, telas sem formatação e só SQL Server (o modo `.txt` e a pasta `projeto/dados` saíram) - 22/10.
+- [x] Nomes claros nas variáveis (`posicaoUsuario`, `posicaoOS`, `posicaoCliente`... no lugar de `i`, `c`, `k`, `n`) e condições longas quebradas em vários `if` - 23/10 (PR #34).
+- [x] Comentários curtos e diretos em cada função e, acima de cada chamada, onde a função está (`/* buscarUsuarioPorId está em geral.c, linha 147 */`) - 23/10 (PRs #34 e #36).
+- [x] Data de hoje pedida ao SQL Server (`GETDATE()`), sem o `time.h`; `bdConsultar` unido ao `bdExecutar` no `banco.c` - 23/10 (PR #36).
+- [x] Confirmação ao sair (UC02): "Tem certeza que deseja sair?"; com N, o usuário volta ao menu - 23/10 (PR #35).
+- [x] Descrição do UC02 atualizada (passos 2 e 3, exceção 3a) no `descricoes-astah.md` e no Astah - 23/10.
+- [x] Teste com 31 cenários antes e depois de cada mudança (telas e tabelas iguais) e compilação sem avisos (`gcc -Wall -Wextra main.c`) - 23/10.
+- [x] Tirar dos documentos a frase "os dados ficam em `.txt`; o SQL Server é o próximo passo" (README, requisitos, DER, Product Backlog) e corrigir os links do README - 23/10 (falta o commit).
 
 ### Documentação acadêmica
 
-- [ ] Etapa 3: diagrama de atividades ou de sequência (os fluxogramas de `docs/Fluxograma/` podem servir de base).
-- [ ] Etapa 4: normalização, principais comandos SQL e discussão sobre bancos NoSQL (os modelos, o `schema_sqlserver.sql` e o dicionário de dados já existem).
-- [ ] Etapa 5: seção sobre a implementação em C (arquivos, `.txt`, menus por perfil, como compilar e executar), com algoritmos, pseudocódigo e prints das telas do terminal.
-- [ ] Etapa 6: redes e sistemas distribuídos (arquitetura, topologia, equipamentos, endereçamento IP, VLANs, nuvem, segurança).
-- [ ] Etapa 7: direitos humanos, inclusão e segurança (acessibilidade, privacidade, proteção de dados, ética).
-- [ ] Etapa 8: integração da solução, limitações, evolução futura (entre elas, o SQL Server) e conclusão.
-- [ ] Atualizar a seção 4 (Planejamento ágil) com as Sprints 05 a 08.
-- [ ] Manter o Desenvolvimento entre 20 e 30 páginas: levar detalhes (as 44 descrições de casos de uso, as regras de integridade) para um apêndice.
+- [ ] Etapa 3: diagrama de atividades ou de sequência (os fluxogramas de `docs/Fluxograma/` podem servir de base). A continuação de 18/10 já tem a seção 3.5 (sequência da criação da OS), mas a imagem aponta para uma pasta do computador de um integrante (`C:/Users/math-/...`) e não aparece no repositório.
+- [ ] Etapa 4: normalização, principais comandos SQL e discussão sobre bancos NoSQL. Rascunho na continuação de 18/10 (seção 5); falta revisar.
+- [ ] Etapa 5: seção sobre a implementação em C (arquivos, SQL Server via ODBC, menus por perfil, como compilar e executar), com algoritmos, pseudocódigo e prints das telas do terminal. Rascunho na continuação de 18/10 (seção 6); a 6.4 ainda está "pendente terminar o banco" e a 6.7 descreve a versão antiga (casos de uso vazios e gravação em texto).
+- [ ] Etapa 6: redes e sistemas distribuídos (arquitetura, topologia, equipamentos, endereçamento IP, VLANs, nuvem, segurança). Rascunho na continuação de 18/10 (seção 7); falta revisar.
+- [ ] Etapa 7: direitos humanos, inclusão e segurança (acessibilidade, privacidade, proteção de dados, ética). Rascunho na continuação de 18/10 (seção 8); falta revisar.
+- [ ] Etapa 8: integração da solução, limitações, evolução futura e conclusão. Rascunho na continuação de 18/10 (seção 9 e Conclusão); o SQL Server já não é evolução futura.
+- [ ] Atualizar a seção 4 (Planejamento ágil) com as Sprints 05 a 08: o Quadro 6 da continuação vai só até a Sprint 05.
+- [ ] Alinhar a parte inicial (`2026-10-12/documentacao_pim_2_inicio.md`) com o SQL Server: a linha do RNF04, o Quadro 5 ("gravadas em usuario.txt...") e o parágrafo sobre os arquivos de texto.
+- [ ] Manter o Desenvolvimento entre 20 e 30 páginas: levar detalhes (as 49 descrições de casos de uso, as regras de integridade) para um apêndice.
 - [ ] Revisar o documento com o grupo e passar para o formato do manual (`docs/manual-pim/`).
 - [x] Corrigir o nome da pasta `docs/documentacao-pim/20206-10-12/` para `2026-10-12` - 18/10.
 - [x] Conferir o título do Diagrama Estendido no Astah: está "byteTech - Diagrama Estendido" - 20/10.
 
 ### Protótipos (Figma)
 
-- [ ] Criar o arquivo do projeto no Figma e definir o padrão das telas, igual ao terminal: cabeçalho BYTETECH com a data, 80 colunas e menus numerados.
+- [ ] Criar o arquivo do projeto no Figma e definir o padrão das telas, igual ao terminal: cabeçalho BYTETECH, 80 colunas e menus numerados.
 - [ ] Prototipar o Login e os 4 menus principais (Administrador, Recepcionista, Técnico e Cliente).
 - [ ] Prototipar as telas de cada pacote do Diagrama Estendido: Usuário, Equipamento, Ordem de Serviço, Manutenção, Orçamento, Histórico e Relatório, Meus Dados.
 - [ ] Ligar as telas no modo protótipo do Figma, seguindo o caminho de uma OS: abertura, diagnóstico, orçamento, reparo, teste, entrega e feedback.
@@ -50,7 +60,9 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 
 ### Organização e apresentação
 
-- [ ] Apagar as pastas antigas de diagramas em `docs/Modalagem_casos_de_uso/` e manter só a de 16/10 (o histórico fica no Git, como combinado na Sprint 04).
+- [ ] Apagar as pastas antigas de diagramas em `docs/Modalagem_casos_de_uso/` e manter só a mais nova, de 23/10 (o histórico fica no Git, como combinado na Sprint 04).
+- [ ] Colocar `*.asta.lock` no `.gitignore` e tirar do repositório o `diagrama_de_classes.asta.lock`.
+- [ ] Apagar as branches já mescladas (`refactor/nomes-claros`, `fix/logout`, `fix/comentarios`) e decidir o que fazer com a `projeto+banco` (feita sobre uma versão antiga do código).
 - [ ] Decidir se os PDFs das aulas (Unidades 1 a 6) entram no repositório ou no `.gitignore`.
 - [ ] Montar o roteiro da apresentação: quem fala de cada parte e o caminho de uma OS para mostrar no terminal.
 
@@ -62,7 +74,7 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 
 **O que foi feito.** Primeiro voltaram os UC24 a UC30, do commit `e1080f0`, que foi feito em cima do próprio `19d76d2`. Depois, como o grupo quer o código no nível das aulas, voltou a simplificação da Sprint 07 (commit `8f426a8`), que saiu desse mesmo código. Ficou assim:
 
-- **Só arquivos `.txt`.** O programa lê `projeto/dados/*.txt` com `fopen`/`fgets` ao abrir e regrava o arquivo com `fprintf` a cada mudança (Unidade 4). O `banco.c` e a chave `USAR_SQLSERVER` saíram de novo; o SQL Server fica como evolução futura.
+- **Só arquivos `.txt`.** O programa lê `projeto/dados/*.txt` com `fopen`/`fgets` ao abrir e regrava o arquivo com `fprintf` a cada mudança (Unidade 4). O `banco.c` e a chave `USAR_SQLSERVER` saíram de novo; o SQL Server fica como evolução futura. *(Mudou em 21/10: ver abaixo.)*
 - **Regras das OS com `if`** em cada caso de uso, sem `osNaEtapa` e sem as constantes `ETAPA_*`.
 - **Relatório com a matriz** `int contagem[12][4]` (Unidade 6).
 - **Duas correções novas no `manutencao.c`:** a observação nova não apaga mais o reparo (entra no fim do texto), e o teste só é aceito depois do reparo registrado (`osTemReparo`, que usa o `contemTexto` que já existia).
@@ -93,6 +105,29 @@ O código foi conferido com a Matriz de Permissões, as RN, as RI, as 44 descri�
 **O que foi decidido.** Reativar virou caso de uso próprio, um em cada pacote: UC45 Reativar Admin, UC46 Reativar Recepcionista, UC47 Reativar Técnico, UC48 Reativar Cliente e UC49 Reativar Equipamento. O sistema passa de 44 para 49 casos de uso. Juntar com o Inativar numa tela só ("Ativar/Inativar") foi testado e descartado: o caso de uso ficava com dois objetivos e o nome ficava estranho; separados, cada um tem um fluxo só. Quem reativa é quem já podia inativar: o Admin para a equipe (RN05), a Recepcionista e o Admin para cliente e equipamento.
 
 **Como funciona.** "5 - Reativar" no menu de cada cadastro. A lista mostra só os inativos, o sistema pede a confirmação e volta o `status` para `ativo`. O equipamento só é reativado se o cliente dono estiver ativo (exceção 4a do UC49, RN01 e RN14). No código: `reativarUsuario` no `geral.c` e `reativarEquipamento` no `equipamento.c`; o `selecionarUsuario` e o `selecionarEquipamento` recebem o status que querem listar ("ativo", "inativo" ou "" para todos).
+
+### 21/10 e 22/10 - Só SQL Server
+
+**O que mudou.** O programa passou a gravar no SQL Server (banco `bytetech`) pela API ODBC, no `banco.c` (PR #33). Em 22/10 o modo `.txt` saiu de vez: a chave `USAR_SQLSERVER`, as funções de arquivo e a pasta `projeto/dados` foram removidas.
+
+**Como funciona.** Ao abrir, o programa lê as 4 tabelas para os vetores. A cada mudança, grava o vetor com `UPDATE` (o que já existe) e `INSERT` (o que é novo). Sem o SQL Server rodando, o programa avisa e fecha.
+
+### 22/10 e 23/10 - Código mais fácil de explicar na apresentação
+
+**Por quê.** O grupo precisa explicar cada parte do código ao professor, e nomes como `i`, `c` e `k` e funções muito curtas atrapalhavam.
+
+**O que foi feito.**
+
+- **Nomes que dizem o que são:** `posicaoUsuario`, `posicaoOS`, `posicaoCliente`, `posicaoTecnico`, `novaPosicao`, `deuCerto`.
+- **Comentários curtos e diretos**, um por função. Acima de cada chamada vai o arquivo e a linha onde a função está. Os números são recalculados quando o código muda.
+- **Menos coisa fora das aulas:** a data vem do SQL Server (`GETDATE()`) em vez do `time.h`. O `banco.c` ficou com uma função só para rodar comandos (`bdExecutar`).
+- **Funções novas para condições que se repetiam:** `usuarioEntraNaLista` e `equipamentoEntraNaLista`.
+
+**Resultado.** Os mesmos 31 cenários de teste dão telas e tabelas iguais antes e depois de cada mudança. Compila sem avisos.
+
+### 23/10 - Confirmação ao sair (UC02)
+
+**O que mudou.** "0 - Sair" agora pergunta "Tem certeza que deseja sair?". Com S, a sessão é encerrada e o sistema volta à tela inicial; com N, o menu do perfil aparece de novo. A descrição do UC02 ganhou os passos 2 e 3 (pedir e dar a confirmação) e a exceção 3a (o usuário desiste). O diagrama de casos de uso não muda: a confirmação fica dentro do próprio UC02. O "0 - Encerrar o programa" da tela inicial continua sem confirmação.
 
 ## Sprint Review
 

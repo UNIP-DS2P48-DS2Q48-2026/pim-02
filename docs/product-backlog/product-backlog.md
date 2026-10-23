@@ -6,7 +6,7 @@ Prioridade: `Alta` / `Média` / `Baixa`. Status: `A fazer` / `Em andamento` / `C
 
 | ID    | Item                                                        | Requisito(s)                              | Casos de uso        | Prioridade | Status       |
 | ----- | ----------------------------------------------------------- | ----------------------------------------- | ------------------- | ---------- | ------------ |
-| PBI01 | Estrutura inicial do projeto e persistência (.txt; SQL Server no próximo passo) | RNF01, RNF02, RNF03, RNF04, RNF06, RNF07  | -                   | Alta       | Concluído (S06) |
+| PBI01 | Estrutura inicial do projeto e persistência (SQL Server) | RNF01, RNF02, RNF03, RNF04, RNF06, RNF07  | -                   | Alta       | Concluído (S06) |
 | PBI02 | Autenticação e controle de acesso por perfil                | RF01, RNF10, RN10, RN12, RN19             | UC01–UC03, UC44     | Alta       | Concluído (S06) |
 | PBI03 | Gerenciar usuários (admin, recepcionista, técnico, cliente) | RF02, RN05, RN12, RN13, RN17              | UC04–UC19, UC45–UC48 | Alta     | Concluído (S06; reativar na S08) |
 | PBI04 | Gerenciar equipamentos (hardware e software)                | RF03, RN01, RN12, RN14, RN16              | UC20–UC23, UC49    | Alta       | Concluído (S06; reativar na S08) |
