@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 /* Conexão com o SQL Server (banco bytetech). Compilar com: gcc main.c -o output/main.exe -lodbc32 */
 #include <windows.h>
@@ -105,6 +104,7 @@ void gerarHash(char senha[], char destino[]);
 void dataHoje(char destino[]);
 void dataHoraAgora(char destino[]);
 
+/* Os outros arquivos entram aqui, nesta ordem */
 #include "banco.c"
 #include "geral.c"
 #include "admin.c"
@@ -117,7 +117,7 @@ void dataHoraAgora(char destino[]);
 #include "orcamento.c"
 #include "relatorio.c"
 
-/* Lê uma linha inteira (aceita espaços) e tira o ENTER do final */
+/* Mostra a pergunta e lê a resposta até o ENTER */
 void lerTexto(char rotulo[], char destino[], int tamanho)
 {
     char linha[500];
@@ -125,12 +125,11 @@ void lerTexto(char rotulo[], char destino[], int tamanho)
     printf("%s", rotulo);
     if (fgets(linha, sizeof(linha), stdin) == NULL)
     {
-        /* Acabou a entrada (Ctrl+Z): encerra, senão o menu repetiria para sempre */
         printf("\n\n[!] Fim da entrada. Encerrando o programa.\n");
         exit(0);
     }
     linha[strcspn(linha, "\n")] = '\0'; /* tira o ENTER */
-    linha[tamanho - 1] = '\0';          /* corta o que não cabe no destino */
+    linha[tamanho - 1] = '\0';          /* corta no tamanho */
     strcpy(destino, linha);
 }
 
@@ -146,7 +145,7 @@ int lerInteiro(char rotulo[])
     return valor;
 }
 
-/* Lê um valor em reais, com ponto nos centavos (ex: 95.50); devolve -1 se ficou vazio ou não é valor */
+/* Lê um valor em reais (ex: 95.50); devolve -1 se vazio ou inválido */
 double lerValor(char rotulo[])
 {
     char texto[30];
@@ -170,37 +169,46 @@ int confirmar(char pergunta[])
     return 0;
 }
 
+/* Espera o ENTER para dar tempo de ler a mensagem */
 void pausar()
 {
     char tecla[5];
     lerTexto("\nPressione ENTER para continuar...", tecla, sizeof(tecla));
 }
 
-/* Transforma a senha num número (hash) para não gravar a senha (RNF10) */
+/* Transforma a senha num número (hash) para não gravar a senha no banco (RNF10) */
 void gerarHash(char senha[], char destino[])
 {
     unsigned long hash = 5381;
-    int i;
+    int posicaoLetra;
 
-    for (i = 0; senha[i] != '\0'; i++)
+    for (posicaoLetra = 0; senha[posicaoLetra] != '\0'; posicaoLetra++)
     {
-        hash = hash * 33 + senha[i];
+        hash = hash * 33 + senha[posicaoLetra];
     }
     sprintf(destino, "%lu", hash);
 }
 
-/* Data de hoje: AAAA-MM-DD */
+/* Data de hoje (AAAA-MM-DD), pegando a data do SQL Server */
 void dataHoje(char destino[])
 {
-    time_t agora = time(NULL);
-    strftime(destino, TAM_DATA, "%Y-%m-%d", localtime(&agora));
+    strcpy(destino, "");
+    /* bdExecutar está em banco.c, linha 61 */
+    /* bdProximaLinha está em banco.c, linha 80 */
+    /* bdLerTexto está em banco.c, linha 88 */
+    if (bdExecutar("SELECT CONVERT(VARCHAR(10), GETDATE(), 120)") && bdProximaLinha())
+        bdLerTexto(1, destino, TAM_DATA);
 }
 
-/* Data e hora de agora: AAAA-MM-DD HH:MM:SS */
+/* Data e hora de agora (AAAA-MM-DD HH:MM:SS), pegando do SQL Server */
 void dataHoraAgora(char destino[])
 {
-    time_t agora = time(NULL);
-    strftime(destino, TAM_DATAHORA, "%Y-%m-%d %H:%M:%S", localtime(&agora));
+    strcpy(destino, "");
+    /* bdExecutar está em banco.c, linha 61 */
+    /* bdProximaLinha está em banco.c, linha 80 */
+    /* bdLerTexto está em banco.c, linha 88 */
+    if (bdExecutar("SELECT CONVERT(VARCHAR(19), GETDATE(), 120)") && bdProximaLinha())
+        bdLerTexto(1, destino, TAM_DATAHORA);
 }
 
 void imprimirCabecalho(char titulo[])
@@ -228,10 +236,15 @@ void menuAdministradores()
 
         switch (opcao)
         {
+        /* cadastrarAdmin está em admin.c, linha 2 */
         case 1: cadastrarAdmin(); break;
+        /* consultarAdmin está em admin.c, linha 9 */
         case 2: consultarAdmin(); break;
+        /* editarAdmin está em admin.c, linha 16 */
         case 3: editarAdmin(); break;
+        /* inativarAdmin está em admin.c, linha 23 */
         case 4: inativarAdmin(); break;
+        /* reativarAdmin está em admin.c, linha 30 */
         case 5: reativarAdmin(); break;
         case 0: break;
         default:
@@ -258,10 +271,15 @@ void menuRecepcionistas()
 
         switch (opcao)
         {
+        /* cadastrarRecepcionista está em recepcionista.c, linha 2 */
         case 1: cadastrarRecepcionista(); break;
+        /* consultarRecepcionista está em recepcionista.c, linha 9 */
         case 2: consultarRecepcionista(); break;
+        /* editarRecepcionista está em recepcionista.c, linha 16 */
         case 3: editarRecepcionista(); break;
+        /* inativarRecepcionista está em recepcionista.c, linha 23 */
         case 4: inativarRecepcionista(); break;
+        /* reativarRecepcionista está em recepcionista.c, linha 30 */
         case 5: reativarRecepcionista(); break;
         case 0: break;
         default:
@@ -288,10 +306,15 @@ void menuTecnicos()
 
         switch (opcao)
         {
+        /* cadastrarTecnico está em tecnico.c, linha 2 */
         case 1: cadastrarTecnico(); break;
+        /* consultarTecnico está em tecnico.c, linha 9 */
         case 2: consultarTecnico(); break;
+        /* editarTecnico está em tecnico.c, linha 16 */
         case 3: editarTecnico(); break;
+        /* inativarTecnico está em tecnico.c, linha 23 */
         case 4: inativarTecnico(); break;
+        /* reativarTecnico está em tecnico.c, linha 30 */
         case 5: reativarTecnico(); break;
         case 0: break;
         default:
@@ -318,10 +341,15 @@ void menuClientes()
 
         switch (opcao)
         {
+        /* cadastrarCliente está em cliente.c, linha 2 */
         case 1: cadastrarCliente(); break;
+        /* consultarCliente está em cliente.c, linha 9 */
         case 2: consultarCliente(); break;
+        /* editarCliente está em cliente.c, linha 16 */
         case 3: editarCliente(); break;
+        /* inativarCliente está em cliente.c, linha 23 */
         case 4: inativarCliente(); break;
+        /* reativarCliente está em cliente.c, linha 30 */
         case 5: reativarCliente(); break;
         case 0: break;
         default:
@@ -348,10 +376,15 @@ void menuEquipamentos()
 
         switch (opcao)
         {
+        /* cadastrarEquipamento está em equipamento.c, linha 235 */
         case 1: cadastrarEquipamento(); break;
+        /* consultarEquipamento está em equipamento.c, linha 312 */
         case 2: consultarEquipamento(); break;
+        /* editarEquipamento está em equipamento.c, linha 335 */
         case 3: editarEquipamento(); break;
+        /* inativarEquipamento está em equipamento.c, linha 367 */
         case 4: inativarEquipamento(); break;
+        /* reativarEquipamento está em equipamento.c, linha 405 */
         case 5: reativarEquipamento(); break;
         case 0: break;
         default:
@@ -380,12 +413,19 @@ void menuOrdensServico()
 
         switch (opcao)
         {
+        /* criarOrdemServico está em ordem_servico.c, linha 431 */
         case 1: criarOrdemServico(); break;
+        /* consultarOS está em ordem_servico.c, linha 547 */
         case 2: consultarOS(); break;
+        /* editarOS está em ordem_servico.c, linha 613 */
         case 3: editarOS(); break;
+        /* cancelarOS está em ordem_servico.c, linha 639 */
         case 4: cancelarOS(); break;
+        /* atribuirTecnico está em ordem_servico.c, linha 666 */
         case 5: atribuirTecnico(); break;
+        /* registrarEntrega está em ordem_servico.c, linha 744 */
         case 6: registrarEntrega(); break;
+        /* registrarFeedback está em ordem_servico.c, linha 801 */
         case 7: registrarFeedback(); break;
         case 0: break;
         default:
@@ -413,11 +453,17 @@ void menuOrcamentos()
 
         switch (opcao)
         {
+        /* registrarOrcamento está em orcamento.c, linha 5 */
         case 1: registrarOrcamento(); break;
+        /* editarOrcamento está em orcamento.c, linha 37 */
         case 2: editarOrcamento(); break;
+        /* consultarOrcamento está em orcamento.c, linha 69 */
         case 3: consultarOrcamento(); break;
+        /* aprovarOrcamento está em orcamento.c, linha 133 */
         case 4: aprovarOrcamento(); break;
+        /* recusarOrcamento está em orcamento.c, linha 140 */
         case 5: recusarOrcamento(); break;
+        /* arquivarOrcamento está em orcamento.c, linha 147 */
         case 6: arquivarOrcamento(); break;
         case 0: break;
         default:
@@ -445,10 +491,15 @@ void menuManutencao()
 
         switch (opcao)
         {
+        /* registrarObservacao está em manutencao.c, linha 5 */
         case 1: registrarObservacao(); break;
+        /* registrarDiagnostico está em manutencao.c, linha 68 */
         case 2: registrarDiagnostico(); break;
+        /* executarManutencao está em manutencao.c, linha 147 */
         case 3: executarManutencao(); break;
+        /* registrarTeste está em manutencao.c, linha 236 */
         case 4: registrarTeste(); break;
+        /* listarProntasParaEntrega está em manutencao.c, linha 303 */
         case 5: listarProntasParaEntrega(); break;
         case 0: break;
         default:
@@ -485,24 +536,37 @@ void menuDoAdmin()
 
         switch (opcao)
         {
+        /* menuAdministradores está em main.c, linha 222 */
         case 1: menuAdministradores(); break;
+        /* menuRecepcionistas está em main.c, linha 257 */
         case 2: menuRecepcionistas(); break;
+        /* menuTecnicos está em main.c, linha 292 */
         case 3: menuTecnicos(); break;
+        /* menuClientes está em main.c, linha 327 */
         case 4: menuClientes(); break;
+        /* menuEquipamentos está em main.c, linha 362 */
         case 5: menuEquipamentos(); break;
+        /* menuOrdensServico está em main.c, linha 397 */
         case 6: menuOrdensServico(); break;
+        /* menuManutencao está em main.c, linha 477 */
         case 7: menuManutencao(); break;
+        /* menuOrcamentos está em main.c, linha 438 */
         case 8: menuOrcamentos(); break;
+        /* consultarHistorico está em relatorio.c, linha 5 */
         case 9: consultarHistorico(); break;
+        /* gerarRelatorio está em relatorio.c, linha 42 */
         case 10: gerarRelatorio(); break;
+        /* consultarMeusDados está em geral.c, linha 621 */
         case 11: consultarMeusDados(); break;
+        /* alterarSenha está em geral.c, linha 638 */
         case 12: alterarSenha(); break;
+        /* fazerLogout está em geral.c, linha 611 */
         case 0: fazerLogout(); break;
         default:
             printf("\n[!] Opcao invalida!");
             pausar();
         }
-    } while (opcao != 0);
+    } while (usuarioLogado >= 0); /* sai só depois do logout */
 }
 
 void menuDaRecepcionista()
@@ -526,20 +590,29 @@ void menuDaRecepcionista()
 
         switch (opcao)
         {
+        /* menuClientes está em main.c, linha 327 */
         case 1: menuClientes(); break;
+        /* menuEquipamentos está em main.c, linha 362 */
         case 2: menuEquipamentos(); break;
+        /* menuOrdensServico está em main.c, linha 397 */
         case 3: menuOrdensServico(); break;
+        /* listarProntasParaEntrega está em manutencao.c, linha 303 */
         case 4: listarProntasParaEntrega(); break;
+        /* menuOrcamentos está em main.c, linha 438 */
         case 5: menuOrcamentos(); break;
+        /* consultarHistorico está em relatorio.c, linha 5 */
         case 6: consultarHistorico(); break;
+        /* consultarMeusDados está em geral.c, linha 621 */
         case 7: consultarMeusDados(); break;
+        /* alterarSenha está em geral.c, linha 638 */
         case 8: alterarSenha(); break;
+        /* fazerLogout está em geral.c, linha 611 */
         case 0: fazerLogout(); break;
         default:
             printf("\n[!] Opcao invalida!");
             pausar();
         }
-    } while (opcao != 0);
+    } while (usuarioLogado >= 0); /* sai só depois do logout */
 }
 
 /* O técnico só consulta clientes, equipamentos e OS; o resto é a manutenção */
@@ -566,22 +639,33 @@ void menuDoTecnico()
 
         switch (opcao)
         {
+        /* consultarCliente está em cliente.c, linha 9 */
         case 1: consultarCliente(); break;
+        /* consultarEquipamento está em equipamento.c, linha 312 */
         case 2: consultarEquipamento(); break;
+        /* consultarOS está em ordem_servico.c, linha 547 */
         case 3: consultarOS(); break;
+        /* registrarObservacao está em manutencao.c, linha 5 */
         case 4: registrarObservacao(); break;
+        /* registrarDiagnostico está em manutencao.c, linha 68 */
         case 5: registrarDiagnostico(); break;
+        /* executarManutencao está em manutencao.c, linha 147 */
         case 6: executarManutencao(); break;
+        /* registrarTeste está em manutencao.c, linha 236 */
         case 7: registrarTeste(); break;
+        /* consultarHistorico está em relatorio.c, linha 5 */
         case 8: consultarHistorico(); break;
+        /* consultarMeusDados está em geral.c, linha 621 */
         case 9: consultarMeusDados(); break;
+        /* alterarSenha está em geral.c, linha 638 */
         case 10: alterarSenha(); break;
+        /* fazerLogout está em geral.c, linha 611 */
         case 0: fazerLogout(); break;
         default:
             printf("\n[!] Opcao invalida!");
             pausar();
         }
-    } while (opcao != 0);
+    } while (usuarioLogado >= 0); /* sai só depois do logout */
 }
 
 /* O cliente vê só o que é dele: equipamentos, OS e orçamentos */
@@ -607,21 +691,31 @@ void menuDoCliente()
 
         switch (opcao)
         {
+        /* consultarEquipamento está em equipamento.c, linha 312 */
         case 1: consultarEquipamento(); break;
+        /* consultarOS está em ordem_servico.c, linha 547 */
         case 2: consultarOS(); break;
+        /* registrarFeedback está em ordem_servico.c, linha 801 */
         case 3: registrarFeedback(); break;
+        /* consultarOrcamento está em orcamento.c, linha 69 */
         case 4: consultarOrcamento(); break;
+        /* aprovarOrcamento está em orcamento.c, linha 133 */
         case 5: aprovarOrcamento(); break;
+        /* recusarOrcamento está em orcamento.c, linha 140 */
         case 6: recusarOrcamento(); break;
+        /* consultarHistorico está em relatorio.c, linha 5 */
         case 7: consultarHistorico(); break;
+        /* consultarMeusDados está em geral.c, linha 621 */
         case 8: consultarMeusDados(); break;
+        /* alterarSenha está em geral.c, linha 638 */
         case 9: alterarSenha(); break;
+        /* fazerLogout está em geral.c, linha 611 */
         case 0: fazerLogout(); break;
         default:
             printf("\n[!] Opcao invalida!");
             pausar();
         }
-    } while (opcao != 0);
+    } while (usuarioLogado >= 0); /* sai só depois do logout */
 }
 
 void menuPrincipal()
@@ -639,18 +733,23 @@ void menuPrincipal()
         switch (opcao)
         {
         case 1:
+            /* realizarLogin está em geral.c, linha 577 */
             usuarioLogado = realizarLogin();
             if (usuarioLogado < 0)
                 break; /* login falhou: volta para a tela inicial */
 
             /* guarda o perfil antes, porque o logout apaga o usuarioLogado */
             strcpy(perfil, usuarios[usuarioLogado].perfil);
+            /* menuDoAdmin está em main.c, linha 514 */
             if (strcmp(perfil, "admin") == 0)
                 menuDoAdmin();
+            /* menuDaRecepcionista está em main.c, linha 572 */
             if (strcmp(perfil, "recepcionista") == 0)
                 menuDaRecepcionista();
+            /* menuDoTecnico está em main.c, linha 619 */
             if (strcmp(perfil, "tecnico") == 0)
                 menuDoTecnico();
+            /* menuDoCliente está em main.c, linha 672 */
             if (strcmp(perfil, "cliente") == 0)
                 menuDoCliente();
             break;
@@ -666,6 +765,7 @@ void menuPrincipal()
 
 int main()
 {
+    /* bdConectar está em banco.c, linha 29 */
     if (!bdConectar())
     {
         printf("[!] Nao foi possivel conectar ao SQL Server (banco bytetech).\n");
@@ -674,23 +774,31 @@ int main()
         return 1;
     }
 
+    /* carregarUsuarios está em geral.c, linha 63 */
     carregarUsuarios();
+    /* carregarEquipamentos está em equipamento.c, linha 51 */
     carregarEquipamentos();
+    /* carregarOrdens está em ordem_servico.c, linha 66 */
     carregarOrdens();
+    /* carregarTecnicosOS está em ordem_servico.c, linha 161 */
     carregarTecnicosOS();
 
     /* Primeira vez (sem nenhum usuário): cria os usuários de teste do grupo, com a senha byte123 */
     if (totalUsuarios == 0)
     {
+        /* adicionarUsuarioInicial está em geral.c, linha 101 */
         adicionarUsuarioInicial("Ana", "ana@bytetech.com", "", "admin", "", "");
         adicionarUsuarioInicial("Carla", "carla@bytetech.com", "", "recepcionista", "", "");
         adicionarUsuarioInicial("Rafael", "rafael@bytetech.com", "", "tecnico", "", "Hardware");
         adicionarUsuarioInicial("Joao Pereira", "joao.pereira@email.com", "(11) 90000-0000", "cliente", "111.111.111-11", "");
+        /* salvarUsuarios está em geral.c, linha 16 */
         salvarUsuarios();
     }
 
+    /* menuPrincipal está em main.c, linha 721 */
     menuPrincipal();
 
+    /* bdDesconectar está em banco.c, linha 50 */
     bdDesconectar();
     return 0;
 }
