@@ -20,6 +20,6 @@ Prioridade: `Alta` / `Média` / `Baixa`. Status: `A fazer` / `Em andamento` / `C
 | PBI12 | Validações e integridade dos dados do sistema               | RNF08, RNF09                              | todos (transversal) | Alta       | Concluído (S07) |
 PBI12 não é implementado sozinho: as validações de cada operação entram junto com o PBI correspondente, e o PBI12 só é concluído quando todos os outros estiverem.
 
-O número entre parênteses é a sprint em que o PBI foi concluído (S06 = [Sprint 06](../sprints/sprints/sprint-06.md), S07 = [Sprint 07](../sprints/sprints/sprint-07.md)). No PBI01, a versão concluída grava em `.txt`; ligar o programa ao SQL Server é o próximo passo.
+O número entre parênteses é a sprint em que o PBI foi concluído (S06 = [Sprint 06](../sprints/sprints/sprint-06.md), S07 = [Sprint 07](../sprints/sprints/sprint-07.md)). No PBI01, a primeira versão (Sprint 06) gravava em `.txt`; desde a [Sprint 08](../sprints/sprints/sprint-08.md) o programa grava no SQL Server.
 
 Os 49 casos de uso estão distribuídos entre os PBIs acima, sem repetição.
