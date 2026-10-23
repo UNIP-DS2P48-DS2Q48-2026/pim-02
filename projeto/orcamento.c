@@ -1,17 +1,20 @@
-/* UC36 - Registrar Orcamento: registra o valor da proposta a partir do diagnostico */
+/* Funções do main.c usadas aqui: lerValor (linha 149), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 214), dataHoraAgora (linha 204) */
+/* orcamento.c - orçamento da OS: registrar, editar, consultar, aprovar, recusar e arquivar */
+
+/* UC36 - Registrar Orcamento: valor da proposta para uma OS já diagnosticada */
 void registrarOrcamento()
 {
     double valor;
-    int i;
+    int posicaoOS;
 
     imprimirCabecalho("Orcamentos > Registrar");
 
-    /* RF05: só aparecem as OS com diagnóstico e ainda sem orçamento (para mudar o valor, use Editar) */
-    i = selecionarOS("aguardando orcamento", 0);
-    if (i < 0)
+    /* selecionarOS está em ordem_servico.c, linha 317 */
+    posicaoOS = selecionarOS("aguardando orcamento", 0);
+    if (posicaoOS < 0)
         return;
 
-    printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
+    printf("\nDiagnostico: %s\n", ordens[posicaoOS].diagnostico);
     printf("Se nao houve defeito, informe 0 (RN18).\n");
     valor = lerValor("Valor da proposta em R$ (ex: 95.50): ");
     if (valor < 0)
@@ -21,28 +24,29 @@ void registrarOrcamento()
         return;
     }
 
-    ordens[i].orcamento = valor;
-    strcpy(ordens[i].resultado_resposta_cliente, "");
-    dataHoraAgora(ordens[i].atualizado_em);
+    ordens[posicaoOS].orcamento = valor;
+    strcpy(ordens[posicaoOS].resultado_resposta_cliente, "");
+    dataHoraAgora(ordens[posicaoOS].atualizado_em);
+    /* salvarOrdens está em ordem_servico.c, linha 9 */
     if (salvarOrdens())
-        printf("\n[+] Orcamento de R$ %.2f enviado! A OS %d aguarda a resposta do cliente.", valor, ordens[i].id_os);
+        printf("\n[+] Orcamento de R$ %.2f enviado! A OS %d aguarda a resposta do cliente.", valor, ordens[posicaoOS].id_os);
     pausar();
 }
 
-/* UC37 - Editar Orcamento: renegocia o valor depois de uma recusa */
+/* UC37 - Editar Orcamento: novo valor depois de uma recusa */
 void editarOrcamento()
 {
     double valor;
-    int i;
+    int posicaoOS;
 
     imprimirCabecalho("Orcamentos > Editar");
 
-    /* Só aparecem as OS com orçamento recusado pelo cliente (UC40) */
-    i = selecionarOS("orcamento recusado", 0);
-    if (i < 0)
+    /* selecionarOS está em ordem_servico.c, linha 317 */
+    posicaoOS = selecionarOS("orcamento recusado", 0);
+    if (posicaoOS < 0)
         return;
 
-    printf("\nValor recusado: R$ %.2f\n", ordens[i].orcamento);
+    printf("\nValor recusado: R$ %.2f\n", ordens[posicaoOS].orcamento);
     valor = lerValor("Novo valor em R$ (ex: 95.50): ");
     if (valor < 0)
     {
@@ -52,36 +56,41 @@ void editarOrcamento()
     }
 
     /* O novo valor volta a aguardar a resposta do cliente */
-    ordens[i].orcamento = valor;
-    strcpy(ordens[i].resultado_resposta_cliente, "");
-    dataHoraAgora(ordens[i].atualizado_em);
+    ordens[posicaoOS].orcamento = valor;
+    strcpy(ordens[posicaoOS].resultado_resposta_cliente, "");
+    dataHoraAgora(ordens[posicaoOS].atualizado_em);
+    /* salvarOrdens está em ordem_servico.c, linha 9 */
     if (salvarOrdens())
-        printf("\n[+] Orcamento reenviado com o valor de R$ %.2f! A OS %d aguarda nova resposta.", valor, ordens[i].id_os);
+        printf("\n[+] Orcamento reenviado com o valor de R$ %.2f! A OS %d aguarda nova resposta.", valor, ordens[posicaoOS].id_os);
     pausar();
 }
 
-/* UC38 - Consultar Orcamento: mostra o valor e a resposta de cada orcamento */
+/* UC38 - Consultar Orcamento: valor e resposta de cada orçamento */
 void consultarOrcamento()
 {
     char dono[60], resposta[25];
-    int i, mostrados = 0;
+    int posicaoOS, idCliente, mostrados = 0;
 
     imprimirCabecalho("Orcamentos > Consultar");
 
-    for (i = 0; i < totalOrdens; i++)
+    for (posicaoOS = 0; posicaoOS < totalOrdens; posicaoOS++)
     {
-        /* O cliente só vê os orçamentos das próprias OS (RI10); -1 = OS ainda sem orçamento */
-        if (podeVerOS(i) && ordens[i].orcamento >= 0)
+        /* RN10: o cliente só vê os dele; -1 = OS sem orçamento */
+        /* podeVerOS está em ordem_servico.c, linha 212 */
+        if (podeVerOS(posicaoOS) && ordens[posicaoOS].orcamento >= 0)
         {
-            nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento), dono);
+            /* donoDoEquipamento está em geral.c, linha 174 */
+            idCliente = donoDoEquipamento(ordens[posicaoOS].id_equipamento);
+            /* nomeDoCliente está em equipamento.c, linha 143 */
+            nomeDoCliente(idCliente, dono);
 
-            /* Passo 5: resposta vazia = o cliente ainda não respondeu */
-            strcpy(resposta, ordens[i].resultado_resposta_cliente);
+            /* Resposta vazia = cliente ainda não respondeu */
+            strcpy(resposta, ordens[posicaoOS].resultado_resposta_cliente);
             if (strlen(resposta) == 0)
                 strcpy(resposta, "aguardando");
 
-            printf("OS %d - %s - R$ %.2f - %s - %s\n", ordens[i].id_os, dono, ordens[i].orcamento, resposta,
-                   ordens[i].status);
+            printf("OS %d - %s - R$ %.2f - %s - %s\n", ordens[posicaoOS].id_os, dono, ordens[posicaoOS].orcamento, resposta,
+                   ordens[posicaoOS].status);
             mostrados++;
         }
     }
@@ -91,20 +100,20 @@ void consultarOrcamento()
     pausar();
 }
 
-/* Aprovar e Recusar fazem a mesma coisa, só muda a resposta gravada ("aprovado" ou "recusado") */
+/* Grava a resposta do cliente ("aprovado" ou "recusado") */
 void responderOrcamento(char resposta[], char titulo[])
 {
-    int i;
+    int posicaoOS;
 
     imprimirCabecalho(titulo);
 
-    /* Só aparecem os orçamentos aguardando resposta; o cliente vê só os dele (RN10) */
-    i = selecionarOS("aguardando resposta", 0);
-    if (i < 0)
+    /* selecionarOS está em ordem_servico.c, linha 317 */
+    posicaoOS = selecionarOS("aguardando resposta", 0);
+    if (posicaoOS < 0)
         return;
 
-    printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
-    printf("Valor: R$ %.2f\n", ordens[i].orcamento);
+    printf("\nDiagnostico: %s\n", ordens[posicaoOS].diagnostico);
+    printf("Valor: R$ %.2f\n", ordens[posicaoOS].orcamento);
     if (!confirmar("\nConfirma a resposta?"))
     {
         printf("\nOperacao cancelada. O orcamento continua aguardando resposta.");
@@ -112,35 +121,38 @@ void responderOrcamento(char resposta[], char titulo[])
         return;
     }
 
-    strcpy(ordens[i].resultado_resposta_cliente, resposta);
-    dataHoraAgora(ordens[i].atualizado_em);
+    strcpy(ordens[posicaoOS].resultado_resposta_cliente, resposta);
+    dataHoraAgora(ordens[posicaoOS].atualizado_em);
+    /* salvarOrdens está em ordem_servico.c, linha 9 */
     if (salvarOrdens())
-        printf("\n[+] Orcamento %s na OS %d.", resposta, ordens[i].id_os);
+        printf("\n[+] Orcamento %s na OS %d.", resposta, ordens[posicaoOS].id_os);
     pausar();
 }
 
-/* UC39 - Registrar Aprovacao do Orcamento: a OS fica liberada para a manutencao */
+/* UC39 - Aprovar Orcamento: libera a OS para o reparo */
 void aprovarOrcamento()
 {
+    /* responderOrcamento está em orcamento.c, linha 104 */
     responderOrcamento("aprovado", "Orcamentos > Aprovar");
 }
 
-/* UC40 - Registrar Recusa do Orcamento: a OS pode ser renegociada ou arquivada */
+/* UC40 - Recusar Orcamento: a OS pode ser renegociada ou arquivada */
 void recusarOrcamento()
 {
+    /* responderOrcamento está em orcamento.c, linha 104 */
     responderOrcamento("recusado", "Orcamentos > Recusar");
 }
 
-/* UC41 - Arquivar Orcamento: encerra a OS quando nao ha acordo */
+/* UC41 - Arquivar Orcamento: encerra a OS como cancelada (RN09) */
 void arquivarOrcamento()
 {
-    int i;
+    int posicaoOS;
 
     imprimirCabecalho("Orcamentos > Arquivar");
 
-    /* Só aparecem as OS com orçamento recusado */
-    i = selecionarOS("orcamento recusado", 0);
-    if (i < 0)
+    /* selecionarOS está em ordem_servico.c, linha 317 */
+    posicaoOS = selecionarOS("orcamento recusado", 0);
+    if (posicaoOS < 0)
         return;
 
     if (!confirmar("\nArquivar esta OS? Ela sera encerrada sem reparo."))
@@ -150,10 +162,10 @@ void arquivarOrcamento()
         return;
     }
 
-    /* "Arquivada" é a OS cancelada por recusa: o registro continua no histórico (RN09) */
-    strcpy(ordens[i].status, "cancelada");
-    dataHoraAgora(ordens[i].atualizado_em);
+    strcpy(ordens[posicaoOS].status, "cancelada");
+    dataHoraAgora(ordens[posicaoOS].atualizado_em);
+    /* salvarOrdens está em ordem_servico.c, linha 9 */
     if (salvarOrdens())
-        printf("\n[+] OS %d arquivada. O historico foi preservado.", ordens[i].id_os);
+        printf("\n[+] OS %d arquivada. O historico foi preservado.", ordens[posicaoOS].id_os);
     pausar();
 }
