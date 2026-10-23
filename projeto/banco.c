@@ -1,9 +1,6 @@
-/* Conexão com o SQL Server pela API ODBC (sql.h / sqlext.h).
-   Compilar com: gcc main.c -o output/main.exe -lodbc32
-   Antes de usar: rodar docs/Modelagem_DB/schema_sqlserver.sql e dados_exemplo_sqlserver.sql */
+/* banco.c - conversa com o SQL Server (ODBC). Compilar com: gcc main.c -o output/main.exe -lodbc32 */
 
-/* Banco bytetech na instância padrão da máquina, com o login do Windows (sem senha no código).
-   Se a máquina só tiver o driver 17, troque "ODBC Driver 18" por "ODBC Driver 17" */
+/* Banco bytetech nesta máquina, com o login do Windows. Se só tiver o driver 17, troque 18 por 17 */
 #define CONEXAO_SQLSERVER "DRIVER={ODBC Driver 18 for SQL Server};" \
                           "SERVER=localhost;"                        \
                           "DATABASE=bytetech;"                       \
@@ -11,6 +8,7 @@
                           "Encrypt=yes;"                             \
                           "TrustServerCertificate=yes;"
 
+/* Ligações com o ODBC: o ambiente, a conexão e o último comando executado */
 SQLHENV  bdAmbiente = SQL_NULL_HENV;
 SQLHDBC  bdConexao = SQL_NULL_HDBC;
 SQLHSTMT bdComando = SQL_NULL_HSTMT;
@@ -22,36 +20,33 @@ void bdMostrarErro(SQLSMALLINT tipo, SQLHANDLE handle)
     SQLCHAR mensagem[512];
     SQLINTEGER erroNativo;
     SQLSMALLINT tamanho;
-    SQLSMALLINT i = 1;
 
-    while (SQLGetDiagRec(tipo, handle, i, estado, &erroNativo, mensagem, sizeof(mensagem), &tamanho) == SQL_SUCCESS)
-    {
+    if (SQLGetDiagRec(tipo, handle, 1, estado, &erroNativo, mensagem, sizeof(mensagem), &tamanho) == SQL_SUCCESS)
         printf("\n[!] Banco de dados: %s\n", mensagem);
-        i++;
-    }
 }
 
 /* Abre a conexão com o banco; devolve 1 se conectou */
 int bdConectar()
 {
-    SQLRETURN ret;
+    SQLRETURN resultado;
 
     SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &bdAmbiente);
     SQLSetEnvAttr(bdAmbiente, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0);
     SQLAllocHandle(SQL_HANDLE_DBC, bdAmbiente, &bdConexao);
-    SQLSetConnectAttr(bdConexao, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
+    SQLSetConnectAttr(bdConexao, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0); /* espera até 5 segundos */
 
-    ret = SQLDriverConnect(bdConexao, NULL, (SQLCHAR *)CONEXAO_SQLSERVER, SQL_NTS,
-                           NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
-    if (!SQL_SUCCEEDED(ret))
+    resultado = SQLDriverConnect(bdConexao, NULL, (SQLCHAR *)CONEXAO_SQLSERVER, SQL_NTS,
+                                 NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+    if (!SQL_SUCCEEDED(resultado))
     {
+        /* bdMostrarErro está em banco.c, linha 17 */
         bdMostrarErro(SQL_HANDLE_DBC, bdConexao);
         return 0;
     }
     return 1;
 }
 
-/* Fecha a conexão e libera os handles */
+/* Fecha a conexão com o banco */
 void bdDesconectar()
 {
     if (bdComando != SQL_NULL_HSTMT)
@@ -61,49 +56,27 @@ void bdDesconectar()
     SQLFreeHandle(SQL_HANDLE_ENV, bdAmbiente);
 }
 
-/* Roda um comando que não devolve linhas (INSERT, UPDATE, SET); devolve 1 se deu certo */
+/* Roda um comando no banco (SELECT, INSERT, UPDATE ou SET); devolve 1 se deu certo.
+   As linhas de um SELECT são lidas depois com bdProximaLinha e bdLerTexto */
 int bdExecutar(char sql[])
 {
-    SQLHSTMT comando;
-    SQLRETURN ret;
-
-    /* fecha o SELECT anterior: o SQL Server não roda outro comando com um SELECT aberto */
-    if (bdComando != SQL_NULL_HSTMT)
-    {
-        SQLFreeHandle(SQL_HANDLE_STMT, bdComando);
-        bdComando = SQL_NULL_HSTMT;
-    }
-    SQLAllocHandle(SQL_HANDLE_STMT, bdConexao, &comando);
-    ret = SQLExecDirect(comando, (SQLCHAR *)sql, SQL_NTS);
-    /* SQL_NO_DATA: o comando rodou, mas não mudou nenhuma linha */
-    if (!SQL_SUCCEEDED(ret) && ret != SQL_NO_DATA)
-    {
-        bdMostrarErro(SQL_HANDLE_STMT, comando);
-        SQLFreeHandle(SQL_HANDLE_STMT, comando);
-        return 0;
-    }
-    SQLFreeHandle(SQL_HANDLE_STMT, comando);
-    return 1;
-}
-
-/* Roda um SELECT; as linhas são lidas depois com bdProximaLinha e bdLerTexto */
-int bdConsultar(char sql[])
-{
-    SQLRETURN ret;
+    SQLRETURN resultado;
 
     if (bdComando != SQL_NULL_HSTMT)
-        SQLFreeHandle(SQL_HANDLE_STMT, bdComando);
+        SQLFreeHandle(SQL_HANDLE_STMT, bdComando); /* fecha o comando anterior */
     SQLAllocHandle(SQL_HANDLE_STMT, bdConexao, &bdComando);
-    ret = SQLExecDirect(bdComando, (SQLCHAR *)sql, SQL_NTS);
-    if (!SQL_SUCCEEDED(ret))
+
+    resultado = SQLExecDirect(bdComando, (SQLCHAR *)sql, SQL_NTS);
+    if (!SQL_SUCCEEDED(resultado) && resultado != SQL_NO_DATA) /* NO_DATA: rodou, mas não mudou nenhuma linha */
     {
+        /* bdMostrarErro está em banco.c, linha 17 */
         bdMostrarErro(SQL_HANDLE_STMT, bdComando);
         return 0;
     }
     return 1;
 }
 
-/* Avança para a próxima linha do SELECT; devolve 0 quando acabou */
+/* Passa para a próxima linha do SELECT; devolve 0 quando as linhas acabaram */
 int bdProximaLinha()
 {
     if (SQL_SUCCEEDED(SQLFetch(bdComando)))
@@ -111,7 +84,7 @@ int bdProximaLinha()
     return 0;
 }
 
-/* Copia a coluna (1, 2, 3...) da linha atual para destino. NULL no banco vira texto vazio */
+/* Copia a coluna (1, 2, 3...) da linha atual para destino; NULL no banco vira texto vazio */
 void bdLerTexto(int coluna, char destino[], int tamanho)
 {
     SQLLEN indicador;
@@ -122,12 +95,11 @@ void bdLerTexto(int coluna, char destino[], int tamanho)
         destino[0] = '\0';
 }
 
-/* Prepara um texto para entrar no SQL: vazio vira NULL; o resto vira N'texto'.
-   O apóstrofo é escrito duas vezes (D'Avila vira D''Avila): assim o SQL Server
-   entende que ele faz parte do texto e não que o texto acabou */
+/* Prepara um texto para o SQL: vazio vira NULL, o resto vira N'texto'.
+   O apóstrofo é repetido (D'Avila vira D''Avila) para o SQL Server não achar que o texto acabou */
 void sqlTexto(char destino[], char texto[])
 {
-    int i, j, tamanho = strlen(texto);
+    int posicaoTexto, posicaoDestino, tamanho = strlen(texto);
 
     if (tamanho == 0)
     {
@@ -136,22 +108,22 @@ void sqlTexto(char destino[], char texto[])
     }
 
     strcpy(destino, "N'");
-    j = 2; /* próxima posição livre do destino */
-    for (i = 0; i < tamanho; i++)
+    posicaoDestino = 2; /* depois do N' */
+    for (posicaoTexto = 0; posicaoTexto < tamanho; posicaoTexto++)
     {
-        destino[j] = texto[i];
-        j++;
-        if (texto[i] == '\'')
+        destino[posicaoDestino] = texto[posicaoTexto];
+        posicaoDestino++;
+        if (texto[posicaoTexto] == '\'')
         {
-            destino[j] = '\''; /* repete o apóstrofo */
-            j++;
+            destino[posicaoDestino] = '\''; /* repete o apóstrofo */
+            posicaoDestino++;
         }
     }
-    destino[j] = '\0';
+    destino[posicaoDestino] = '\0';
     strcat(destino, "'");
 }
 
-/* Prepara um valor em dinheiro: -1 (ainda não informado) vira NULL */
+/* Prepara um valor em dinheiro para o SQL: -1 (ainda não informado) vira NULL */
 void sqlDinheiro(char destino[], double valor)
 {
     if (valor < 0)
