@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sql.h>
-#include <sqlext.h>
 #include <string.h>
+#include "banco.h"
 
 #define CONNECTION_STRING "DRIVER={ODBC Driver 18 for SQL Server};" \
                           "SERVER=localhost;"                        \
@@ -15,154 +14,149 @@
                           
 
 #define RESULT_LEN  256
-
-#define CHECK_ERROR(e, s, h, t) ({\
-            if (e!=SQL_SUCCESS && e != SQL_SUCCESS_WITH_INFO) {extract_error(s, h, t); goto exit;} \
-})
-void extract_error(char *fn, SQLHANDLE handle, SQLSMALLINT type)
+//commit
+//prepara e estabelece a conexão com o banco.
+int bdConectar(Banco *banco)
 {
-	SQLINTEGER i = 0;
-	SQLINTEGER NativeError;
-	SQLCHAR SQLState[7];
-	SQLCHAR MessageText[256];
-	SQLSMALLINT TextLength;
-	SQLRETURN ret;
-
-	fprintf(stderr, "\nThe driver reported the following error %s\n", fn);
-	do
-	{
-		ret = SQLGetDiagRec(type, handle, ++i, SQLState, &NativeError,
-			MessageText, sizeof(MessageText), &TextLength);
-		if (SQL_SUCCEEDED(ret)) {
-			printf("%s:%ld:%ld:%s\n",
-				SQLState, (long)i, (long)NativeError, MessageText);
-		}
-	} while (ret == SQL_SUCCESS);
-}
-
-
-int consul_user (char tabela[], int id){
-	
-	SQLHENV   henv = SQL_NULL_HENV;   // Environment
-	SQLHDBC   hdbc = SQL_NULL_HDBC;   // Connection handle
-	SQLHSTMT  hstmt = SQL_NULL_HSTMT;  // Statement handle
 	SQLRETURN retcode;
 	SQLCHAR outstr[1024];
 	SQLSMALLINT outstrlen;
+//estamos criando o ambiente ODBC
+	retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &banco->henv);
 
-    
-	// Allocate environment handle
-	retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
-	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_ENV)",
-		henv, SQL_HANDLE_ENV);
-
-
-
-	// Set the ODBC version environment attribute
-	retcode = SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION,
-		(SQLPOINTER*)SQL_OV_ODBC3, 0);
-	CHECK_ERROR(retcode, "SQLSetEnvAttr(SQL_ATTR_ODBC_VERSION)",
-		henv, SQL_HANDLE_ENV);
-
-	// Allocate connection handle
-	retcode = SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc);
-	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_DBC)",
-		hdbc, SQL_HANDLE_DBC);
-
-
-
-	// Set login timeout to 5 seconds
-	retcode = SQLSetConnectAttr(hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
-	CHECK_ERROR(retcode, "SQLSetConnectAttr(SQL_LOGIN_TIMEOUT)",
-		hdbc, SQL_HANDLE_DBC);
-
-
-
-	// Connect to data source, replace with your connection string
-	retcode = SQLDriverConnect(hdbc, NULL, CONNECTION_STRING, SQL_NTS, outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_NOPROMPT);
-
-
-	// Allocate statement handle
-	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
-	CHECK_ERROR(retcode, "SQLAllocHandle(SQL_HANDLE_STMT)",
-		hstmt, SQL_HANDLE_STMT);
-
-		char stringId[5];
-		sprintf(stringId, "%d", id);
-
-		char query[80] = "SELECT * FROM ";
-		
-		strcat(query, tabela);
-
-		strcat(query, " WHERE ID = ");
-
-		strcat(query, stringId);
-		
-
-	retcode = SQLExecDirect(hstmt,
-		(SQLCHAR*) query, SQL_NTS);
-	CHECK_ERROR(retcode, "SQLExecDirect()", hstmt, SQL_HANDLE_STMT);
-
-	SQLSMALLINT columns;
-
-	SQLNumResultCols(hstmt, &columns);
-
-	SQLCHAR buf[5][64];
-	SQLLEN indicator[5];
-
-	// Bind columns
-	for (int i = 0; i < columns; i++) {
-		SQLBindCol(hstmt, i+1, SQL_C_CHAR, buf[i], sizeof(buf[i]), &indicator[i]);
+	if (!SQL_SUCCEEDED(retcode))
+	{
+		printf("Erro ao criar ambiente ODBC. \n");
+		return 0;
 	}
+//estamos configurando o ambiente ODBC
+	retcode = SQLSetEnvAttr(banco->henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0);
+
+	if (!SQL_SUCCEEDED(retcode))
+	{
+		printf("Erro ao configurar ambiente ODBC.\n");
+		SQLFreeHandle(SQL_HANDLE_ENV, banco->henv);
+		banco->henv = SQL_NULL_HENV;
+		return 0;
+	}
+//estamos criando o identificador da conexão do ambiente ODBC		
+	retcode = SQLAllocHandle(SQL_HANDLE_DBC, banco->henv, &banco->hdbc);
+	if (!SQL_SUCCEEDED(retcode))
+	{
+		printf("Erro ao criar identificador de conexao.\n");
+		SQLFreeHandle(SQL_HANDLE_ENV, banco->henv);
+		banco->henv = SQL_NULL_HENV;
+		return 0;
+	}
+
+//estamos setando o tempo limite de tentativa de conexão com o ODBC
+	retcode = SQLSetConnectAttr(banco->hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5,0);
 	
+	if (!SQL_SUCCEEDED(retcode))
+	{
+    printf("Erro ao configurar tempo limite de conexao.\n");
 
-	// Fetch and print each row of data until SQL_NO_DATA returned.
-	while (SQL_SUCCEEDED(SQLFetch(hstmt))) {
-		for (int i = 0; i < columns; i++) {
-			printf("| %s |", buf[i]);
-		}
-		printf("\n");
+    SQLFreeHandle(SQL_HANDLE_DBC, banco->hdbc);
+//libera o identificador da conexão.
+    banco->hdbc = SQL_NULL_HDBC;
+//indica que o identificador nao está mais em uso
+
+    SQLFreeHandle(SQL_HANDLE_ENV, banco->henv);
+//libera o ambiente ODBC.
+    banco->henv = SQL_NULL_HENV;
+//indica que o identificador nao está mais em uso
+    return 0;
 	}
+
+	retcode = SQLDriverConnect(
+		banco->hdbc,
+		NULL,
+		(SQLCHAR*)CONNECTION_STRING,
+		SQL_NTS,
+		outstr,
+		sizeof(outstr),
+		&outstrlen,
+		SQL_DRIVER_NOPROMPT
+	);
+	if (!SQL_SUCCEEDED(retcode))
+	{
+    printf("Erro ao conectar no SQL Server.\n");
+
+    SQLFreeHandle(SQL_HANDLE_DBC, banco->hdbc);
+//libera o identificador da conexão.
+    banco->hdbc = SQL_NULL_HDBC;
+//indica que o identificador nao está mais em uso
+
+    SQLFreeHandle(SQL_HANDLE_ENV, banco->henv);
+//libera o ambiente ODBC.
+    banco->henv = SQL_NULL_HENV;
+//indica que o identificador nao está mais em uso
+    return 0;
+	}
+	printf("Conexao com SQL Server estabelecida!\n");
+return 1;
+}
+//utiliza a conexão existente para executar um comando SQL.
+
+
+void bdDesconectar(Banco *banco)
+{
+if (banco->hstmt != SQL_NULL_HSTMT)
+{
+    SQLFreeHandle(SQL_HANDLE_STMT, banco->hstmt);
+    banco->hstmt = SQL_NULL_HSTMT;
+}
+//identificador da conexão existe e ainda não foi marcado como nulo?
+	if (banco->hdbc != SQL_NULL_HDBC)
+	{
+		SQLDisconnect(banco->hdbc);
+//encerra a conexão
+		SQLFreeHandle(SQL_HANDLE_DBC, banco->hdbc);
+//liberamos o identificador
+		banco->hdbc = SQL_NULL_HDBC;
+//marcamos ele como nulo 
+	}
+
+	if (banco->henv != SQL_NULL_HENV)
+	{
+		SQLFreeHandle(SQL_HANDLE_ENV, banco->henv);
+//liberamos o identificador
+		banco->henv = SQL_NULL_HENV;
+//marcamos ele como nulo 
+	}
+
+	printf("Conexao encerrada!\n");
+}
+//encerra a conexão depois que terminarmos.
+
+int bdExecutar(Banco *banco, const char *sql)
+{
+	SQLRETURN retcode;
+
+	retcode = SQLAllocHandle(SQL_HANDLE_STMT, banco->hdbc, &banco->hstmt);
+	if (!SQL_SUCCEEDED(retcode))
+	{
+		printf("Erro ao criar identificador sql. \n");
+		return 0;
+	}
+retcode = SQLExecDirect(banco->hstmt, (SQLCHAR*)sql, SQL_NTS);
+if (!SQL_SUCCEEDED(retcode))
+{
+	printf("Erro ao executar comando SQL. \n");
+
+	SQLFreeHandle(SQL_HANDLE_STMT, banco->hstmt);
+	banco->hstmt = SQL_NULL_HSTMT;
 	
-exit:
-	printf("\nComplete.\n\n\n");
-	// Free handles
-	// Statement
-	if (hstmt != SQL_NULL_HSTMT)
-		SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
-	// Connection
-	if (hdbc != SQL_NULL_HDBC) {
-		SQLDisconnect(hdbc);
-		SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
-	}
-	// Environment
-	if (henv != SQL_NULL_HENV)
-		SQLFreeHandle(SQL_HANDLE_ENV, henv);
 	return 0;
-
 }
 
 
-/*
-void bdMostrarErro(int tipo, int handle) {
+//libera o identificador apos executar o comando;
+SQLFreeHandle(SQL_HANDLE_STMT, banco->hstmt);
+banco->hstmt = SQL_NULL_HSTMT;
 
-}
+//marca o identificador como nulo.
+banco->hstmt = SQL_NULL_HSTMT;
 
-int bdConectar(void) {
+	return 1;
 }
-
-int bdExecutar(const char *sql) {
-}
-
-int bdConsultar(const char *sql) {
-}
-
-int bdProximaLinha(void) {
-}
-
-void bdLerTexto(int coluna, char *destino, int tamanho) {
-}
-
-void sqlTexto(char *destino, const char *texto) {
-}
-*/
