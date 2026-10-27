@@ -1,6 +1,6 @@
 # Sprint 09
 
-**Status:** Planejada - começa no sábado, 24/10/2026, e fecha na sexta-feira, 30/10/2026.
+**Status:** Em andamento - começou no sábado, 24/10/2026, e fecha na sexta-feira, 30/10/2026.
 
 **Período:** 24/10/2026 a 30/10/2026 (sábado a sexta-feira).
 
@@ -14,7 +14,7 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 
 ## Tasks
 
-Os responsáveis são definidos na Sprint Planning. As tarefas marcadas com *(Sprint 08)* vêm da sprint anterior e só entram aqui se não forem concluídas até o fechamento dela.
+Os responsáveis são definidos na Sprint Planning. As tarefas marcadas com *(Sprint 08)* vieram da sprint anterior, que fechou sem concluí-las (ver a [Sprint Review da Sprint 08](./sprint-08.md#sprint-review)).
 
 ### Documento do PIM (`docs/documentacao-pim/`)
 
@@ -50,12 +50,15 @@ Os responsáveis são definidos na Sprint Planning. As tarefas marcadas com *(Sp
 
 ### Ajustes finais e organização
 
-- [ ] Protótipos das telas no Figma, exportados em PNG, e o link no README. *(Sprint 08)*
+- [x] Protótipos das telas no Figma exportados em PNG para `docs/telas-figma/`: login, página inicial, menus e telas de cada perfil (Admin, Recepcionista, Técnico e Cliente) e o mapa de navegação, 34 imagens - 26/10 (PR #39). *(Sprint 08)*
+- [ ] Colocar o link do Figma e da pasta `docs/telas-figma/` no README. *(Sprint 08)*
+- [ ] Conferir as telas do Figma com os casos de uso: o mapa de navegação usa outra numeração (ex.: "34 Cadastrar admin", que é o UC04 nas descrições) e não tem os casos de uso de reativar (UC45 a UC49). Corrigir os nomes das pastas `recpcionista` e `cadastro-recpcionista`.
+- [ ] Decidir com o grupo como explicar na apresentação que os protótipos são de telas web e o sistema é de console (o plano da Sprint 08 era seguir o padrão do terminal).
 - [ ] Colocar no README os links do documento do código e do manual de uso.
 - [ ] Atualizar ou arquivar os materiais fora do repositório que descrevem a versão antiga do código (a documentação do código no Claude Docs, de 22/10, e o guia do banco ODBC, de 21/10).
 - [ ] Apagar as pastas antigas de diagramas em `docs/Modalagem_casos_de_uso/` e manter só a mais nova. *(Sprint 08)*
 - [ ] Colocar `*.asta.lock` no `.gitignore` e tirar do repositório o `diagrama_de_classes.asta.lock`. *(Sprint 08)*
-- [ ] Apagar as branches já mescladas e decidir o que fazer com a `projeto+banco`. *(Sprint 08)*
+- [ ] Apagar as branches já mescladas e decidir o que fazer com a `projeto+banco`: ela tem um commit de 21/10 ("ajustamos o menu recepcionistas para consultar direto no banco") que não está na `main`. *(Sprint 08)*
 - [ ] Decidir se os PDFs das aulas (Unidades 1 a 6) entram no repositório ou no `.gitignore`. *(Sprint 08)*
 - [ ] Roteiro da apresentação: quem fala de cada parte e o caminho de uma OS para mostrar no terminal. *(Sprint 08)*
 - [ ] Ensaio da apresentação com o programa rodando e o banco com os dados de exemplo.
@@ -65,6 +68,8 @@ Ao concluir uma tarefa, marque `[x]` e escreva a data no fim (ex.: `- 27/10`). O
 ## Sprint Review
 
 *A ser preenchido na sexta-feira, 30/10.*
+
+Andamento em 26/10: as telas do Figma entraram no repositório (PR #39). O documento do PIM, o documento do código e o manual de uso ainda não começaram.
 
 ## Retrospective
 
