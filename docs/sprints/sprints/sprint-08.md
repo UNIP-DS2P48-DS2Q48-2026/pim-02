@@ -1,6 +1,6 @@
 # Sprint 08
 
-**Status:** Em andamento - começou no sábado, 17/10/2026, e fecha na sexta-feira, 23/10/2026.
+**Status:** Concluída - fechada em 26/10/2026, a partir do histórico do Git (a reunião de sexta-feira, 23/10, não registrou o fechamento).
 
 **Período:** 17/10/2026 a 23/10/2026.
 
@@ -33,38 +33,38 @@ Todos os PBIs do código estão concluídos (ver o [Product Backlog](../../produ
 - [x] Confirmação ao sair (UC02): "Tem certeza que deseja sair?"; com N, o usuário volta ao menu - 23/10 (PR #35).
 - [x] Descrição do UC02 atualizada (passos 2 e 3, exceção 3a) no `descricoes-astah.md` e no Astah - 23/10.
 - [x] Teste com 31 cenários antes e depois de cada mudança (telas e tabelas iguais) e compilação sem avisos (`gcc -Wall -Wextra main.c`) - 23/10.
-- [x] Tirar dos documentos a frase "os dados ficam em `.txt`; o SQL Server é o próximo passo" (README, requisitos, DER, Product Backlog) e corrigir os links do README - 23/10 (falta o commit).
+- [x] Tirar dos documentos a frase "os dados ficam em `.txt`; o SQL Server é o próximo passo" (README, requisitos, DER, Product Backlog) e corrigir os links do README - 23/10 (PR #37).
 
 ### Documentação acadêmica
 
-- [ ] Etapa 3: diagrama de atividades ou de sequência (os fluxogramas de `docs/Fluxograma/` podem servir de base). A continuação de 18/10 já tem a seção 3.5 (sequência da criação da OS), mas a imagem aponta para uma pasta do computador de um integrante (`C:/Users/math-/...`) e não aparece no repositório.
-- [ ] Etapa 4: normalização, principais comandos SQL e discussão sobre bancos NoSQL. Rascunho na continuação de 18/10 (seção 5); falta revisar.
-- [ ] Etapa 5: seção sobre a implementação em C (arquivos, SQL Server via ODBC, menus por perfil, como compilar e executar), com algoritmos, pseudocódigo e prints das telas do terminal. Rascunho na continuação de 18/10 (seção 6); a 6.4 ainda está "pendente terminar o banco" e a 6.7 descreve a versão antiga (casos de uso vazios e gravação em texto).
-- [ ] Etapa 6: redes e sistemas distribuídos (arquitetura, topologia, equipamentos, endereçamento IP, VLANs, nuvem, segurança). Rascunho na continuação de 18/10 (seção 7); falta revisar.
-- [ ] Etapa 7: direitos humanos, inclusão e segurança (acessibilidade, privacidade, proteção de dados, ética). Rascunho na continuação de 18/10 (seção 8); falta revisar.
-- [ ] Etapa 8: integração da solução, limitações, evolução futura e conclusão. Rascunho na continuação de 18/10 (seção 9 e Conclusão); o SQL Server já não é evolução futura.
-- [ ] Atualizar a seção 4 (Planejamento ágil) com as Sprints 05 a 08: o Quadro 6 da continuação vai só até a Sprint 05.
-- [ ] Alinhar a parte inicial (`2026-10-12/documentacao_pim_2_inicio.md`) com o SQL Server: a linha do RNF04, o Quadro 5 ("gravadas em usuario.txt...") e o parágrafo sobre os arquivos de texto.
-- [ ] Manter o Desenvolvimento entre 20 e 30 páginas: levar detalhes (as 49 descrições de casos de uso, as regras de integridade) para um apêndice.
-- [ ] Revisar o documento com o grupo e passar para o formato do manual (`docs/manual-pim/`).
+- [ ] Etapa 3: diagrama de atividades ou de sequência (os fluxogramas de `docs/Fluxograma/` podem servir de base). A continuação de 18/10 já tem a seção 3.5 (sequência da criação da OS), mas a imagem aponta para uma pasta do computador de um integrante (`C:/Users/math-/...`) e não aparece no repositório. → passou para a Sprint 09.
+- [ ] Etapa 4: normalização, principais comandos SQL e discussão sobre bancos NoSQL. Rascunho na continuação de 18/10 (seção 5); falta revisar. → passou para a Sprint 09.
+- [ ] Etapa 5: seção sobre a implementação em C (arquivos, SQL Server via ODBC, menus por perfil, como compilar e executar), com algoritmos, pseudocódigo e prints das telas do terminal. Rascunho na continuação de 18/10 (seção 6); a 6.4 ainda está "pendente terminar o banco" e a 6.7 descreve a versão antiga (casos de uso vazios e gravação em texto). → passou para a Sprint 09.
+- [ ] Etapa 6: redes e sistemas distribuídos (arquitetura, topologia, equipamentos, endereçamento IP, VLANs, nuvem, segurança). Rascunho na continuação de 18/10 (seção 7); falta revisar. → passou para a Sprint 09.
+- [ ] Etapa 7: direitos humanos, inclusão e segurança (acessibilidade, privacidade, proteção de dados, ética). Rascunho na continuação de 18/10 (seção 8); falta revisar. → passou para a Sprint 09.
+- [ ] Etapa 8: integração da solução, limitações, evolução futura e conclusão. Rascunho na continuação de 18/10 (seção 9 e Conclusão); o SQL Server já não é evolução futura. → passou para a Sprint 09.
+- [ ] Atualizar a seção 4 (Planejamento ágil) com as Sprints 05 a 08: o Quadro 6 da continuação vai só até a Sprint 05. → passou para a Sprint 09.
+- [ ] Alinhar a parte inicial (`2026-10-12/documentacao_pim_2_inicio.md`) com o SQL Server: a linha do RNF04, o Quadro 5 ("gravadas em usuario.txt...") e o parágrafo sobre os arquivos de texto. → passou para a Sprint 09.
+- [ ] Manter o Desenvolvimento entre 20 e 30 páginas: levar detalhes (as 49 descrições de casos de uso, as regras de integridade) para um apêndice. → passou para a Sprint 09.
+- [ ] Revisar o documento com o grupo e passar para o formato do manual (`docs/manual-pim/`). → passou para a Sprint 09.
 - [x] Corrigir o nome da pasta `docs/documentacao-pim/20206-10-12/` para `2026-10-12` - 18/10.
 - [x] Conferir o título do Diagrama Estendido no Astah: está "byteTech - Diagrama Estendido" - 20/10.
 
 ### Protótipos (Figma)
 
-- [ ] Criar o arquivo do projeto no Figma e definir o padrão das telas, igual ao terminal: cabeçalho BYTETECH, 80 colunas e menus numerados.
-- [ ] Prototipar o Login e os 4 menus principais (Administrador, Recepcionista, Técnico e Cliente).
-- [ ] Prototipar as telas de cada pacote do Diagrama Estendido: Usuário, Equipamento, Ordem de Serviço, Manutenção, Orçamento, Histórico e Relatório, Meus Dados.
-- [ ] Ligar as telas no modo protótipo do Figma, seguindo o caminho de uma OS: abertura, diagnóstico, orçamento, reparo, teste, entrega e feedback.
-- [ ] Exportar os protótipos em PNG para `docs/` e colocar o link do Figma no README.
+- [ ] Criar o arquivo do projeto no Figma e definir o padrão das telas, igual ao terminal: cabeçalho BYTETECH, 80 colunas e menus numerados. → passou para a Sprint 09. As telas entraram no repositório em 26/10 (PR #39), num estilo de página web, e não no do terminal.
+- [ ] Prototipar o Login e os 4 menus principais (Administrador, Recepcionista, Técnico e Cliente). → passou para a Sprint 09.
+- [ ] Prototipar as telas de cada pacote do Diagrama Estendido: Usuário, Equipamento, Ordem de Serviço, Manutenção, Orçamento, Histórico e Relatório, Meus Dados. → passou para a Sprint 09.
+- [ ] Ligar as telas no modo protótipo do Figma, seguindo o caminho de uma OS: abertura, diagnóstico, orçamento, reparo, teste, entrega e feedback. → passou para a Sprint 09.
+- [ ] Exportar os protótipos em PNG para `docs/` e colocar o link do Figma no README. → passou para a Sprint 09.
 
 ### Organização e apresentação
 
-- [ ] Apagar as pastas antigas de diagramas em `docs/Modalagem_casos_de_uso/` e manter só a mais nova, de 23/10 (o histórico fica no Git, como combinado na Sprint 04).
-- [ ] Colocar `*.asta.lock` no `.gitignore` e tirar do repositório o `diagrama_de_classes.asta.lock`.
-- [ ] Apagar as branches já mescladas (`refactor/nomes-claros`, `fix/logout`, `fix/comentarios`) e decidir o que fazer com a `projeto+banco` (feita sobre uma versão antiga do código).
-- [ ] Decidir se os PDFs das aulas (Unidades 1 a 6) entram no repositório ou no `.gitignore`.
-- [ ] Montar o roteiro da apresentação: quem fala de cada parte e o caminho de uma OS para mostrar no terminal.
+- [ ] Apagar as pastas antigas de diagramas em `docs/Modalagem_casos_de_uso/` e manter só a mais nova, de 23/10 (o histórico fica no Git, como combinado na Sprint 04). → passou para a Sprint 09.
+- [ ] Colocar `*.asta.lock` no `.gitignore` e tirar do repositório o `diagrama_de_classes.asta.lock`. → passou para a Sprint 09.
+- [ ] Apagar as branches já mescladas (`refactor/nomes-claros`, `fix/logout`, `fix/comentarios`) e decidir o que fazer com a `projeto+banco` (feita sobre uma versão antiga do código). → passou para a Sprint 09.
+- [ ] Decidir se os PDFs das aulas (Unidades 1 a 6) entram no repositório ou no `.gitignore`. → passou para a Sprint 09.
+- [ ] Montar o roteiro da apresentação: quem fala de cada parte e o caminho de uma OS para mostrar no terminal. → passou para a Sprint 09.
 
 ## Decisões desta sprint
 
@@ -131,18 +131,27 @@ O código foi conferido com a Matriz de Permissões, as RN, as RI, as 44 descri�
 
 ## Sprint Review
 
-*A ser preenchido na sexta-feira, 23/10.*
+A semana foi quase toda de código. Os UC24 a UC30 voltaram depois do PR #29, o código foi conferido com os diagramas, as regras e as descrições, e o sistema ganhou os casos de uso de reativar (UC45 a UC49), passando de 44 para 49. O programa passou a gravar no SQL Server pela API ODBC e o modo `.txt` saiu. O código ficou mais fácil de explicar: nomes claros, comentários com o arquivo e a linha de cada função, data vinda do banco e confirmação ao sair (UC02). Os 31 cenários de teste passam e o código compila sem avisos. Os diagramas foram exportados de novo (23/10) e os documentos deixaram de dizer que os dados ficam em `.txt`. Foram 8 PRs com merge na `main` (#30 a #37).
+
+Não foram entregues e passaram para a [Sprint 09](./sprint-09.md): as etapas 3 a 8 do documento do PIM (a continuação de 18/10 não foi revisada nem alinhada ao SQL Server), os protótipos no Figma dentro da semana, a limpeza do repositório (pastas antigas de diagramas, `.asta.lock`, branches) e o roteiro da apresentação.
 
 ## Retrospective
 
 ### Funcionou bem
 
-*A ser preenchido na sexta-feira, 23/10.*
+- Os 31 cenários de teste rodados antes e depois de cada mudança deram segurança para trocar o `.txt` pelo SQL Server e renomear variáveis sem quebrar nada.
+- Uma branch e um PR para cada assunto (`fix/volta-uc24-30`, `feat/banco-sqlserver`, `refactor/nomes-claros`, `fix/logout`, `fix/comentarios`) deixou o histórico fácil de seguir.
+- Registrar as decisões no arquivo da sprint, com o porquê, ajudou a explicar as mudanças ao grupo.
 
 ### Problemas
 
-*A ser preenchido na sexta-feira, 23/10.*
+- O documento do PIM ficou parado desde 18/10: o código tomou a semana toda e a meta da sprint (documento, Figma e apresentação) não foi cumprida.
+- O trabalho ficou concentrado nas noites de 20 a 23/10, e a sprint de novo não foi fechada na sexta-feira.
+- O código mudou de base duas vezes na mesma semana (`.txt` e depois só SQL Server), e o documento do PIM e os materiais de fora do repositório ficaram descrevendo a versão antiga.
+- O commit de 21/10 que faz o menu da recepcionista consultar direto no banco ficou só na branch `projeto+banco`, feita sobre uma versão antiga, e não chegou à `main`.
 
 ### Melhorias
 
-*A ser preenchido na sexta-feira, 23/10.*
+- Proposta para a Sprint 09: só mexer no código para corrigir erro, e usar o tempo no documento do PIM, no manual de uso e na apresentação.
+- Dividir as etapas do documento entre o grupo logo no sábado, com um responsável por etapa.
+- Fechar a sprint na sexta-feira, mesmo incompleta, e enviar as mudanças pela branch antes de começar a próxima.
