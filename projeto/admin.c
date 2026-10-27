@@ -1,4 +1,5 @@
 /* UC04 - Cadastrar Admin: cadastra um novo administrador */
+//commit
 void cadastrarAdmin()
 {
     cadastrarUsuario("admin", "Administradores > Cadastrar");
