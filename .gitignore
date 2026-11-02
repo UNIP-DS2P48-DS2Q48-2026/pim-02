@@ -3,3 +3,14 @@
 
 # executavel gerado na compilacao
 projeto/output/
+
+# ByteTech - arquivos locais
+/projeto/bytetech
+/projeto/teste_banco
+/projeto/teste.banco
+/projeto/backups_sql/
+/projeto/dados/*.txt
+/projeto/*.bak
+/projeto/*.backup
+/projeto/*.orig
+/projeto/.env
