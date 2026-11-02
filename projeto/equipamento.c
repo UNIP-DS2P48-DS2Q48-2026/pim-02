@@ -76,6 +76,8 @@ int listarEquipamentos(char filtro[], int soAtivos)
             continue;
         if (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0)
             continue;
+        if (soAtivos == -1 && strcmp(equipamentos[i].status, "inativo") != 0)
+            continue;
 
         nomeDoCliente(equipamentos[i].id_cliente, dono);
         if (!contemTexto(dono, filtro) && !contemTexto(equipamentos[i].tipo, filtro) &&
@@ -97,7 +99,8 @@ int listarEquipamentos(char filtro[], int soAtivos)
     return mostrados;
 }
 
-/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido).
+   soAtivos: 1 só ativos, 0 todos, -1 só inativos */
 int selecionarEquipamento(int soAtivos)
 {
     char filtro[60];
@@ -119,7 +122,8 @@ int selecionarEquipamento(int soAtivos)
         return -1;
 
     i = buscarEquipamentoPorId(id);
-    if (i < 0 || !podeVerEquipamento(i) || (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0))
+    if (i < 0 || !podeVerEquipamento(i) || (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0) ||
+        (soAtivos == -1 && strcmp(equipamentos[i].status, "inativo") != 0))
     {
         printf("\n[!] ID %d nao esta na lista.", id);
         pausar();
@@ -295,5 +299,60 @@ void inativarEquipamento()
     }
 
     printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
+    pausar();
+}
+
+/* UC49 - Reativar Equipamento: volta o equipamento para ativo; o cliente dono precisa estar ativo (RN01, RN14) */
+void reativarEquipamento()
+{
+    int i, cliente, inativos = 0;
+
+    imprimirCabecalho("Equipamentos > Reativar");
+
+    /* Conta os equipamentos inativos (exceção: nenhum) */
+    for (i = 0; i < totalEquipamentos; i++)
+    {
+        if (podeVerEquipamento(i) && strcmp(equipamentos[i].status, "inativo") == 0)
+            inativos++;
+    }
+    if (inativos == 0)
+    {
+        printf("\n[!] Nenhum equipamento inativo. Nao ha cadastro para reativar.");
+        pausar();
+        return;
+    }
+
+    i = selecionarEquipamento(-1);
+    if (i < 0)
+        return;
+
+    cliente = buscarUsuarioPorId(equipamentos[i].id_cliente);
+    if (cliente < 0 || strcmp(usuarios[cliente].status, "ativo") != 0)
+    {
+        printf("\n[!] O cliente dono deste equipamento esta inativo. Reative o cliente antes do equipamento.");
+        pausar();
+        return;
+    }
+
+    printf("\nReativar o equipamento ID %d (%s %s).", equipamentos[i].id_equipamento, equipamentos[i].tipo,
+           equipamentos[i].marca);
+    if (!confirmar("\nTem certeza?"))
+    {
+        printf("\nOperacao cancelada. O equipamento continua inativo.");
+        pausar();
+        return;
+    }
+
+    strcpy(equipamentos[i].status, "ativo");
+    dataHoraAgora(equipamentos[i].atualizado_em);
+    if (!salvarEquipamentos())
+    {
+        /* Banco recusou: volta o vetor ao que estava */
+        strcpy(equipamentos[i].status, "inativo");
+        pausar();
+        return;
+    }
+
+    printf("\n[+] Equipamento reativado. Ele volta a poder receber novas OS.");
     pausar();
 }

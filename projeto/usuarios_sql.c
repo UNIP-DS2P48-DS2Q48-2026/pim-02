@@ -331,7 +331,7 @@ int atualizarUsuarioSQL(Banco *banco, Usuario *usuario)
         goto erro;
 
     retorno = SQLExecute(comando);
-    if (!SQL_SUCCEEDED(retorno))
+    if (!SQL_SUCCEEDED(retorno) && retorno != SQL_NO_DATA)
         goto erro;
 
     retorno = SQLRowCount(comando, &linhasAfetadas);
@@ -390,8 +390,9 @@ int inativarUsuarioSQL(Banco *banco, int idUsuario)
     if (!SQL_SUCCEEDED(retorno))
         goto erro;
 
+    // SQL_NO_DATA: o UPDATE rodou mas nao alterou linha (bloqueado pela regra).
     retorno = SQLExecute(comando);
-    if (!SQL_SUCCEEDED(retorno))
+    if (!SQL_SUCCEEDED(retorno) && retorno != SQL_NO_DATA)
         goto erro;
 
     retorno = SQLRowCount(comando, &linhasAfetadas);
@@ -403,6 +404,54 @@ int inativarUsuarioSQL(Banco *banco, int idUsuario)
 
 erro:
     printf("[!] Erro ao tentar inativar o usuario no SQL Server.\n");
+    usuarioSQLMostrarErro(comando);
+    SQLFreeHandle(SQL_HANDLE_STMT, comando);
+    return 0;
+}
+
+
+/* Reativa um usuario inativo, liberando de novo o acesso (UC45 a UC48). */
+int reativarUsuarioSQL(Banco *banco, int idUsuario)
+{
+    const char *sql =
+        "UPDATE dbo.usuario SET status='ativo', atualizado_em=SYSDATETIME() "
+        "WHERE id_usuario=? AND status='inativo'";
+    SQLHSTMT comando = SQL_NULL_HSTMT;
+    SQLRETURN retorno;
+    SQLINTEGER id = (SQLINTEGER)idUsuario;
+    SQLLEN indicadorId = 0;
+    SQLLEN linhasAfetadas = 0;
+
+    if (banco == NULL || banco->hdbc == SQL_NULL_HDBC || idUsuario <= 0)
+        return 0;
+
+    retorno = SQLAllocHandle(SQL_HANDLE_STMT, banco->hdbc, &comando);
+    if (!SQL_SUCCEEDED(retorno))
+        return 0;
+
+    retorno = SQLPrepare(comando, (SQLCHAR *)sql, SQL_NTS);
+    if (!SQL_SUCCEEDED(retorno))
+        goto erro;
+
+    retorno = SQLBindParameter(comando, 1, SQL_PARAM_INPUT,
+                               SQL_C_SLONG, SQL_INTEGER, 0, 0,
+                               &id, sizeof(id), &indicadorId);
+    if (!SQL_SUCCEEDED(retorno))
+        goto erro;
+
+    retorno = SQLExecute(comando);
+    if (!SQL_SUCCEEDED(retorno) && retorno != SQL_NO_DATA)
+        goto erro;
+
+    retorno = SQLRowCount(comando, &linhasAfetadas);
+    if (!SQL_SUCCEEDED(retorno))
+        goto erro;
+
+    SQLFreeHandle(SQL_HANDLE_STMT, comando);
+    return linhasAfetadas == 1;
+
+erro:
+    printf("[!] Erro ao tentar reativar o usuario no SQL Server.\n");
     usuarioSQLMostrarErro(comando);
     SQLFreeHandle(SQL_HANDLE_STMT, comando);
     return 0;
@@ -460,7 +509,7 @@ int alterarSenhaUsuarioSQL(Banco *banco, int idUsuario,
         goto erro;
 
     retorno = SQLExecute(comando);
-    if (!SQL_SUCCEEDED(retorno))
+    if (!SQL_SUCCEEDED(retorno) && retorno != SQL_NO_DATA)
         goto erro;
 
     retorno = SQLRowCount(comando, &linhasAfetadas);

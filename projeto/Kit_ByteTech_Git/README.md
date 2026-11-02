@@ -121,6 +121,7 @@ Conexao no Windows:
   (`Trusted_Connection`), em `localhost`.
 - **Com** `BYTETECH_DB_PASSWORD` definida, entra com o usuario `sa`, igual ao Linux.
 - `BYTETECH_DB_SERVER` troca o servidor (ex.: `localhost\SQLEXPRESS`).
+- `BYTETECH_DB_NAME` troca o banco (padrao `bytetech`), ex.: um banco so de testes.
 - `BYTETECH_DB_DRIVER` troca o driver, se so tiver o 17:
   `set BYTETECH_DB_DRIVER=ODBC Driver 17 for SQL Server`
 
