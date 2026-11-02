@@ -1,115 +1,161 @@
-/* relatorio.c - histórico do equipamento e relatório de OS por mês */
-/* Funções do main.c usadas aqui: lerTexto (linha 121), pausar (linha 173), imprimirCabecalho (linha 215), dataHoje (linha 193) */
-
-/* UC42 - Consultar Historico: todas as OS de um equipamento */
-void consultarHistorico()
+/* A data está no formato AAAA-MM-DD? */
+int dataValida(char data[])
 {
-    int posicaoEquipamento, posicaoOS, mostrados = 0;
+    int i;
+
+    if (strlen(data) != 10 || data[4] != '-' || data[7] != '-')
+        return 0;
+    for (i = 0; i < 10; i++)
+    {
+        if (i == 4 || i == 7)
+            continue;
+        if (data[i] < '0' || data[i] > '9')
+            return 0;
+    }
+    return 1;
+}
+
+/* UC42 - Consultar Historico dos Equipamentos: mostra todas as OS de um equipamento */
+void historicoEquipamento()
+{
+    char dono[60];
+    int e, i, k, t, tecnicos, mostrados = 0;
 
     imprimirCabecalho("Historico de Equipamento");
 
-    /* Pede outro equipamento enquanto o escolhido não tiver OS (exceção 4a) */
-    do
+    /* A escolha do equipamento já respeita o escopo do perfil (RN10, RI10) */
+    e = selecionarEquipamento(0);
+    if (e < 0)
+        return;
+
+    nomeDoCliente(equipamentos[e].id_cliente, dono);
+    printf("\nEquipamento %d: %s %s (%s) - cliente %s\n", equipamentos[e].id_equipamento, equipamentos[e].tipo,
+           equipamentos[e].marca, equipamentos[e].modelo_numero_serie, dono);
+
+    /* Todas as OS do equipamento, inclusive finalizadas e canceladas (RN09) */
+    for (i = 0; i < totalOrdens; i++)
     {
-        /* selecionarEquipamento está em equipamento.c, linha 195 */
-        posicaoEquipamento = selecionarEquipamento("");
-        if (posicaoEquipamento < 0)
-            return;
+        if (ordens[i].id_equipamento != equipamentos[e].id_equipamento)
+            continue;
 
-        printf("\nEquipamento %d: %s %s - %s\n", equipamentos[posicaoEquipamento].id_equipamento, equipamentos[posicaoEquipamento].tipo,
-               equipamentos[posicaoEquipamento].marca, equipamentos[posicaoEquipamento].modelo_numero_serie);
+        printf("\n  OS %d - aberta em %s - %s\n", ordens[i].id_os, ordens[i].data_abertura, ordens[i].status);
+        printf("    Problema:    %s\n", ordens[i].problema_relatado);
+        if (strlen(ordens[i].diagnostico) > 0)
+            printf("    Diagnostico: %s\n", ordens[i].diagnostico);
+        else
+            printf("    Diagnostico: (ainda nao registrado)\n");
 
-        /* Inclui finalizadas e canceladas (RN09); o técnico só vê as dele (RN10) */
-        mostrados = 0;
-        for (posicaoOS = 0; posicaoOS < totalOrdens; posicaoOS++)
+        /* Técnicos atribuídos à OS (tabela tecnico_os) */
+        printf("    Tecnicos:    ");
+        tecnicos = 0;
+        for (k = 0; k < totalTecnicosOS; k++)
         {
-            /* podeVerOS está em ordem_servico.c, linha 212 */
-            if (ordens[posicaoOS].id_equipamento == equipamentos[posicaoEquipamento].id_equipamento && podeVerOS(posicaoOS))
-            {
-                /* mostrarOS está em ordem_servico.c, linha 391 */
-                mostrarOS(posicaoOS);
-                mostrados++;
-            }
+            if (tecnicosOS[k].id_os != ordens[i].id_os)
+                continue;
+            t = buscarUsuarioPorId(tecnicosOS[k].id_tecnico);
+            if (tecnicos > 0)
+                printf(", ");
+            if (t >= 0)
+                printf("%s", usuarios[t].nome);
+            else
+                printf("?");
+            tecnicos++;
         }
+        if (tecnicos == 0)
+            printf("(nenhum)");
+        printf("\n");
 
-        if (mostrados == 0)
-            printf("\n[!] Este equipamento ainda nao tem historico de atendimento. Escolha outro.\n");
-    } while (mostrados == 0);
+        if (strlen(ordens[i].data_entrega) > 0)
+            printf("    Entrega:     %s\n", ordens[i].data_entrega);
+        mostrados++;
+    }
+
+    if (mostrados == 0)
+    {
+        printf("\n[!] Este equipamento ainda nao tem historico de atendimento.\n");
+    }
     pausar();
 }
 
-/* UC43 - Consultar Relatorios: quantidade de OS por mês e por status no ano */
-void gerarRelatorio()
+/* UC43 - Consultar Relatorios: contagens de OS e equipamentos por periodo */
+void consultarRelatorios()
 {
-    /* Linha = mês (0 = janeiro), coluna = status */
-    int contagem[12][4];
-    char nomesMes[12][4] = {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"};
-    char ano[TAM_DATA], anoDaOS[5], mesDaOS[3];
-    int posicaoOS, mes, coluna, satisfeitos = 0, comFeedback = 0;
+    char inicio[TAM_DATA + 5], fim[TAM_DATA + 5];
+    int i, j, repetido;
+    int total = 0, abertas = 0, andamento = 0, finalizadas = 0, canceladas = 0;
+    int equipamentosAtendidos = 0, comFeedback = 0, satisfeitos = 0;
 
     imprimirCabecalho("Relatorios");
 
-    lerTexto("\nAno (AAAA, ENTER para o ano atual): ", ano, sizeof(ano));
-    if (strlen(ano) == 0)
+    printf("\nInforme o periodo pela data de abertura das OS (formato AAAA-MM-DD).\n");
+    lerTexto("Data inicial (ENTER para desde o inicio): ", inicio, sizeof(inicio));
+    lerTexto("Data final (ENTER para ate hoje): ", fim, sizeof(fim));
+
+    /* ENTER em branco: sem limite naquele lado do período */
+    if (strlen(inicio) == 0)
+        strcpy(inicio, "0000-01-01");
+    if (strlen(fim) == 0)
+        dataHoje(fim);
+
+    if (!dataValida(inicio) || !dataValida(fim))
     {
-        dataHoje(ano); /* AAAA-MM-DD: fica só com o AAAA */
-        ano[4] = '\0';
+        printf("\n[!] Data invalida. Use o formato AAAA-MM-DD (ex: 2026-10-01).");
+        pausar();
+        return;
     }
 
-    /* Zera a matriz */
-    for (mes = 0; mes < 12; mes++)
+    /* Datas AAAA-MM-DD podem ser comparadas como texto com strcmp */
+    for (i = 0; i < totalOrdens; i++)
     {
-        for (coluna = 0; coluna < 4; coluna++)
-        {
-            contagem[mes][coluna] = 0;
-        }
-    }
-
-    /* Conta cada OS na linha do mês e na coluna do status */
-    for (posicaoOS = 0; posicaoOS < totalOrdens; posicaoOS++)
-    {
-        /* data_abertura é AAAA-MM-DD: ano nas posições 0 a 3, mês nas posições 5 e 6 */
-        anoDaOS[0] = ordens[posicaoOS].data_abertura[0];
-        anoDaOS[1] = ordens[posicaoOS].data_abertura[1];
-        anoDaOS[2] = ordens[posicaoOS].data_abertura[2];
-        anoDaOS[3] = ordens[posicaoOS].data_abertura[3];
-        anoDaOS[4] = '\0';
-        if (strcmp(anoDaOS, ano) != 0)
+        if (strcmp(ordens[i].data_abertura, inicio) < 0 || strcmp(ordens[i].data_abertura, fim) > 0)
             continue;
 
-        mesDaOS[0] = ordens[posicaoOS].data_abertura[5];
-        mesDaOS[1] = ordens[posicaoOS].data_abertura[6];
-        mesDaOS[2] = '\0';
-        mes = atoi(mesDaOS) - 1;
+        total++;
+        if (strcmp(ordens[i].status, "aberta") == 0)
+            abertas++;
+        else if (strcmp(ordens[i].status, "em_andamento") == 0)
+            andamento++;
+        else if (strcmp(ordens[i].status, "finalizada") == 0)
+            finalizadas++;
+        else if (strcmp(ordens[i].status, "cancelada") == 0)
+            canceladas++;
 
-        /* Coluna: 0 = aberta, 1 = em andamento, 2 = finalizada, 3 = cancelada */
-        coluna = 3;
-        if (strcmp(ordens[posicaoOS].status, "aberta") == 0)
-            coluna = 0;
-        if (strcmp(ordens[posicaoOS].status, "em_andamento") == 0)
-            coluna = 1;
-        if (strcmp(ordens[posicaoOS].status, "finalizada") == 0)
-            coluna = 2;
-        contagem[mes][coluna]++;
-
-        if (strlen(ordens[posicaoOS].satisfeito) > 0)
+        if (strlen(ordens[i].satisfeito) > 0)
         {
             comFeedback++;
-            if (strcmp(ordens[posicaoOS].satisfeito, "sim") == 0)
+            if (strcmp(ordens[i].satisfeito, "sim") == 0)
                 satisfeitos++;
         }
+
+        /* Conta o equipamento só na primeira OS dele dentro do período */
+        repetido = 0;
+        for (j = 0; j < i; j++)
+        {
+            if (ordens[j].id_equipamento == ordens[i].id_equipamento &&
+                strcmp(ordens[j].data_abertura, inicio) >= 0 && strcmp(ordens[j].data_abertura, fim) <= 0)
+            {
+                repetido = 1;
+            }
+        }
+        if (repetido == 0)
+            equipamentosAtendidos++;
     }
 
-    /* Mostra a matriz, pulando os meses sem nenhuma OS */
-    printf("\nOrdens de servico abertas em %s\n", ano);
-    for (mes = 0; mes < 12; mes++)
+    if (total == 0)
     {
-        if (contagem[mes][0] + contagem[mes][1] + contagem[mes][2] + contagem[mes][3] > 0)
-        {
-            printf("%s: abertas %d - em andamento %d - finalizadas %d - canceladas %d\n", nomesMes[mes], contagem[mes][0],
-                   contagem[mes][1], contagem[mes][2], contagem[mes][3]);
-        }
+        printf("\n[!] Nenhuma OS aberta entre %s e %s.", inicio, fim);
+        pausar();
+        return;
     }
-    printf("\nClientes satisfeitos: %d de %d que deram feedback\n", satisfeitos, comFeedback);
+
+    printf("\n  Periodo: %s a %s\n", inicio, fim);
+    printf("  ---------------------------------------------------------------------------\n");
+    printf("  Ordens de servico abertas no periodo:      %d\n", total);
+    printf("    Abertas (aguardando tecnico):            %d\n", abertas);
+    printf("    Em andamento:                            %d\n", andamento);
+    printf("    Finalizadas:                             %d\n", finalizadas);
+    printf("    Canceladas / arquivadas:                 %d\n", canceladas);
+    printf("  Equipamentos que passaram por manutencao:  %d\n", equipamentosAtendidos);
+    printf("  Clientes satisfeitos (feedback):           %d de %d\n", satisfeitos, comFeedback);
     pausar();
 }

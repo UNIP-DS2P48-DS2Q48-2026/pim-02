@@ -36,5 +36,5 @@ Toda **sexta-feira**, na reunião de fechamento:
 Um item só é considerado concluído quando:
 
 - **Documentação/modelagem:** está no repositório (merge na `main`), com o arquivo-fonte (`.asta`, `.brM3`, `.md`) e, quando for diagrama, a exportação em PNG.
-- **Código:** compila sem erros (`gcc main.c -o output/main.exe -lodbc32`), foi testado manualmente no terminal pelo fluxo principal e pelas exceções do caso de uso, respeita a Matriz de Permissões e os dados persistem após fechar o programa.
+- **Código:** compila sem erros (`gcc main.c banco.c -o output/main.exe -lodbc32 -ladvapi32`), foi testado manualmente no terminal pelo fluxo principal e pelas exceções do caso de uso, respeita a Matriz de Permissões e os dados persistem após fechar o programa.
 - **Rastreabilidade:** o item está ligado ao seu PBI/requisito/caso de uso, e o arquivo da sprint foi atualizado.
