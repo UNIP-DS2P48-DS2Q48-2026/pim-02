@@ -47,7 +47,8 @@ backups `.bak` ou o executavel local ao GitHub.
    ```
 
    Confirme que aparecem seus usuarios e registros existentes. Nao execute
-   `criar_bytetech.sql` sobre a sua base renomeada.
+   `docs/Modelagem_DB/schema_sqlserver.sql` sobre a sua base renomeada
+   (ele recria as tabelas e apaga os registros).
 
 ## B) Integrante do grupo: instalar em Windows 10/11 + Ubuntu WSL
 
@@ -105,7 +106,8 @@ O mesmo codigo compila direto no Windows com MinGW (GCC). Nao precisa de OpenSSL
 o hash das senhas (PBKDF2-SHA256) esta implementado em `senhas.c`.
 
 Pre-requisitos: SQL Server (Express ou Developer) com o banco `bytetech` criado
-(`database/criar_bytetech.sql`), o **ODBC Driver 18 for SQL Server** e o MinGW.
+(`docs/Modelagem_DB/schema_sqlserver.sql`, veja o README principal), o
+**ODBC Driver 18 for SQL Server** e o MinGW.
 
 1. Na pasta `projeto`, compile:
 
@@ -129,9 +131,9 @@ Um `.exe` **nao embute o SQL Server**: cada maquina precisa do seu.
 
 ## Estrutura e seguranca
 
-- `database/criar_bytetech.sql`: cria a base e quatro tabelas do sistema sem
-  fazer `DROP`. Diferente do schema antigo em `docs/Modelagem_DB`, que tem
-  `DROP TABLE` e **NAO deve ser usado** sobre bancos com registros.
+- O banco e criado pelo script oficial `docs/Modelagem_DB/schema_sqlserver.sql`.
+  Ele faz `DROP TABLE` antes de criar: **NAO execute** sobre bancos com registros.
+  O `iniciar.sh` so o executa quando o banco `bytetech` ainda nao existe.
 - `database/renomear_pim02_para_bytetech.sql`: altera o nome do banco do autor.
 - `ferramentas/atualizar_conexao.py`: troca apenas a configuracao do `banco.c`,
   guarda backup e recompila.

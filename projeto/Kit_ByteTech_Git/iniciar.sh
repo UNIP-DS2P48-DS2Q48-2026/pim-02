@@ -64,7 +64,7 @@ if [[ "$EXISTE" == 0 ]]; then
         exit 1
     fi
     echo 'Criando banco e tabelas do ByteTech pela primeira vez...'
-    "$SQLCMD" -S "$SERVIDOR" -U sa -C -d master -b -i "$KIT_DIR/database/criar_bytetech.sql"
+    "$SQLCMD" -S "$SERVIDOR" -U sa -C -d master -b -i "$KIT_DIR/../../docs/Modelagem_DB/schema_sqlserver.sql"
 elif [[ "$EXISTE" == 1 ]]; then
     echo 'Banco bytetech encontrado. Preservando todos os dados.'
 else
