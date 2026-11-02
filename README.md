@@ -69,6 +69,7 @@ O programa entra no SQL Server com o login do Windows. Para mudar a conexão, de
 - `BYTETECH_DB_SERVER`: outro servidor (ex.: `localhost\SQLEXPRESS`)
 - `BYTETECH_DB_DRIVER`: outro driver, se só tiver o 17 (`ODBC Driver 17 for SQL Server`)
 - `BYTETECH_DB_PASSWORD`: senha do `sa`, para entrar com usuário do SQL em vez do login do Windows
+- `BYTETECH_DB_NAME`: outro banco no lugar do `bytetech` (ex.: `bytetech_teste`, para testar sem mexer nos dados)
 
 Para rodar no Linux/WSL (ou com SQL Server no Docker), veja o [Kit ByteTech](./projeto/Kit_ByteTech_Git/README.md).
 

@@ -160,6 +160,8 @@ int listarUsuarios(char perfil[], char filtro[], int soAtivos)
             continue;
         if (soAtivos == 1 && strcmp(usuarios[i].status, "ativo") != 0)
             continue;
+        if (soAtivos == -1 && strcmp(usuarios[i].status, "inativo") != 0)
+            continue;
         if (!contemTexto(usuarios[i].nome, filtro) && !contemTexto(usuarios[i].email, filtro) &&
             !contemTexto(usuarios[i].cpf, filtro))
             continue;
@@ -184,7 +186,8 @@ int listarUsuarios(char perfil[], char filtro[], int soAtivos)
     return mostrados;
 }
 
-/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido).
+   soAtivos: 1 só ativos, 0 todos, -1 só inativos */
 int selecionarUsuario(char perfil[], int soAtivos)
 {
     char filtro[60];
@@ -206,7 +209,8 @@ int selecionarUsuario(char perfil[], int soAtivos)
         return -1;
 
     i = buscarUsuarioPorId(id);
-    if (i < 0 || !podeVerUsuario(i, perfil) || (soAtivos == 1 && strcmp(usuarios[i].status, "ativo") != 0))
+    if (i < 0 || !podeVerUsuario(i, perfil) || (soAtivos == 1 && strcmp(usuarios[i].status, "ativo") != 0) ||
+        (soAtivos == -1 && strcmp(usuarios[i].status, "inativo") != 0))
     {
         printf("\n[!] ID %d nao esta na lista.", id);
         pausar();
@@ -440,6 +444,53 @@ void inativarUsuario(char perfil[], char titulo[])
     dataHoraAgora(usuarios[i].atualizado_em);
 
     printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado.", usuarios[i].nome);
+    pausar();
+}
+
+/* Reativar (UC45, UC46, UC47, UC48): volta o cadastro para ativo e libera o acesso */
+void reativarUsuario(char perfil[], char titulo[])
+{
+    int i, inativos = 0;
+
+    imprimirCabecalho(titulo);
+
+    /* Conta os inativos deste perfil (exceção: nenhum) */
+    for (i = 0; i < totalUsuarios; i++)
+    {
+        if (podeVerUsuario(i, perfil) && strcmp(usuarios[i].status, "inativo") == 0)
+            inativos++;
+    }
+    if (inativos == 0)
+    {
+        printf("\n[!] Nenhum cadastro inativo. Nao ha cadastro para reativar.");
+        pausar();
+        return;
+    }
+
+    i = selecionarUsuario(perfil, -1);
+    if (i < 0)
+        return;
+
+    printf("\nReativar %s.", usuarios[i].nome);
+    if (!confirmar("\nTem certeza?"))
+    {
+        printf("\nOperacao cancelada. O cadastro continua inativo.");
+        pausar();
+        return;
+    }
+
+    /* Atualizamos o vetor somente depois que o banco confirmar. */
+    if (!reativarUsuarioSQL(bancoAtivo, usuarios[i].id_usuario))
+    {
+        printf("\n[!] Reativacao nao realizada. Verifique se o cadastro ainda esta inativo.");
+        pausar();
+        return;
+    }
+
+    strcpy(usuarios[i].status, "ativo");
+    dataHoraAgora(usuarios[i].atualizado_em);
+
+    printf("\n[+] %s reativado(a). O acesso ao sistema foi liberado.", usuarios[i].nome);
     pausar();
 }
 

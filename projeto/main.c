@@ -167,6 +167,7 @@ Banco *bancoAtivo = NULL;
 int inserirUsuarioSQL(Banco *banco, Usuario *usuario);
 int atualizarUsuarioSQL(Banco *banco, Usuario *usuario);
 int inativarUsuarioSQL(Banco *banco, int idUsuario);
+int reativarUsuarioSQL(Banco *banco, int idUsuario);
 int alterarSenhaUsuarioSQL(Banco *banco, int idUsuario, const char *hashAtual, const char *hashNovo);
 
 int podeVerOS(int i);
@@ -603,6 +604,8 @@ void menuAdministradores()
 
         printf("  4 - Inativar\n");
 
+        printf("  5 - Reativar\n");
+
         printf("  0 - Voltar\n\n");
 
         opcao = lerInteiro("Opcao: ");
@@ -618,6 +621,8 @@ void menuAdministradores()
         case 3: editarAdmin(); break;
 
         case 4: inativarAdmin(); break;
+
+        case 5: reativarAdmin(); break;
 
         case 0: break;
 
@@ -653,6 +658,8 @@ void menuRecepcionistas()
 
         printf("  4 - Inativar\n");
 
+        printf("  5 - Reativar\n");
+
         printf("  0 - Voltar\n\n");
 
         opcao = lerInteiro("Opcao: ");
@@ -668,6 +675,8 @@ void menuRecepcionistas()
         case 3: editarRecepcionista(); break;
 
         case 4: inativarRecepcionista(); break;
+
+        case 5: reativarRecepcionista(); break;
 
         case 0: break;
 
@@ -703,6 +712,8 @@ void menuTecnicos()
 
         printf("  4 - Inativar\n");
 
+        printf("  5 - Reativar\n");
+
         printf("  0 - Voltar\n\n");
 
         opcao = lerInteiro("Opcao: ");
@@ -718,6 +729,8 @@ void menuTecnicos()
         case 3: editarTecnico(); break;
 
         case 4: inativarTecnico(); break;
+
+        case 5: reativarTecnico(); break;
 
         case 0: break;
 
@@ -753,6 +766,8 @@ void menuClientes()
 
         printf("  4 - Inativar\n");
 
+        printf("  5 - Reativar\n");
+
         printf("  0 - Voltar\n\n");
 
         opcao = lerInteiro("Opcao: ");
@@ -768,6 +783,8 @@ void menuClientes()
         case 3: editarCliente(); break;
 
         case 4: inativarCliente(); break;
+
+        case 5: reativarCliente(); break;
 
         case 0: break;
 
@@ -803,6 +820,8 @@ void menuEquipamentos()
 
         printf("  4 - Inativar\n");
 
+        printf("  5 - Reativar\n");
+
         printf("  0 - Voltar\n\n");
 
         opcao = lerInteiro("Opcao: ");
@@ -818,6 +837,8 @@ void menuEquipamentos()
         case 3: editarEquipamento(); break;
 
         case 4: inativarEquipamento(); break;
+
+        case 5: reativarEquipamento(); break;
 
         case 0: break;
 
@@ -1397,7 +1418,7 @@ void menuPrincipal()
 
         {
 
-            printf("\nSitema encerrado. Ate logo!\n");
+            printf("\nSistema encerrado. Ate logo!\n");
 
         }
 

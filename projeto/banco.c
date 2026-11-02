@@ -40,6 +40,10 @@ int bdConectar(Banco *banco)
     const char *driver = getenv("BYTETECH_DB_DRIVER");
     if (driver == NULL || driver[0] == '\0')
         driver = "ODBC Driver 18 for SQL Server";
+    // Outro banco (ex.: um de testes): BYTETECH_DB_NAME=bytetech_teste
+    const char *nomeBanco = getenv("BYTETECH_DB_NAME");
+    if (nomeBanco == NULL || nomeBanco[0] == '\0')
+        nomeBanco = "bytetech";
 
     if (banco == NULL)
         return 0;
@@ -55,8 +59,8 @@ int bdConectar(Banco *banco)
         // Com senha definida, entra com o usuario sa (Linux/Docker ou login SQL).
         tamanho = snprintf(conexao, sizeof(conexao),
             "DRIVER={%s};"
-            "SERVER=%s;DATABASE=bytetech;UID=sa;PWD=%s;"
-            "Encrypt=yes;TrustServerCertificate=yes;", driver, servidor, senha);
+            "SERVER=%s;DATABASE=%s;UID=sa;PWD=%s;"
+            "Encrypt=yes;TrustServerCertificate=yes;", driver, servidor, nomeBanco, senha);
     }
     else
     {
@@ -64,8 +68,8 @@ int bdConectar(Banco *banco)
         // Sem senha no Windows, entra com o login do proprio Windows.
         tamanho = snprintf(conexao, sizeof(conexao),
             "DRIVER={%s};"
-            "SERVER=%s;DATABASE=bytetech;Trusted_Connection=yes;"
-            "Encrypt=yes;TrustServerCertificate=yes;", driver, servidor);
+            "SERVER=%s;DATABASE=%s;Trusted_Connection=yes;"
+            "Encrypt=yes;TrustServerCertificate=yes;", driver, servidor, nomeBanco);
 #else
         printf("Defina a variavel BYTETECH_DB_PASSWORD.\n");
         return 0;

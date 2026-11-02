@@ -21,3 +21,9 @@ void inativarTecnico()
 {
     inativarUsuario("tecnico", "Tecnicos > Inativar");
 }
+
+/* UC47 - Reativar Tecnico: reativa um tecnico inativo */
+void reativarTecnico()
+{
+    reativarUsuario("tecnico", "Tecnicos > Reativar");
+}
