@@ -156,6 +156,13 @@ int selecionarOS(int etapa)
         return -1;
 
     i = buscarOSPorId(id);
+    /* OS aberta ainda nao tem tecnico: nao entra nas etapas de manutencao */
+    if (i >= 0 && etapa == ETAPA_MANUTENCAO && podeVerOS(i) && strcmp(ordens[i].status, "aberta") == 0)
+    {
+        printf("\n[!] A OS %d ainda nao tem tecnico. Atribua um tecnico primeiro.", id);
+        pausar();
+        return -1;
+    }
     if (i < 0 || !osNaEtapa(i, etapa))
     {
         printf("\n[!] OS %d nao esta na lista.", id);
@@ -393,6 +400,17 @@ void executarManutencao()
         return;
     }
 
+    /* Depois de um teste reprovado, o novo reparo libera outro teste */
+    if (strcmp(ordens[i].resultado_teste, "reprovado") == 0)
+    {
+        ordens[i].resultado_teste[0] = '\0';
+        if (!salvarOrdens())
+        {
+            pausar();
+            return;
+        }
+    }
+
     printf("\n[+] Reparo registrado na OS %d! Quando terminar, registre o teste.", ordens[i].id_os);
     pausar();
 }
@@ -400,7 +418,7 @@ void executarManutencao()
 /* UC34 - Registrar Teste de Funcionamento: aprova ou reprova o reparo antes da entrega */
 void registrarTeste()
 {
-    int i, opcao;
+    int i, k, opcao, temReparo = 0;
 
     imprimirCabecalho("Manutencao > Registrar Teste");
 
@@ -417,6 +435,27 @@ void registrarTeste()
     if (strcmp(ordens[i].resultado_teste, "aprovado") == 0)
     {
         printf("\n[!] O teste da OS %d ja foi aprovado. Ela esta pronta para entrega.", ordens[i].id_os);
+        pausar();
+        return;
+    }
+
+    /* So testa se ja existe um reparo registrado */
+    for (k = 0; k < totalTecnicosOS; k++)
+    {
+        if (tecnicosOS[k].id_os == ordens[i].id_os && strstr(tecnicosOS[k].observacoes_tecnicas, "Reparo:") != NULL)
+            temReparo = 1;
+    }
+    if (!temReparo)
+    {
+        printf("\n[!] Nenhum reparo registrado na OS %d. Use Executar Manutencao antes do teste.", ordens[i].id_os);
+        pausar();
+        return;
+    }
+
+    /* Teste reprovado exige um novo reparo antes de outro teste */
+    if (strcmp(ordens[i].resultado_teste, "reprovado") == 0)
+    {
+        printf("\n[!] O ultimo teste da OS %d foi reprovado. Registre o novo reparo em Executar Manutencao.", ordens[i].id_os);
         pausar();
         return;
     }

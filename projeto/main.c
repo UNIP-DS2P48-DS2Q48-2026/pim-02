@@ -262,9 +262,10 @@ void lerTexto(char rotulo[], char destino[], int tamanho)
 
     {
 
-        destino[0] = '\0'; /* não leu nada (fim da entrada) */
+        /* Fim da entrada (Ctrl+Z / arquivo acabou): sem isso os menus ficam em loop */
+        printf("\n\n[!] Fim da entrada. Encerrando o programa.\n");
 
-        return;
+        exit(0);
 
     }
 
