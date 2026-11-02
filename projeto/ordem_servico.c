@@ -27,15 +27,40 @@ static int osSelecionarVisivel(const char *titulo)
 
 void criarOrdemServico(void)
 {
-    int e,n,maior=0,j;char problema[200];
+    int e,n,maior=0,j,cliente,id,mostrados=0;char problema[200],cpf[20];
     imprimirCabecalho("Ordens de Servico > Criar");
     if (!perfilLogado("admin") && !perfilLogado("recepcionista")) {printf("Sem permissao.\n");pausar();return;}
     if (totalOrdens>=MAX_OS) {printf("Limite de OS atingido.\n");pausar();return;}
-    e=selecionarEquipamento(1);
-    if (e<0) return;
-    j=buscarUsuarioPorId(equipamentos[e].id_cliente);
-    if (j<0 || strcmp(usuarios[j].status,"ativo")!=0) {
-        printf("\n[!] Cliente inativo ou nao encontrado.\n");pausar();return;
+    /* UC24: o atendente informa o CPF e escolhe um equipamento ativo desse cliente */
+    lerTexto("\nCPF do cliente, como foi cadastrado (ENTER para voltar): ",cpf,sizeof(cpf));
+    if (!*cpf) return;
+    cliente=-1;
+    for (j=0;j<totalUsuarios;j++)
+        if (!strcmp(usuarios[j].perfil,"cliente") && !strcmp(usuarios[j].cpf,cpf)) cliente=j;
+    if (cliente<0) {
+        printf("\n[!] Nenhum cliente com o CPF %s. Cadastre o cliente e o equipamento antes de abrir a OS.\n",cpf);
+        pausar();return;
+    }
+    if (strcmp(usuarios[cliente].status,"ativo")!=0) {
+        printf("\n[!] O cliente %s esta inativo. Nao e possivel abrir OS.\n",usuarios[cliente].nome);
+        pausar();return;
+    }
+    printf("\nCliente: %s\n",usuarios[cliente].nome);
+    for (j=0;j<totalEquipamentos;j++) {
+        if (equipamentos[j].id_cliente!=usuarios[cliente].id_usuario || strcmp(equipamentos[j].status,"ativo")) continue;
+        printf("ID %d - %s %s - %s\n",equipamentos[j].id_equipamento,equipamentos[j].tipo,
+               equipamentos[j].marca,equipamentos[j].modelo_numero_serie);
+        mostrados++;
+    }
+    if (!mostrados) {
+        printf("\n[!] O cliente nao tem equipamento ativo. Cadastre em Equipamentos > Cadastrar.\n");
+        pausar();return;
+    }
+    id=lerInteiro("\nID do equipamento (0 para voltar): ");
+    if (id<=0) return;
+    e=buscarEquipamentoPorId(id);
+    if (e<0 || equipamentos[e].id_cliente!=usuarios[cliente].id_usuario || strcmp(equipamentos[e].status,"ativo")) {
+        printf("\n[!] ID %d nao esta na lista.\n",id);pausar();return;
     }
     lerTexto("Problema relatado: ",problema,sizeof(problema));
     if (!campoPreenchido(problema,"Problema"))return;
@@ -52,7 +77,7 @@ void criarOrdemServico(void)
     strcpy(ordens[n].atualizado_em,ordens[n].criado_em);
     totalOrdens++;
     if (!salvarOrdens()) {printf("\n[!] Nao foi possivel salvar a OS.\n");pausar();return;}
-    printf("\n[+] Ordem de servico %d criada.\n",ordens[n].id_os);pausar();
+    printf("\n[+] OS %d criada! Agora atribua um tecnico em Ordens de Servico > Atribuir Tecnico.\n",ordens[n].id_os);pausar();
 }
 
 void consultarOS(void)
@@ -131,37 +156,61 @@ void atribuirTecnico(void)
 
 void registrarEntrega(void)
 {
-    int i;char texto[32];double pago;
+    int i,confirmado;char texto[32];double pago;
     if(!perfilLogado("admin")&&!perfilLogado("recepcionista")){printf("Sem permissao.\n");pausar();return;}
     i=osSelecionarVisivel("Ordens de Servico > Registrar Entrega");if(i<0)return;
     if(strcmp(ordens[i].status,"em_andamento") ||
        strcmp(ordens[i].resultado_teste,"aprovado") ||
-       strcmp(ordens[i].resultado_resposta_cliente,"aprovado")) {
-        printf("[!] Entrega exige orcamento aprovado, manutencao e teste aprovado.\n");pausar();return;
+       strcmp(ordens[i].resultado_resposta_cliente,"aprovado") ||
+       *ordens[i].data_entrega) {
+        printf("[!] A OS %d nao esta pronta para entrega.\n",ordens[i].id_os);pausar();return;
     }
-    lerTexto("Valor recebido (R$): ",texto,sizeof(texto));
-    pago=textoParaValor(texto);
-    if(!*texto || pago<0 || pago>99999999) {printf("Valor invalido.\n");pausar();return;}
-    if(!confirmar("Confirmar entrega e pagamento?"))return;
+    printf("\nOrcamento aprovado: R$ %.2f\n",ordens[i].orcamento);
+    /* UC29 7a: valor diferente do orcamento precisa ser confirmado ou digitado de novo */
+    do {
+        lerTexto("Valor recebido em R$ (ENTER para voltar): ",texto,sizeof(texto));
+        if(!*texto) return;
+        pago=textoParaValor(texto);
+        if(pago<0 || pago>99999999) {printf("Valor invalido.\n");pausar();return;}
+        confirmado=1;
+        if(pago!=ordens[i].orcamento) {
+            confirmado=confirmar("\n[!] Valor diferente do orcamento. Confirmar mesmo assim?");
+            if(!confirmado) printf("Digite o valor correto.\n");
+        }
+    } while(!confirmado);
+    /* A OS continua em andamento: so e finalizada pelo feedback do cliente (UC30) */
     ordens[i].valor_pago=pago;
     dataHoje(ordens[i].data_entrega);
-    strcpy(ordens[i].status,"finalizada");
     if(!salvarOrdens()){printf("Falha ao registrar entrega.\n");pausar();return;}
-    printf("[+] Entrega e pagamento registrados.\n");pausar();
+    printf("[+] Entrega registrada! A OS %d aguarda o feedback do cliente.\n",ordens[i].id_os);pausar();
 }
 
 void registrarFeedback(void)
 {
     int i,resposta;char feedback[200];
     i=osSelecionarVisivel("Ordens de Servico > Registrar Feedback");if(i<0)return;
-    if(strcmp(ordens[i].status,"finalizada") || !*ordens[i].data_entrega) {
-        printf("[!] Feedback so e registrado apos a entrega.\n");pausar();return;
+    if(!*ordens[i].data_entrega) {
+        printf("[!] A OS %d ainda nao foi entregue.\n",ordens[i].id_os);pausar();return;
     }
-    lerTexto("Comentario (ENTER para voltar): ",feedback,sizeof(feedback));if(!*feedback)return;
+    if(strcmp(ordens[i].status,"em_andamento")) {
+        printf("[!] A OS %d ja foi encerrada.\n",ordens[i].id_os);pausar();return;
+    }
+    lerTexto("Comentario do cliente (opcional): ",feedback,sizeof(feedback));
     resposta=lerInteiro("Satisfeito? 1-Sim, 2-Nao: ");
     if(resposta!=1 && resposta!=2) {printf("Opcao invalida.\n");pausar();return;}
     strcpy(ordens[i].feedback_cliente,feedback);
-    strcpy(ordens[i].satisfeito,resposta==1?"sim":"nao");
+    if(resposta==1) {
+        strcpy(ordens[i].satisfeito,"sim");
+        strcpy(ordens[i].status,"finalizada");
+    } else {
+        /* UC30 5a: limpa teste, entrega e pagamento para refazer o reparo */
+        strcpy(ordens[i].satisfeito,"nao");
+        ordens[i].resultado_teste[0]='\0';
+        ordens[i].data_entrega[0]='\0';
+        ordens[i].valor_pago=-1;
+    }
     if(!salvarOrdens()){printf("Falha ao registrar feedback.\n");pausar();return;}
-    printf("[+] Feedback registrado.\n");pausar();
+    if(resposta==1) printf("[+] Feedback registrado. A OS %d foi finalizada!\n",ordens[i].id_os);
+    else printf("[+] Feedback registrado. A OS %d voltou para Executar Manutencao.\n",ordens[i].id_os);
+    pausar();
 }
