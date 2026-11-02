@@ -1,9 +1,11 @@
+
 #ifndef BANCO_H
 #define BANCO_H
 
 #include <sql.h>
 #include <sqlext.h>
-//commit
+
+// Estrutura que guarda os identificadores ODBC.
 typedef struct
 {
     SQLHENV henv;
@@ -11,10 +13,13 @@ typedef struct
     SQLHSTMT hstmt;
 } Banco;
 
+// Funcoes de conexao.
 int bdConectar(Banco *banco);
-
 void bdDesconectar(Banco *banco);
 
+// Funcoes para executar comandos SQL.
 int bdExecutar(Banco *banco, const char *sql);
+int bdConsultar(Banco *banco, const char *sql);
+void bdEncerrarConsulta(Banco *banco);
 
 #endif

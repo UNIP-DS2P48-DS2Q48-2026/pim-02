@@ -1,159 +1,167 @@
-/* Regrava o os.txt inteiro com o que está no vetor. Dinheiro -1.00 = ainda não informado */
-int salvarOrdens()
+/* Persistencia de OS e atribuicoes ocorre no SQL Server. */
+int salvarOrdens(void) { return salvarOrdensSQL(); }
+void carregarOrdens(void) { if (!carregarOrdensSQL()) fprintf(stderr,"Falha ao carregar OS.\n"); }
+int salvarTecnicosOS(void) { return salvarTecnicosOSSQL(); }
+void carregarTecnicosOS(void) { if (!carregarTecnicosOSSQL()) fprintf(stderr,"Falha ao carregar atribuicoes.\n"); }
+
+/* UC24-UC30: implementacao dos fluxos de OS. */
+static int osSelecionarVisivel(const char *titulo)
 {
-    FILE *arquivo;
+    int i,id,mostrados=0;char dono[60],equip[90];
+    imprimirCabecalho((char *)titulo);
+    for (i=0;i<totalOrdens;i++) {
+        if (!podeVerOS(i)) continue;
+        nomeDoCliente(donoDoEquipamento(ordens[i].id_equipamento),dono);
+        nomeDoEquipamento(ordens[i].id_equipamento,equip);
+        printf("  OS %d | %s | %-14.14s | %-20.20s | %s\n",ordens[i].id_os,
+               ordens[i].data_abertura,dono,equip,ordens[i].status);
+        mostrados++;
+    }
+    if (!mostrados) {printf("\nNenhuma OS disponivel.\n");pausar();return -1;}
+    id=lerInteiro("\nNumero da OS (0 para voltar): ");
+    if (id<=0) return -1;
+    i=buscarOSPorId(id);
+    if (i<0 || !podeVerOS(i)) {printf("\n[!] OS nao encontrada ou sem permissao.\n");pausar();return -1;}
+    return i;
+}
+
+void criarOrdemServico(void)
+{
+    int e,n,maior=0,j;char problema[200];
+    imprimirCabecalho("Ordens de Servico > Criar");
+    if (!perfilLogado("admin") && !perfilLogado("recepcionista")) {printf("Sem permissao.\n");pausar();return;}
+    if (totalOrdens>=MAX_OS) {printf("Limite de OS atingido.\n");pausar();return;}
+    e=selecionarEquipamento(1);
+    if (e<0) return;
+    j=buscarUsuarioPorId(equipamentos[e].id_cliente);
+    if (j<0 || strcmp(usuarios[j].status,"ativo")!=0) {
+        printf("\n[!] Cliente inativo ou nao encontrado.\n");pausar();return;
+    }
+    lerTexto("Problema relatado: ",problema,sizeof(problema));
+    if (!campoPreenchido(problema,"Problema"))return;
+    for (j=0;j<totalOrdens;j++)if(ordens[j].id_os>maior)maior=ordens[j].id_os;
+    n=totalOrdens;memset(&ordens[n],0,sizeof(ordens[n]));
+    ordens[n].id_os=maior+1;
+    ordens[n].id_equipamento=equipamentos[e].id_equipamento;
+    ordens[n].id_atendente=usuarios[usuarioLogado].id_usuario;
+    strcpy(ordens[n].problema_relatado,problema);
+    strcpy(ordens[n].status,"aberta");
+    ordens[n].orcamento=-1;ordens[n].valor_pago=-1;
+    dataHoje(ordens[n].data_abertura);
+    dataHoraAgora(ordens[n].criado_em);
+    strcpy(ordens[n].atualizado_em,ordens[n].criado_em);
+    totalOrdens++;
+    if (!salvarOrdens()) {printf("\n[!] Nao foi possivel salvar a OS.\n");pausar();return;}
+    printf("\n[+] Ordem de servico %d criada.\n",ordens[n].id_os);pausar();
+}
+
+void consultarOS(void)
+{
+    int i=osSelecionarVisivel("Ordens de Servico > Consultar");
+    if (i<0)return;
+    OrdemServico *o=&ordens[i];
+    printf("\nOS: %d | Status: %s\nAbertura: %s\nProblema: %s\nDiagnostico: %s\n",
+        o->id_os,o->status,o->data_abertura,o->problema_relatado,
+        *o->diagnostico?o->diagnostico:"(pendente)");
+    if(o->orcamento>=0)printf("Orcamento: R$ %.2f | Resposta: %s\n",o->orcamento,
+        *o->resultado_resposta_cliente?o->resultado_resposta_cliente:"aguardando");
+    if (*o->resultado_teste)printf("Teste: %s\n",o->resultado_teste);
+    if (*o->data_entrega)printf("Entrega: %s | Pago: R$ %.2f\n",o->data_entrega,o->valor_pago);
+    if (*o->feedback_cliente)printf("Feedback: %s | Satisfeito: %s\n",o->feedback_cliente,o->satisfeito);
+    pausar();
+}
+
+void editarOS(void)
+{
+    int i;char texto[200];
+    if(!perfilLogado("admin")&&!perfilLogado("recepcionista")){printf("Sem permissao.\n");pausar();return;}
+    i=osSelecionarVisivel("Ordens de Servico > Editar");if(i<0)return;
+    if(strcmp(ordens[i].status,"aberta")!=0) {
+        printf("[!] So e possivel editar o problema de OS aberta.\n");pausar();return;
+    }
+    lerTexto("Novo problema (ENTER para voltar): ",texto,sizeof(texto));if(!*texto)return;
+    strcpy(ordens[i].problema_relatado,texto);
+    if(!salvarOrdens()){printf("Falha ao editar OS.\n");pausar();return;}
+    printf("[+] OS atualizada.\n");pausar();
+}
+
+void cancelarOS(void)
+{
     int i;
-
-    arquivo = fopen(ARQ_OS, "w");
-    if (arquivo == NULL)
-    {
-        printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_OS);
-        return 0;
+    if(!perfilLogado("admin")&&!perfilLogado("recepcionista")){printf("Sem permissao.\n");pausar();return;}
+    i=osSelecionarVisivel("Ordens de Servico > Cancelar");if(i<0)return;
+    if(!strcmp(ordens[i].status,"finalizada")||!strcmp(ordens[i].status,"cancelada")) {
+        printf("[!] OS encerrada nao pode ser cancelada.\n");pausar();return;
     }
-    fprintf(arquivo, "id_os;id_equipamento;id_atendente;data_abertura;problema_relatado;diagnostico;orcamento;status;resultado_resposta_cliente;data_entrega;resultado_teste;valor_pago;feedback_cliente;satisfeito;criado_em;atualizado_em\n");
-    for (i = 0; i < totalOrdens; i++)
-    {
-        fprintf(arquivo, "%d;%d;%d;%s;%s;%s;%.2f;%s;%s;%s;%s;%.2f;%s;%s;%s;%s\n",
-                ordens[i].id_os, ordens[i].id_equipamento, ordens[i].id_atendente, ordens[i].data_abertura,
-                ordens[i].problema_relatado, ordens[i].diagnostico, ordens[i].orcamento, ordens[i].status,
-                ordens[i].resultado_resposta_cliente, ordens[i].data_entrega, ordens[i].resultado_teste,
-                ordens[i].valor_pago, ordens[i].feedback_cliente, ordens[i].satisfeito,
-                ordens[i].criado_em, ordens[i].atualizado_em);
-    }
-    fclose(arquivo);
-    return 1;
+    if(!confirmar("Confirmar cancelamento da OS?"))return;
+    strcpy(ordens[i].status,"cancelada");
+    if(!salvarOrdens()){printf("Falha ao cancelar.\n");pausar();return;}
+    printf("[+] OS cancelada; historico preservado.\n");pausar();
 }
 
-/* Lê o os.txt para o vetor (sem arquivo = nenhuma OS ainda) */
-void carregarOrdens()
+void atribuirTecnico(void)
 {
-    FILE *arquivo;
-    char linha[TAM_LINHA];
-    char numero[30];
-    int n;
-
-    totalOrdens = 0;
-    arquivo = fopen(ARQ_OS, "r");
-    if (arquivo == NULL)
-    {
-        return;
+    int i,t;char idOS[24],idTec[24];
+    if(!perfilLogado("admin")&&!perfilLogado("recepcionista")){printf("Sem permissao.\n");pausar();return;}
+    i=osSelecionarVisivel("Ordens de Servico > Atribuir Tecnico");if(i<0)return;
+    if(strcmp(ordens[i].status,"aberta")&&strcmp(ordens[i].status,"em_andamento")) {
+        printf("[!] OS encerrada nao aceita tecnico.\n");pausar();return;
     }
-    while (totalOrdens < MAX_OS && fgets(linha, sizeof(linha), arquivo) != NULL)
-    {
-        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
-        if (linha[0] < '0' || linha[0] > '9')
-            continue;
-
-        n = totalOrdens;
-        pegarCampo(linha, 0, numero, sizeof(numero));
-        ordens[n].id_os = atoi(numero);
-        pegarCampo(linha, 1, numero, sizeof(numero));
-        ordens[n].id_equipamento = atoi(numero);
-        pegarCampo(linha, 2, numero, sizeof(numero));
-        ordens[n].id_atendente = atoi(numero);
-        pegarCampo(linha, 3, ordens[n].data_abertura, sizeof(ordens[n].data_abertura));
-        pegarCampo(linha, 4, ordens[n].problema_relatado, sizeof(ordens[n].problema_relatado));
-        pegarCampo(linha, 5, ordens[n].diagnostico, sizeof(ordens[n].diagnostico));
-        pegarCampo(linha, 6, numero, sizeof(numero));
-        ordens[n].orcamento = atof(numero);
-        pegarCampo(linha, 7, ordens[n].status, sizeof(ordens[n].status));
-        pegarCampo(linha, 8, ordens[n].resultado_resposta_cliente, sizeof(ordens[n].resultado_resposta_cliente));
-        pegarCampo(linha, 9, ordens[n].data_entrega, sizeof(ordens[n].data_entrega));
-        pegarCampo(linha, 10, ordens[n].resultado_teste, sizeof(ordens[n].resultado_teste));
-        pegarCampo(linha, 11, numero, sizeof(numero));
-        ordens[n].valor_pago = atof(numero);
-        pegarCampo(linha, 12, ordens[n].feedback_cliente, sizeof(ordens[n].feedback_cliente));
-        pegarCampo(linha, 13, ordens[n].satisfeito, sizeof(ordens[n].satisfeito));
-        pegarCampo(linha, 14, ordens[n].criado_em, sizeof(ordens[n].criado_em));
-        pegarCampo(linha, 15, ordens[n].atualizado_em, sizeof(ordens[n].atualizado_em));
-        totalOrdens++;
+    t=selecionarUsuario("tecnico",1);if(t<0)return;
+    if(tecnicoEstaNaOS(usuarios[t].id_usuario,ordens[i].id_os)) {
+        printf("[!] Tecnico ja atribuido a OS.\n");pausar();return;
     }
-    fclose(arquivo);
+    dadosNumero(ordens[i].id_os,idOS,sizeof(idOS));
+    dadosNumero(usuarios[t].id_usuario,idTec,sizeof(idTec));
+    /* SQL Server gera a identidade. O BEGIN TRAN mantem vinculo e status juntos. */
+    const char *sql=
+      "SET XACT_ABORT ON; BEGIN TRY BEGIN TRAN; "
+      "IF NOT EXISTS (SELECT 1 FROM dbo.os WHERE id_os=? AND status IN ('aberta','em_andamento')) "
+      "THROW 50001,'OS indisponivel',1; "
+      "IF EXISTS(SELECT 1 FROM dbo.tecnico_os WHERE id_os=? AND id_tecnico=?) "
+      "THROW 50002,'Tecnico ja vinculado',1; "
+      "INSERT dbo.tecnico_os(id_os,id_tecnico,data_atribuicao) VALUES(?,?,CONVERT(date,GETDATE())); "
+      "UPDATE dbo.os SET status='em_andamento',atualizado_em=SYSDATETIME() WHERE id_os=?; "
+      "COMMIT; END TRY BEGIN CATCH IF @@TRANCOUNT>0 ROLLBACK; THROW; END CATCH";
+    const char *p[]={idOS,idOS,idTec,idOS,idTec,idOS};
+    if(!dadosExecutar(sql,6,p,NULL)) {printf("Falha ao atribuir tecnico.\n");pausar();return;}
+    if(!carregarOrdensSQL() || !carregarTecnicosOSSQL()) {printf("Erro ao atualizar dados da memoria.\n");pausar();return;}
+    printf("[+] Tecnico atribuido e OS em andamento.\n");pausar();
 }
 
-/* Regrava o tecnico_os.txt inteiro com o que está no vetor */
-int salvarTecnicosOS()
+void registrarEntrega(void)
 {
-    FILE *arquivo;
-    int i;
-
-    arquivo = fopen(ARQ_TECNICO_OS, "w");
-    if (arquivo == NULL)
-    {
-        printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_TECNICO_OS);
-        return 0;
+    int i;char texto[32];double pago;
+    if(!perfilLogado("admin")&&!perfilLogado("recepcionista")){printf("Sem permissao.\n");pausar();return;}
+    i=osSelecionarVisivel("Ordens de Servico > Registrar Entrega");if(i<0)return;
+    if(strcmp(ordens[i].status,"em_andamento") ||
+       strcmp(ordens[i].resultado_teste,"aprovado") ||
+       strcmp(ordens[i].resultado_resposta_cliente,"aprovado")) {
+        printf("[!] Entrega exige orcamento aprovado, manutencao e teste aprovado.\n");pausar();return;
     }
-    fprintf(arquivo, "id_tecnico_os;id_tecnico;id_os;data_atribuicao;observacoes_tecnicas;criado_em;atualizado_em\n");
-    for (i = 0; i < totalTecnicosOS; i++)
-    {
-        fprintf(arquivo, "%d;%d;%d;%s;%s;%s;%s\n", tecnicosOS[i].id_tecnico_os, tecnicosOS[i].id_tecnico,
-                tecnicosOS[i].id_os, tecnicosOS[i].data_atribuicao, tecnicosOS[i].observacoes_tecnicas,
-                tecnicosOS[i].criado_em, tecnicosOS[i].atualizado_em);
-    }
-    fclose(arquivo);
-    return 1;
+    lerTexto("Valor recebido (R$): ",texto,sizeof(texto));
+    pago=textoParaValor(texto);
+    if(!*texto || pago<0 || pago>99999999) {printf("Valor invalido.\n");pausar();return;}
+    if(!confirmar("Confirmar entrega e pagamento?"))return;
+    ordens[i].valor_pago=pago;
+    dataHoje(ordens[i].data_entrega);
+    strcpy(ordens[i].status,"finalizada");
+    if(!salvarOrdens()){printf("Falha ao registrar entrega.\n");pausar();return;}
+    printf("[+] Entrega e pagamento registrados.\n");pausar();
 }
 
-/* Lê o tecnico_os.txt para o vetor (sem arquivo = nenhuma atribuição ainda) */
-void carregarTecnicosOS()
+void registrarFeedback(void)
 {
-    FILE *arquivo;
-    char linha[TAM_LINHA];
-    char numero[20];
-    int n;
-
-    totalTecnicosOS = 0;
-    arquivo = fopen(ARQ_TECNICO_OS, "r");
-    if (arquivo == NULL)
-    {
-        return;
+    int i,resposta;char feedback[200];
+    i=osSelecionarVisivel("Ordens de Servico > Registrar Feedback");if(i<0)return;
+    if(strcmp(ordens[i].status,"finalizada") || !*ordens[i].data_entrega) {
+        printf("[!] Feedback so e registrado apos a entrega.\n");pausar();return;
     }
-    while (totalTecnicosOS < MAX_TECNICO_OS && fgets(linha, sizeof(linha), arquivo) != NULL)
-    {
-        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
-        if (linha[0] < '0' || linha[0] > '9')
-            continue;
-
-        n = totalTecnicosOS;
-        pegarCampo(linha, 0, numero, sizeof(numero));
-        tecnicosOS[n].id_tecnico_os = atoi(numero);
-        pegarCampo(linha, 1, numero, sizeof(numero));
-        tecnicosOS[n].id_tecnico = atoi(numero);
-        pegarCampo(linha, 2, numero, sizeof(numero));
-        tecnicosOS[n].id_os = atoi(numero);
-        pegarCampo(linha, 3, tecnicosOS[n].data_atribuicao, sizeof(tecnicosOS[n].data_atribuicao));
-        pegarCampo(linha, 4, tecnicosOS[n].observacoes_tecnicas, sizeof(tecnicosOS[n].observacoes_tecnicas));
-        pegarCampo(linha, 5, tecnicosOS[n].criado_em, sizeof(tecnicosOS[n].criado_em));
-        pegarCampo(linha, 6, tecnicosOS[n].atualizado_em, sizeof(tecnicosOS[n].atualizado_em));
-        totalTecnicosOS++;
-    }
-    fclose(arquivo);
-}
-
-/* UC24 - Criar Ordem de Servico: abre uma OS para um equipamento do cliente */
-void criarOrdemServico() {
-}
-
-/* UC25 - Consultar Ordem de Servico: lista e busca as OS por numero, CPF, status ou periodo */
-void consultarOS() {
-}
-
-/* UC26 - Editar Ordem de Servico: altera o problema relatado da OS */
-void editarOS() {
-}
-
-/* UC27 - Cancelar Ordem de Servico: cancela a OS sem apagar */
-void cancelarOS() {
-}
-
-/* UC28 - Atribuir Tecnico a Ordem de Servico: vincula um ou mais tecnicos a OS */
-void atribuirTecnico() {
-}
-
-/* UC29 - Registrar Entrega e Pagamento: registra a data de entrega e o valor pago */
-void registrarEntrega() {
-}
-
-/* UC30 - Registrar Feedback do Cliente: finaliza a OS ou devolve para novo reparo */
-void registrarFeedback() {
+    lerTexto("Comentario (ENTER para voltar): ",feedback,sizeof(feedback));if(!*feedback)return;
+    resposta=lerInteiro("Satisfeito? 1-Sim, 2-Nao: ");
+    if(resposta!=1 && resposta!=2) {printf("Opcao invalida.\n");pausar();return;}
+    strcpy(ordens[i].feedback_cliente,feedback);
+    strcpy(ordens[i].satisfeito,resposta==1?"sim":"nao");
+    if(!salvarOrdens()){printf("Falha ao registrar feedback.\n");pausar();return;}
+    printf("[+] Feedback registrado.\n");pausar();
 }

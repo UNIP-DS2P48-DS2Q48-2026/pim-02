@@ -1,27 +1,22 @@
-#include "banco.c"
-
-/* UC08 - Cadastrar Recepcionista: cadastra uma nova recepcionista */
+/* UC08 - Cadastrar Recepcionista */
 void cadastrarRecepcionista()
 {
     cadastrarUsuario("recepcionista", "Recepcionistas > Cadastrar");
 }
 
-/* UC09 - Consultar Recepcionista: lista e busca as recepcionistas */
+/* UC09 - Consultar Recepcionista */
 void consultarRecepcionista()
 {
-    int id;
-    scanf("%d", &id);
-    consul_user("Recepcionistas", id);
-    getchar();
-
+    consultarUsuarios("recepcionista", "Recepcionistas > Consultar");
 }
-/* UC10 - Editar Recepcionista: altera os dados de uma recepcionista */
+
+/* UC10 - Editar Recepcionista */
 void editarRecepcionista()
 {
     editarUsuario("recepcionista", "Recepcionistas > Editar");
 }
 
-/* UC11 - Inativar Recepcionista: inativa uma recepcionista sem OS em andamento */
+/* UC11 - Inativar Recepcionista */
 void inativarRecepcionista()
 {
     inativarUsuario("recepcionista", "Recepcionistas > Inativar");

@@ -8,94 +8,6 @@ int perfilLogado(char perfil[])
     return 0;
 }
 
-/* Regrava o usuario.txt inteiro com o que está no vetor */
-int salvarUsuarios()
-{
-    FILE *arquivo;
-    int i;
-
-    arquivo = fopen(ARQ_USUARIO, "w");
-    if (arquivo == NULL)
-    {
-        printf("\n[!] Erro: nao foi possivel gravar %s.\n", ARQ_USUARIO);
-        return 0;
-    }
-    fprintf(arquivo, "id_usuario;nome;email;telefone;senha;perfil;cpf;especialidade;status;criado_em;atualizado_em\n");
-    for (i = 0; i < totalUsuarios; i++)
-    {
-        fprintf(arquivo, "%d;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
-                usuarios[i].id_usuario, usuarios[i].nome, usuarios[i].email, usuarios[i].telefone,
-                usuarios[i].senha, usuarios[i].perfil, usuarios[i].cpf, usuarios[i].especialidade,
-                usuarios[i].status, usuarios[i].criado_em, usuarios[i].atualizado_em);
-    }
-    fclose(arquivo);
-    return 1;
-}
-
-/* Coloca um usuário de teste no fim do vetor, com a senha byte123 */
-void adicionarUsuarioInicial(char nome[], char email[], char telefone[], char perfil[], char cpf[], char especialidade[])
-{
-    int n = totalUsuarios;
-
-    usuarios[n].id_usuario = n + 1;
-    strcpy(usuarios[n].nome, nome);
-    strcpy(usuarios[n].email, email);
-    strcpy(usuarios[n].telefone, telefone);
-    gerarHash("byte123", usuarios[n].senha);
-    strcpy(usuarios[n].perfil, perfil);
-    strcpy(usuarios[n].cpf, cpf);
-    strcpy(usuarios[n].especialidade, especialidade);
-    strcpy(usuarios[n].status, "ativo");
-    dataHoraAgora(usuarios[n].criado_em);
-    strcpy(usuarios[n].atualizado_em, usuarios[n].criado_em);
-    totalUsuarios++;
-}
-
-/* Lê o usuario.txt para o vetor; se o arquivo não existir, cria os usuários de teste do grupo */
-void carregarUsuarios()
-{
-    FILE *arquivo;
-    char linha[TAM_LINHA];
-    char numero[20];
-    int n;
-
-    totalUsuarios = 0;
-    arquivo = fopen(ARQ_USUARIO, "r");
-    if (arquivo == NULL)
-    {
-        adicionarUsuarioInicial("Ana", "ana@bytetech.com", "", "admin", "", "");
-        adicionarUsuarioInicial("Carla", "carla@bytetech.com", "", "recepcionista", "", "");
-        adicionarUsuarioInicial("Rafael", "rafael@bytetech.com", "", "tecnico", "", "Hardware");
-        adicionarUsuarioInicial("Joao Pereira", "joao.pereira@email.com", "(11) 90000-0000", "cliente", "111.111.111-11", "");
-        salvarUsuarios();
-        return;
-    }
-
-    /* Uma linha por usuário, campos na mesma ordem do salvarUsuarios */
-    while (totalUsuarios < MAX_USUARIOS && fgets(linha, sizeof(linha), arquivo) != NULL)
-    {
-        /* Pula o cabeçalho e linhas vazias: toda linha de dados começa com o id (um número) */
-        if (linha[0] < '0' || linha[0] > '9')
-            continue;
-
-        n = totalUsuarios;
-        pegarCampo(linha, 0, numero, sizeof(numero));
-        usuarios[n].id_usuario = atoi(numero);
-        pegarCampo(linha, 1, usuarios[n].nome, sizeof(usuarios[n].nome));
-        pegarCampo(linha, 2, usuarios[n].email, sizeof(usuarios[n].email));
-        pegarCampo(linha, 3, usuarios[n].telefone, sizeof(usuarios[n].telefone));
-        pegarCampo(linha, 4, usuarios[n].senha, sizeof(usuarios[n].senha));
-        pegarCampo(linha, 5, usuarios[n].perfil, sizeof(usuarios[n].perfil));
-        pegarCampo(linha, 6, usuarios[n].cpf, sizeof(usuarios[n].cpf));
-        pegarCampo(linha, 7, usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
-        pegarCampo(linha, 8, usuarios[n].status, sizeof(usuarios[n].status));
-        pegarCampo(linha, 9, usuarios[n].criado_em, sizeof(usuarios[n].criado_em));
-        pegarCampo(linha, 10, usuarios[n].atualizado_em, sizeof(usuarios[n].atualizado_em));
-        totalUsuarios++;
-    }
-    fclose(arquivo);
-}
-
 /* ---------- Funções comuns aos cadastros de usuário (UC04 a UC19) ---------- */
 
 /* Posição no vetor do usuário com este id (-1 se não existir) */
@@ -318,7 +230,7 @@ void lerOuManter(char rotulo[], char atual[], char destino[], int tamanho)
 void cadastrarUsuario(char perfil[], char titulo[])
 {
     char senha[50];
-    int i, n, maiorId = 0;
+    int n;
 
     imprimirCabecalho(titulo);
 
@@ -348,7 +260,7 @@ void cadastrarUsuario(char perfil[], char titulo[])
     {
         lerTexto("Especialidade: ", usuarios[n].especialidade, sizeof(usuarios[n].especialidade));
     }
-    lerTexto("Senha: ", senha, sizeof(senha));
+    lerSenha("Senha: ", senha, sizeof(senha));
 
     /* Validações antes de gravar (RNF09, RN13) */
     if (!campoPreenchido(usuarios[n].email, "E-mail") || !campoPreenchido(senha, "Senha"))
@@ -376,26 +288,21 @@ void cadastrarUsuario(char perfil[], char titulo[])
         return;
     }
 
-    /* O novo id é o maior id existente + 1 */
-    for (i = 0; i < totalUsuarios; i++)
-    {
-        if (usuarios[i].id_usuario > maiorId)
-            maiorId = usuarios[i].id_usuario;
-    }
-    usuarios[n].id_usuario = maiorId + 1;
+    /* A geracao do ID agora e responsabilidade do SQL Server (IDENTITY). */
     strcpy(usuarios[n].perfil, perfil);
     strcpy(usuarios[n].status, "ativo");
     gerarHash(senha, usuarios[n].senha);
+    if (!usuarios[n].senha[0]) { printf("Erro ao proteger senha.\n"); pausar(); return; }
     dataHoraAgora(usuarios[n].criado_em);
     strcpy(usuarios[n].atualizado_em, usuarios[n].criado_em);
 
-    totalUsuarios++;
-    if (!salvarUsuarios())
+    /* So adiciona ao vetor se o INSERT realmente funcionar. */
+    if (!inserirUsuarioSQL(bancoAtivo, &usuarios[n]))
     {
-        totalUsuarios--; /* não gravou: desfaz o cadastro */
         pausar();
         return;
     }
+    totalUsuarios++;
 
     printf("\n[+] Cadastro realizado com sucesso! ID: %d", usuarios[n].id_usuario);
     pausar();
@@ -447,7 +354,7 @@ void editarUsuario(char perfil[], char titulo[])
     {
         lerOuManter("Especialidade", usuarios[i].especialidade, especialidade, sizeof(especialidade));
     }
-    lerTexto("Nova senha [manter]: ", senha, sizeof(senha));
+    lerSenha("Nova senha [manter]: ", senha, sizeof(senha));
 
     if (!emailValido(email))
     {
@@ -468,22 +375,28 @@ void editarUsuario(char perfil[], char titulo[])
         return;
     }
 
-    strcpy(usuarios[i].nome, nome);
-    strcpy(usuarios[i].email, email);
-    strcpy(usuarios[i].telefone, telefone);
-    strcpy(usuarios[i].cpf, cpf);
-    strcpy(usuarios[i].especialidade, especialidade);
+    /* Prepara uma copia: nao altera o vetor se o UPDATE falhar. */
+    Usuario alterado = usuarios[i];
+    strcpy(alterado.nome, nome);
+    strcpy(alterado.email, email);
+    strcpy(alterado.telefone, telefone);
+    strcpy(alterado.cpf, cpf);
+    strcpy(alterado.especialidade, especialidade);
     if (strlen(senha) > 0)
     {
-        gerarHash(senha, usuarios[i].senha);
+        gerarHash(senha, alterado.senha);
     }
-    dataHoraAgora(usuarios[i].atualizado_em);
-    if (!salvarUsuarios())
+
+    /* O SQL Server e a fonte de verdade dos dados. */
+    if (!atualizarUsuarioSQL(bancoAtivo, &alterado))
     {
+        printf("\n[!] Nao foi possivel salvar a edicao no SQL Server.");
         pausar();
         return;
     }
 
+    dataHoraAgora(alterado.atualizado_em);
+    usuarios[i] = alterado;
     printf("\n[+] Cadastro de %s atualizado com sucesso!", usuarios[i].nome);
     pausar();
 }
@@ -505,13 +418,6 @@ void inativarUsuario(char perfil[], char titulo[])
         pausar();
         return;
     }
-    if (temOSEmAndamento(usuarios[i].id_usuario))
-    {
-        printf("\n[!] %s tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).", usuarios[i].nome);
-        pausar();
-        return;
-    }
-
     printf("\nInativar %s.", usuarios[i].nome);
     if (!confirmar("\nTem certeza?"))
     {
@@ -520,13 +426,18 @@ void inativarUsuario(char perfil[], char titulo[])
         return;
     }
 
-    strcpy(usuarios[i].status, "inativo");
-    dataHoraAgora(usuarios[i].atualizado_em);
-    if (!salvarUsuarios())
+    /* O SQL verifica as OS abertas/em andamento antes de inativar (RN14).
+       Atualizamos o vetor somente depois que o banco confirmar. */
+    if (!inativarUsuarioSQL(bancoAtivo, usuarios[i].id_usuario))
     {
+        printf("\n[!] Inativacao nao realizada. Verifique se o usuario esta ativo "
+               "e se nao possui OS aberta ou em andamento (RN14).");
         pausar();
         return;
     }
+
+    strcpy(usuarios[i].status, "inativo");
+    dataHoraAgora(usuarios[i].atualizado_em);
 
     printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado (RN12).", usuarios[i].nome);
     pausar();
@@ -537,7 +448,6 @@ int realizarLogin()
 {
     char email[60];
     char senha[50];
-    char hash[TAM_HASH];
     int i;
 
     /* --- PASSO 1: E-MAIL --- */
@@ -566,13 +476,12 @@ int realizarLogin()
         printf("\n");
     }
 
-    lerTexto("Senha: ", senha, sizeof(senha));
+    lerSenha("Senha: ", senha, sizeof(senha));
 
     /* --- VALIDAÇÃO --- */
-    gerarHash(senha, hash);
     for (i = 0; i < totalUsuarios; i++)
     {
-        if (strcmp(email, usuarios[i].email) == 0 && strcmp(hash, usuarios[i].senha) == 0)
+        if (strcmp(email, usuarios[i].email) == 0 && verificarSenha(senha, usuarios[i].senha))
         {
             if (strcmp(usuarios[i].status, "ativo") != 0)
             {
@@ -580,7 +489,18 @@ int realizarLogin()
                 pausar();
                 return -1;
             }
-            return i; /* Retorna o índice do utilizador autenticado */
+            /* Migra automaticamente o hash legado ao efetuar login correto. */
+            if (strncmp(usuarios[i].senha, "pbkdf2_sha256$", 14) != 0)
+            {
+                char novo[TAM_HASH];
+                gerarHash(senha, novo);
+                if (*novo && alterarSenhaUsuarioSQL(bancoAtivo, usuarios[i].id_usuario,
+                                                    usuarios[i].senha, novo))
+                    strcpy(usuarios[i].senha, novo);
+                else
+                    fprintf(stderr, "[!] Falha ao atualizar hash antigo da senha.\n");
+            }
+            return i; /* Indice do usuario autenticado */
         }
     }
 
@@ -620,17 +540,14 @@ void consultarMeusDados()
 void alterarSenha()
 {
     char atual[50], nova[50], confirmacao[50];
-    char hash[TAM_HASH];
-
     imprimirCabecalho("Alterar Senha");
 
-    lerTexto("\nSenha atual (ENTER para voltar): ", atual, sizeof(atual));
+    lerSenha("\nSenha atual (ENTER para voltar): ", atual, sizeof(atual));
     if (strlen(atual) == 0)
     {
         return;
     }
-    gerarHash(atual, hash);
-    if (strcmp(hash, usuarios[usuarioLogado].senha) != 0)
+    if (!verificarSenha(atual, usuarios[usuarioLogado].senha))
     {
         printf("\n[!] A senha atual nao confere. A senha nao foi alterada.");
         pausar();
@@ -640,27 +557,38 @@ void alterarSenha()
     /* Repete até a nova senha e a confirmação serem iguais */
     do
     {
-        lerTexto("Nova senha: ", nova, sizeof(nova));
+        lerSenha("Nova senha: ", nova, sizeof(nova));
         if (strlen(nova) == 0)
         {
             printf("\n[!] A nova senha e obrigatoria. A senha nao foi alterada.");
             pausar();
             return;
         }
-        lerTexto("Confirme a nova senha: ", confirmacao, sizeof(confirmacao));
+        lerSenha("Confirme a nova senha: ", confirmacao, sizeof(confirmacao));
         if (strcmp(nova, confirmacao) != 0)
         {
             printf("\n[!] As senhas nao conferem. Digite novamente.\n\n");
         }
     } while (strcmp(nova, confirmacao) != 0);
 
-    gerarHash(nova, usuarios[usuarioLogado].senha);
-    dataHoraAgora(usuarios[usuarioLogado].atualizado_em);
-    if (!salvarUsuarios())
+    /* Calcula o hash sem alterar a memoria antes do SQL confirmar. */
+    char hashNovo[TAM_HASH];
+    gerarHash(nova, hashNovo);
+    if (!*hashNovo) { printf("Erro ao gerar hash seguro.\n"); pausar(); return; }
+
+    if (!alterarSenhaUsuarioSQL(bancoAtivo,
+                                usuarios[usuarioLogado].id_usuario,
+                                usuarios[usuarioLogado].senha,
+                                hashNovo))
     {
+        printf("\n[!] A senha nao foi alterada no banco de dados.");
         pausar();
         return;
     }
+
+    /* Somente depois do UPDATE atualizamos a memoria. */
+    strcpy(usuarios[usuarioLogado].senha, hashNovo);
+    dataHoraAgora(usuarios[usuarioLogado].atualizado_em);
 
     printf("\n[+] Senha alterada com sucesso!");
     pausar();

@@ -1,32 +1,58 @@
+
 #include <stdio.h>
 #include "banco.h"
-//commit
-int bdConectar(Banco *banco);
-void bdDesconectar(Banco *banco);
 
 int main(void)
 {
+    // Inicializa a estrutura Banco.
     Banco banco = {
         SQL_NULL_HENV,
         SQL_NULL_HDBC,
-        SQL_NULL_HSTMT    
-};
+        SQL_NULL_HSTMT
+    };
 
-if (banco.hdbc == SQL_NULL_HDBC)
+    SQLINTEGER quantidade = 0;
+    SQLLEN indicador = 0;
+
+    // Tenta estabelecer a conexao.
+    if (!bdConectar(&banco))
     {
-        printf("Estrutura Banco inicializada!\n");
+        printf("Falha na conexao.\n");
+        return 1;
     }
 
-    if (bdConectar(&banco))
+    // Consulta a quantidade de usuarios.
+    if (bdConsultar(&banco, "SELECT COUNT(*) FROM dbo.usuario"))
     {
-        printf("Teste realizado com sucesso!\n");
+        // Busca a linha e recupera a primeira coluna.
+        if (SQL_SUCCEEDED(SQLFetch(banco.hstmt)) &&
+            SQL_SUCCEEDED(SQLGetData(
+                banco.hstmt,
+                1,
+                SQL_C_SLONG,
+                &quantidade,
+                sizeof(quantidade),
+                &indicador
+            )) &&
+            indicador != SQL_NULL_DATA)
+        {
+            printf("Usuarios no Pim02: %d\n", (int)quantidade);
+        }
+        else
+        {
+            printf("Erro ao ler resultado da consulta.\n");
+        }
 
-        bdDesconectar(&banco);
+        bdEncerrarConsulta(&banco);
     }
     else
     {
-        printf("Falha no teste de conexao.\n");
+        printf("Falha ao consultar a tabela usuario.\n");
     }
+
+    // Encerra a conexao.
+    bdDesconectar(&banco);
+    printf("Conexao encerrada!\n");
 
     return 0;
 }
