@@ -56,7 +56,7 @@ void registrarOrcamento()
         return;
 
     mostrarOrcamento(i);
-    printf("\nSe o diagnostico nao encontrou defeito, informe 0 (RN18).\n");
+    printf("\nSe o diagnostico nao encontrou defeito, informe 0.\n");
     lerTexto("Valor da proposta em R$ (ENTER para voltar): ", texto, sizeof(texto));
     if (strlen(texto) == 0)
         return;

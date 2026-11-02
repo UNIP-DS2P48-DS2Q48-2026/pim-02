@@ -73,7 +73,7 @@ int campoPreenchido(char valor[], char nomeCampo[])
 {
     if (strlen(valor) == 0)
     {
-        printf("\n[!] O campo %s e obrigatorio (RNF09). Nada foi gravado.", nomeCampo);
+        printf("\n[!] O campo %s e obrigatorio. Nada foi gravado.", nomeCampo);
         pausar();
         return 0;
     }
@@ -277,13 +277,13 @@ void cadastrarUsuario(char perfil[], char titulo[])
     }
     if (emailEmUso(usuarios[n].email, n))
     {
-        printf("\n[!] Este e-mail ja pertence a outro usuario (RN13). Nada foi gravado.");
+        printf("\n[!] Este e-mail ja pertence a outro usuario. Nada foi gravado.");
         pausar();
         return;
     }
     if (strcmp(perfil, "cliente") == 0 && cpfEmUso(usuarios[n].cpf, n))
     {
-        printf("\n[!] Este CPF ja esta cadastrado (RN13). Nada foi gravado.");
+        printf("\n[!] Este CPF ja esta cadastrado. Nada foi gravado.");
         pausar();
         return;
     }
@@ -364,13 +364,13 @@ void editarUsuario(char perfil[], char titulo[])
     }
     if (emailEmUso(email, i))
     {
-        printf("\n[!] Este e-mail ja pertence a outro usuario (RN13). Nada foi alterado.");
+        printf("\n[!] Este e-mail ja pertence a outro usuario. Nada foi alterado.");
         pausar();
         return;
     }
     if (strcmp(perfil, "cliente") == 0 && cpfEmUso(cpf, i))
     {
-        printf("\n[!] Este CPF ja pertence a outro cliente (RN13). Nada foi alterado.");
+        printf("\n[!] Este CPF ja pertence a outro cliente. Nada foi alterado.");
         pausar();
         return;
     }
@@ -414,7 +414,7 @@ void inativarUsuario(char perfil[], char titulo[])
 
     if (i == usuarioLogado)
     {
-        printf("\n[!] Voce nao pode inativar o proprio cadastro (RN17).");
+        printf("\n[!] Voce nao pode inativar o proprio cadastro.");
         pausar();
         return;
     }
@@ -431,7 +431,7 @@ void inativarUsuario(char perfil[], char titulo[])
     if (!inativarUsuarioSQL(bancoAtivo, usuarios[i].id_usuario))
     {
         printf("\n[!] Inativacao nao realizada. Verifique se o usuario esta ativo "
-               "e se nao possui OS aberta ou em andamento (RN14).");
+               "e se nao possui OS aberta ou em andamento.");
         pausar();
         return;
     }
@@ -439,7 +439,7 @@ void inativarUsuario(char perfil[], char titulo[])
     strcpy(usuarios[i].status, "inativo");
     dataHoraAgora(usuarios[i].atualizado_em);
 
-    printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado (RN12).", usuarios[i].nome);
+    printf("\n[+] %s inativado(a). O historico foi preservado e o acesso esta bloqueado.", usuarios[i].nome);
     pausar();
 }
 
@@ -485,7 +485,7 @@ int realizarLogin()
         {
             if (strcmp(usuarios[i].status, "ativo") != 0)
             {
-                printf("\n[!] Usuario inativo. O acesso esta bloqueado (RN12).");
+                printf("\n[!] Usuario inativo. O acesso esta bloqueado.");
                 pausar();
                 return -1;
             }

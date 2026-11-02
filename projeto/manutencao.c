@@ -339,7 +339,7 @@ void executarManutencao()
     /* RF06: só repara depois que o cliente aprovou o orçamento */
     if (strcmp(ordens[i].resultado_resposta_cliente, "aprovado") != 0)
     {
-        printf("\n[!] O orcamento da OS %d ainda nao foi aprovado pelo cliente (RF06).", ordens[i].id_os);
+        printf("\n[!] O orcamento da OS %d ainda nao foi aprovado pelo cliente.", ordens[i].id_os);
         pausar();
         return;
     }
@@ -353,7 +353,7 @@ void executarManutencao()
     printf("\nDiagnostico: %s\n", ordens[i].diagnostico);
     if (ordens[i].orcamento == 0)
     {
-        printf("Orcamento de valor zero: registre que nenhum reparo foi necessario (RN18).\n");
+        printf("Orcamento de valor zero: registre que nenhum reparo foi necessario.\n");
     }
     if (strcmp(ordens[i].resultado_teste, "reprovado") == 0)
     {
@@ -410,7 +410,7 @@ void registrarTeste()
 
     if (strcmp(ordens[i].resultado_resposta_cliente, "aprovado") != 0)
     {
-        printf("\n[!] O orcamento da OS %d ainda nao foi aprovado pelo cliente (RF06).", ordens[i].id_os);
+        printf("\n[!] O orcamento da OS %d ainda nao foi aprovado pelo cliente.", ordens[i].id_os);
         pausar();
         return;
     }

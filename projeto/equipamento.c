@@ -270,7 +270,7 @@ void inativarEquipamento()
     /* Bloqueio caso o equipamento tenha OS "aberta" ou "em andamento" (RN14) */
     if (equipamentoTemOSEmAndamento(equipamentos[i].id_equipamento))
     {
-        printf("\n[!] O equipamento ID %d tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).",
+        printf("\n[!] O equipamento ID %d tem ordem de servico aberta ou em andamento. Inativacao bloqueada.",
                equipamentos[i].id_equipamento);
         pausar();
         return;
