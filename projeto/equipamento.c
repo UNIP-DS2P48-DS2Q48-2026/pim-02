@@ -1,137 +1,51 @@
-/* equipamento.c - equipamentos dos clientes: cadastrar, consultar, editar, inativar e reativar */
-/* Funções do main.c usadas aqui: lerTexto (linha 121), lerInteiro (linha 137), confirmar (linha 161), pausar (linha 173), imprimirCabecalho (linha 215), dataHoraAgora (linha 204) */
+/* Persistencia dos equipamentos ocorre no SQL Server. */
+int salvarEquipamentos(void) { return salvarEquipamentosSQL(); }
+void carregarEquipamentos(void) { if (!carregarEquipamentosSQL()) fprintf(stderr,"Falha ao carregar equipamentos.\n"); }
 
-/* Quantos equipamentos do vetor já estão no banco (os novos ficam no fim do vetor) */
-int equipamentosNoBanco = 0;
-
-/* Grava o vetor na tabela equipamento: UPDATE do que já existe, INSERT do que é novo; devolve 1 se deu certo */
-int salvarEquipamentos()
-{
-    char sql[1500];
-    char categoria[30], tipo[90], marca[90], modelo[130], status[20], criado[50], atualizado[50];
-    int posicaoEquipamento, deuCerto = 1;
-
-    /* bdExecutar está em banco.c, linha 61 */
-    bdExecutar("SET IDENTITY_INSERT equipamento ON"); /* deixa o programa escolher o id */
-    for (posicaoEquipamento = 0; posicaoEquipamento < totalEquipamentos && deuCerto; posicaoEquipamento++)
-    {
-        /* sqlTexto está em banco.c, linha 100 */
-        sqlTexto(categoria, equipamentos[posicaoEquipamento].categoria);
-        sqlTexto(tipo, equipamentos[posicaoEquipamento].tipo);
-        sqlTexto(marca, equipamentos[posicaoEquipamento].marca);
-        sqlTexto(modelo, equipamentos[posicaoEquipamento].modelo_numero_serie);
-        sqlTexto(status, equipamentos[posicaoEquipamento].status);
-        sqlTexto(criado, equipamentos[posicaoEquipamento].criado_em);
-        sqlTexto(atualizado, equipamentos[posicaoEquipamento].atualizado_em);
-
-        if (posicaoEquipamento < equipamentosNoBanco)
-        {
-            sprintf(sql, "UPDATE equipamento SET id_cliente = %d, categoria = %s, tipo = %s, marca = %s, "
-                         "modelo_numero_serie = %s, status = %s, criado_em = %s, atualizado_em = %s WHERE id_equipamento = %d",
-                    equipamentos[posicaoEquipamento].id_cliente, categoria, tipo, marca, modelo, status, criado, atualizado,
-                    equipamentos[posicaoEquipamento].id_equipamento);
-        }
-        else
-        {
-            sprintf(sql, "INSERT INTO equipamento (id_equipamento, id_cliente, categoria, tipo, marca, modelo_numero_serie, "
-                         "status, criado_em, atualizado_em) VALUES (%d, %d, %s, %s, %s, %s, %s, %s, %s)",
-                    equipamentos[posicaoEquipamento].id_equipamento, equipamentos[posicaoEquipamento].id_cliente, categoria,
-                    tipo, marca, modelo, status, criado, atualizado);
-        }
-        deuCerto = bdExecutar(sql);
-    }
-    bdExecutar("SET IDENTITY_INSERT equipamento OFF");
-
-    if (deuCerto)
-        equipamentosNoBanco = totalEquipamentos;
-    return deuCerto;
-}
-
-/* Lê a tabela equipamento para o vetor */
-void carregarEquipamentos()
-{
-    char numero[20];
-    int novaPosicao;
-
-    totalEquipamentos = 0;
-    equipamentosNoBanco = 0;
-    /* bdExecutar está em banco.c, linha 61 */
-    if (!bdExecutar("SELECT id_equipamento, id_cliente, categoria, tipo, marca, modelo_numero_serie, status, "
-                    "CONVERT(VARCHAR(19), criado_em, 120), CONVERT(VARCHAR(19), atualizado_em, 120) "
-                    "FROM equipamento ORDER BY id_equipamento"))
-    {
-        return;
-    }
-
-    /* Cada linha do SELECT vai para a próxima posição do vetor */
-    /* bdProximaLinha está em banco.c, linha 80 */
-    while (totalEquipamentos < MAX_EQUIPAMENTOS && bdProximaLinha())
-    {
-        novaPosicao = totalEquipamentos;
-        /* bdLerTexto está em banco.c, linha 88 */
-        bdLerTexto(1, numero, sizeof(numero));
-        equipamentos[novaPosicao].id_equipamento = atoi(numero);
-        bdLerTexto(2, numero, sizeof(numero));
-        equipamentos[novaPosicao].id_cliente = atoi(numero);
-        bdLerTexto(3, equipamentos[novaPosicao].categoria, sizeof(equipamentos[novaPosicao].categoria));
-        bdLerTexto(4, equipamentos[novaPosicao].tipo, sizeof(equipamentos[novaPosicao].tipo));
-        bdLerTexto(5, equipamentos[novaPosicao].marca, sizeof(equipamentos[novaPosicao].marca));
-        bdLerTexto(6, equipamentos[novaPosicao].modelo_numero_serie, sizeof(equipamentos[novaPosicao].modelo_numero_serie));
-        bdLerTexto(7, equipamentos[novaPosicao].status, sizeof(equipamentos[novaPosicao].status));
-        bdLerTexto(8, equipamentos[novaPosicao].criado_em, sizeof(equipamentos[novaPosicao].criado_em));
-        bdLerTexto(9, equipamentos[novaPosicao].atualizado_em, sizeof(equipamentos[novaPosicao].atualizado_em));
-        totalEquipamentos++;
-    }
-    equipamentosNoBanco = totalEquipamentos;
-}
-
-/* Devolve a posição no vetor do equipamento com este id, ou -1 se não existir */
+/* Posição no vetor do equipamento com este id (-1 se não existir) */
 int buscarEquipamentoPorId(int id)
 {
-    int posicaoEquipamento;
+    int i;
 
-    for (posicaoEquipamento = 0; posicaoEquipamento < totalEquipamentos; posicaoEquipamento++)
+    for (i = 0; i < totalEquipamentos; i++)
     {
-        if (equipamentos[posicaoEquipamento].id_equipamento == id)
-            return posicaoEquipamento;
+        if (equipamentos[i].id_equipamento == id)
+            return i;
     }
     return -1;
 }
 
-/* RN14: devolve 1 se o equipamento tem OS aberta ou em andamento */
+/* RN14: o equipamento tem alguma OS aberta ou em andamento? */
 int equipamentoTemOSEmAndamento(int idEquipamento)
 {
-    int posicaoOS;
+    int i;
 
-    for (posicaoOS = 0; posicaoOS < totalOrdens; posicaoOS++)
+    for (i = 0; i < totalOrdens; i++)
     {
-        if (ordens[posicaoOS].id_equipamento != idEquipamento)
+        if (ordens[i].id_equipamento != idEquipamento)
             continue;
-        if (strcmp(ordens[posicaoOS].status, "aberta") == 0 || strcmp(ordens[posicaoOS].status, "em_andamento") == 0)
+        if (strcmp(ordens[i].status, "aberta") == 0 || strcmp(ordens[i].status, "em_andamento") == 0)
             return 1;
     }
     return 0;
 }
 
-/* RN10: cliente vê só os dele; técnico só os das OS dele; admin e recepcionista veem todos */
-int podeVerEquipamento(int posicaoEquipamento)
+/* RN10/RI10: cliente só vê os próprios; técnico só os das OS atribuídas a ele; atendente vê todos */
+int podeVerEquipamento(int i)
 {
-    int posicaoOS, idLogado = usuarios[usuarioLogado].id_usuario;
+    int j, idLogado = usuarios[usuarioLogado].id_usuario;
 
-    /* perfilLogado está em geral.c, linha 5 */
     if (perfilLogado("cliente"))
     {
-        if (equipamentos[posicaoEquipamento].id_cliente == idLogado)
+        if (equipamentos[i].id_cliente == idLogado)
             return 1;
         return 0;
     }
     if (perfilLogado("tecnico"))
     {
-        for (posicaoOS = 0; posicaoOS < totalOrdens; posicaoOS++)
+        for (j = 0; j < totalOrdens; j++)
         {
-            /* buscarTecnicoNaOS está em geral.c, linha 187 */
-            if (ordens[posicaoOS].id_equipamento == equipamentos[posicaoEquipamento].id_equipamento &&
-                buscarTecnicoNaOS(idLogado, ordens[posicaoOS].id_os) >= 0)
+            if (ordens[j].id_equipamento == equipamentos[i].id_equipamento && tecnicoEstaNaOS(idLogado, ordens[j].id_os))
                 return 1;
         }
         return 0;
@@ -139,70 +53,61 @@ int podeVerEquipamento(int posicaoEquipamento)
     return 1;
 }
 
-/* Copia para destino o nome do cliente com este id ("?" se não existir) */
+/* Copia para destino o nome do cliente com este id, para as listagens */
 void nomeDoCliente(int idCliente, char destino[])
 {
-    /* buscarUsuarioPorId está em geral.c, linha 123 */
-    int posicaoCliente = buscarUsuarioPorId(idCliente);
+    int i = buscarUsuarioPorId(idCliente);
 
-    if (posicaoCliente >= 0)
-        strcpy(destino, usuarios[posicaoCliente].nome);
+    if (i >= 0)
+        strcpy(destino, usuarios[i].nome);
     else
         strcpy(destino, "?");
 }
 
-/* Devolve 1 se o equipamento entra na lista: o logado pode ver e o status bate ("" aceita todos) */
-int equipamentoEntraNaLista(int posicaoEquipamento, char status[])
-{
-    /* podeVerEquipamento está em equipamento.c, linha 117 */
-    if (!podeVerEquipamento(posicaoEquipamento))
-        return 0;
-    if (strlen(status) > 0 && strcmp(equipamentos[posicaoEquipamento].status, status) != 0)
-        return 0;
-    return 1;
-}
-
-/* Lista os equipamentos que têm o filtro no cliente, tipo, marca ou série; devolve quantos mostrou */
-int listarEquipamentos(char filtro[], char status[])
+/* Lista os equipamentos visíveis que batem com o filtro (cliente, tipo, marca ou número de série); devolve quantos mostrou */
+int listarEquipamentos(char filtro[], int soAtivos)
 {
     char dono[60];
-    int posicaoEquipamento, mostrados = 0;
+    int i, mostrados = 0;
 
-    for (posicaoEquipamento = 0; posicaoEquipamento < totalEquipamentos; posicaoEquipamento++)
+    for (i = 0; i < totalEquipamentos; i++)
     {
-        /* equipamentoEntraNaLista está em equipamento.c, linha 155 */
-        if (!equipamentoEntraNaLista(posicaoEquipamento, status))
+        if (!podeVerEquipamento(i))
+            continue;
+        if (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0)
             continue;
 
-        /* nomeDoCliente está em equipamento.c, linha 143 */
-        nomeDoCliente(equipamentos[posicaoEquipamento].id_cliente, dono);
-        if (strstr(dono, filtro) == NULL &&
-            strstr(equipamentos[posicaoEquipamento].tipo, filtro) == NULL &&
-            strstr(equipamentos[posicaoEquipamento].marca, filtro) == NULL &&
-            strstr(equipamentos[posicaoEquipamento].modelo_numero_serie, filtro) == NULL)
+        nomeDoCliente(equipamentos[i].id_cliente, dono);
+        if (!contemTexto(dono, filtro) && !contemTexto(equipamentos[i].tipo, filtro) &&
+            !contemTexto(equipamentos[i].marca, filtro) && !contemTexto(equipamentos[i].modelo_numero_serie, filtro))
             continue;
 
-        printf("ID %d - %s - %s - %s %s - %s - %s\n", equipamentos[posicaoEquipamento].id_equipamento, dono,
-               equipamentos[posicaoEquipamento].categoria, equipamentos[posicaoEquipamento].tipo,
-               equipamentos[posicaoEquipamento].marca, equipamentos[posicaoEquipamento].modelo_numero_serie,
-               equipamentos[posicaoEquipamento].status);
+        /* Cabeçalho da tabela antes do primeiro da lista */
+        if (mostrados == 0)
+        {
+            printf("\n  %-4s %-14s %-8s %-14s %-10s %-15s %s\n", "ID", "Cliente", "Categ.", "Tipo", "Marca",
+                   "Modelo/Serie", "Status");
+            printf("  ----------------------------------------------------------------------------\n");
+        }
+        printf("  %-4d %-14.14s %-8s %-14.14s %-10.10s %-15.15s %s\n", equipamentos[i].id_equipamento, dono,
+               equipamentos[i].categoria, equipamentos[i].tipo, equipamentos[i].marca,
+               equipamentos[i].modelo_numero_serie, equipamentos[i].status);
         mostrados++;
     }
     return mostrados;
 }
 
-/* Pede um filtro, lista e pede o ID; devolve a posição do escolhido ou -1 */
-int selecionarEquipamento(char status[])
+/* Pede um filtro, lista e pede o ID. Devolve a posição no vetor ou -1 (voltou ou ID inválido) */
+int selecionarEquipamento(int soAtivos)
 {
     char filtro[60];
-    int id, posicaoEquipamento;
+    int id, i;
 
     lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
     if (strcmp(filtro, "0") == 0)
         return -1;
 
-    /* listarEquipamentos está em equipamento.c, linha 166 */
-    if (listarEquipamentos(filtro, status) == 0)
+    if (listarEquipamentos(filtro, soAtivos) == 0)
     {
         printf("\n[!] Nenhum equipamento encontrado para o filtro informado.");
         pausar();
@@ -213,28 +118,20 @@ int selecionarEquipamento(char status[])
     if (id <= 0)
         return -1;
 
-    /* buscarEquipamentoPorId está em equipamento.c, linha 89 */
-    posicaoEquipamento = buscarEquipamentoPorId(id);
-    if (posicaoEquipamento < 0)
+    i = buscarEquipamentoPorId(id);
+    if (i < 0 || !podeVerEquipamento(i) || (soAtivos == 1 && strcmp(equipamentos[i].status, "ativo") != 0))
     {
         printf("\n[!] ID %d nao esta na lista.", id);
         pausar();
         return -1;
     }
-    /* equipamentoEntraNaLista está em equipamento.c, linha 155 */
-    if (!equipamentoEntraNaLista(posicaoEquipamento, status))
-    {
-        printf("\n[!] ID %d nao esta na lista.", id);
-        pausar();
-        return -1;
-    }
-    return posicaoEquipamento;
+    return i;
 }
 
-/* UC20 - Cadastrar Equipamento: hardware ou software de um cliente ativo */
+/* UC20 - Cadastrar Equipamento: cadastra um hardware ou software de um cliente */
 void cadastrarEquipamento()
 {
-    int novaPosicao, posicaoCliente, categoria;
+    int i, n, iCliente, categoria, maiorId = 0;
 
     imprimirCabecalho("Equipamentos > Cadastrar");
 
@@ -245,14 +142,13 @@ void cadastrarEquipamento()
         return;
     }
 
-    /* O dono precisa ser um cliente ativo (RN01, RN14) */
+    /* Vinculação do equipamento a um cliente ativo (RN01, RN14) */
     printf("\nCliente proprietario:");
-    /* selecionarUsuario está em geral.c, linha 283 */
-    posicaoCliente = selecionarUsuario("cliente", "ativo");
-    if (posicaoCliente < 0)
+    iCliente = selecionarUsuario("cliente", 1);
+    if (iCliente < 0)
         return;
 
-    printf("\nCategoria do equipamento:\n");
+    printf("\nSelecione a Categoria do Equipamento:\n");
     printf("1 - Hardware\n");
     printf("2 - Software\n");
     categoria = lerInteiro("Opcao: ");
@@ -263,129 +159,125 @@ void cadastrarEquipamento()
         return;
     }
 
-    /* Preenche a próxima posição livre; o total só aumenta se tudo der certo */
-    novaPosicao = totalEquipamentos;
-    lerTexto("Tipo (ex: Notebook, Sistema Operacional): ", equipamentos[novaPosicao].tipo, sizeof(equipamentos[novaPosicao].tipo));
-    lerTexto("Marca: ", equipamentos[novaPosicao].marca, sizeof(equipamentos[novaPosicao].marca));
+    /* Preenche a próxima posição livre; só conta o equipamento se tudo der certo */
+    n = totalEquipamentos;
+    lerTexto("Tipo (ex: Notebook, Sistema Operacional): ", equipamentos[n].tipo, sizeof(equipamentos[n].tipo));
+    lerTexto("Marca: ", equipamentos[n].marca, sizeof(equipamentos[n].marca));
     if (categoria == 1)
     {
-        strcpy(equipamentos[novaPosicao].categoria, "hardware");
-        lerTexto("Modelo / Numero de Serie: ", equipamentos[novaPosicao].modelo_numero_serie,
-                 sizeof(equipamentos[novaPosicao].modelo_numero_serie));
+        strcpy(equipamentos[n].categoria, "hardware");
+        lerTexto("Modelo / Numero de Serie: ", equipamentos[n].modelo_numero_serie, sizeof(equipamentos[n].modelo_numero_serie));
     }
     else
     {
-        strcpy(equipamentos[novaPosicao].categoria, "software");
-        lerTexto("Chave de Licenca: ", equipamentos[novaPosicao].modelo_numero_serie,
-                 sizeof(equipamentos[novaPosicao].modelo_numero_serie));
+        strcpy(equipamentos[n].categoria, "software");
+        lerTexto("Chave de Licenca: ", equipamentos[n].modelo_numero_serie, sizeof(equipamentos[n].modelo_numero_serie));
     }
 
-    /* Campos obrigatórios (RNF09) */
-    /* campoPreenchido está em geral.c, linha 162 */
-    if (!campoPreenchido(equipamentos[novaPosicao].tipo, "Tipo"))
-        return;
-    if (!campoPreenchido(equipamentos[novaPosicao].marca, "Marca"))
-        return;
-    if (!campoPreenchido(equipamentos[novaPosicao].modelo_numero_serie, "Modelo / Numero de Serie / Chave"))
+    /* Validação de campos obrigatórios (RNF09) */
+    if (!campoPreenchido(equipamentos[n].tipo, "Tipo") || !campoPreenchido(equipamentos[n].marca, "Marca") ||
+        !campoPreenchido(equipamentos[n].modelo_numero_serie, "Modelo / Numero de Serie / Chave"))
         return;
 
-    /* O novo id é o id do último + 1 (ou 1 se for o primeiro) */
-    equipamentos[novaPosicao].id_equipamento = 1;
-    if (novaPosicao > 0)
-        equipamentos[novaPosicao].id_equipamento = equipamentos[novaPosicao - 1].id_equipamento + 1;
-    equipamentos[novaPosicao].id_cliente = usuarios[posicaoCliente].id_usuario;
-    strcpy(equipamentos[novaPosicao].status, "ativo");
-    dataHoraAgora(equipamentos[novaPosicao].criado_em);
-    strcpy(equipamentos[novaPosicao].atualizado_em, equipamentos[novaPosicao].criado_em);
+    for (i = 0; i < totalEquipamentos; i++)
+    {
+        if (equipamentos[i].id_equipamento > maiorId)
+            maiorId = equipamentos[i].id_equipamento;
+    }
+    equipamentos[n].id_equipamento = maiorId + 1;
+    equipamentos[n].id_cliente = usuarios[iCliente].id_usuario;
+    strcpy(equipamentos[n].status, "ativo");
+    dataHoraAgora(equipamentos[n].criado_em);
+    strcpy(equipamentos[n].atualizado_em, equipamentos[n].criado_em);
 
     totalEquipamentos++;
-    /* salvarEquipamentos está em equipamento.c, linha 8 */
-    if (salvarEquipamentos())
-        printf("\n[+] Equipamento cadastrado e vinculado a %s! ID: %d", usuarios[posicaoCliente].nome,
-               equipamentos[novaPosicao].id_equipamento);
-    else
-        totalEquipamentos--; /* não gravou: desfaz */
-    pausar();
-}
-
-/* UC21 - Consultar Equipamento: lista os equipamentos que o perfil pode ver */
-void consultarEquipamento()
-{
-    char filtro[60];
-    int mostrados;
-
-    imprimirCabecalho("Equipamentos > Consultar");
-
-    /* Pede outro filtro enquanto nada for encontrado (exceção 4a) */
-    do
+    if (!salvarEquipamentos())
     {
-        lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
-        if (strcmp(filtro, "0") == 0)
-            return;
-
-        /* listarEquipamentos está em equipamento.c, linha 166 */
-        mostrados = listarEquipamentos(filtro, "");
-        if (mostrados == 0)
-            printf("\n[!] Nenhum equipamento encontrado para o filtro informado. Tente outro filtro.\n");
-    } while (mostrados == 0);
-    pausar();
-}
-
-/* UC22 - Editar Equipamento: altera tipo, marca e modelo/número de série */
-void editarEquipamento()
-{
-    char tipo[40], marca[40], serie[60];
-    int posicaoEquipamento;
-
-    imprimirCabecalho("Equipamentos > Editar");
-
-    /* selecionarEquipamento está em equipamento.c, linha 195 */
-    posicaoEquipamento = selecionarEquipamento("");
-    if (posicaoEquipamento < 0)
-        return;
-
-    printf("\nDeixe em branco para manter o valor atual.\n");
-    /* lerOuManter está em geral.c, linha 323 */
-    lerOuManter("Tipo", equipamentos[posicaoEquipamento].tipo, tipo, sizeof(tipo));
-    lerOuManter("Marca", equipamentos[posicaoEquipamento].marca, marca, sizeof(marca));
-    if (strcmp(equipamentos[posicaoEquipamento].categoria, "software") == 0)
-        lerOuManter("Chave de Licenca", equipamentos[posicaoEquipamento].modelo_numero_serie, serie, sizeof(serie));
-    else
-        lerOuManter("Modelo / Numero de Serie", equipamentos[posicaoEquipamento].modelo_numero_serie, serie, sizeof(serie));
-
-    strcpy(equipamentos[posicaoEquipamento].tipo, tipo);
-    strcpy(equipamentos[posicaoEquipamento].marca, marca);
-    strcpy(equipamentos[posicaoEquipamento].modelo_numero_serie, serie);
-    dataHoraAgora(equipamentos[posicaoEquipamento].atualizado_em);
-    /* salvarEquipamentos está em equipamento.c, linha 8 */
-    if (salvarEquipamentos())
-        printf("\n[+] Equipamento ID %d atualizado com sucesso!", equipamentos[posicaoEquipamento].id_equipamento);
-    pausar();
-}
-
-/* UC23 - Inativar Equipamento: não apaga (RN12) e bloqueia se tiver OS aberta (RN14) */
-void inativarEquipamento()
-{
-    int posicaoEquipamento;
-
-    imprimirCabecalho("Equipamentos > Inativar");
-
-    /* selecionarEquipamento está em equipamento.c, linha 195 */
-    posicaoEquipamento = selecionarEquipamento("ativo");
-    if (posicaoEquipamento < 0)
-        return;
-
-    /* equipamentoTemOSEmAndamento está em equipamento.c, linha 102 */
-    if (equipamentoTemOSEmAndamento(equipamentos[posicaoEquipamento].id_equipamento))
-    {
-        printf("\n[!] O equipamento ID %d tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).",
-               equipamentos[posicaoEquipamento].id_equipamento);
+        totalEquipamentos--; /* não gravou: desfaz o cadastro */
         pausar();
         return;
     }
 
-    printf("\nInativar o equipamento ID %d (%s %s).", equipamentos[posicaoEquipamento].id_equipamento,
-           equipamentos[posicaoEquipamento].tipo, equipamentos[posicaoEquipamento].marca);
+    printf("\n[+] Equipamento cadastrado e vinculado a %s! ID: %d", usuarios[iCliente].nome, equipamentos[n].id_equipamento);
+    pausar();
+}
+
+/* UC21 - Consultar Equipamento: lista e busca os equipamentos que o perfil pode ver */
+void consultarEquipamento()
+{
+    char filtro[60];
+
+    imprimirCabecalho("Equipamentos > Consultar");
+
+    lerTexto("\nFiltro (cliente, tipo, marca ou numero de serie), ENTER para listar todos ou 0 para voltar: ", filtro, sizeof(filtro));
+    if (strcmp(filtro, "0") == 0)
+        return;
+
+    /* Ativos e inativos aparecem, com o status, para preservar o histórico */
+    if (listarEquipamentos(filtro, 0) == 0)
+    {
+        printf("\n[!] Nenhum equipamento encontrado para o filtro informado.\n");
+    }
+    pausar();
+}
+
+/* UC22 - Editar Equipamento: altera tipo, marca e modelo/numero de serie */
+void editarEquipamento()
+{
+    char tipo[40], marca[40], serie[60], dono[60];
+    int i;
+
+    imprimirCabecalho("Equipamentos > Editar");
+
+    i = selecionarEquipamento(0);
+    if (i < 0)
+        return;
+
+    nomeDoCliente(equipamentos[i].id_cliente, dono);
+    printf("\nEquipamento de %s (%s). Deixe em branco para manter o valor atual.\n\n", dono, equipamentos[i].categoria);
+    lerOuManter("Tipo", equipamentos[i].tipo, tipo, sizeof(tipo));
+    lerOuManter("Marca", equipamentos[i].marca, marca, sizeof(marca));
+    if (strcmp(equipamentos[i].categoria, "software") == 0)
+        lerOuManter("Chave de Licenca", equipamentos[i].modelo_numero_serie, serie, sizeof(serie));
+    else
+        lerOuManter("Modelo / Numero de Serie", equipamentos[i].modelo_numero_serie, serie, sizeof(serie));
+
+    strcpy(equipamentos[i].tipo, tipo);
+    strcpy(equipamentos[i].marca, marca);
+    strcpy(equipamentos[i].modelo_numero_serie, serie);
+    dataHoraAgora(equipamentos[i].atualizado_em);
+    if (!salvarEquipamentos())
+    {
+        pausar();
+        return;
+    }
+
+    printf("\n[+] Equipamento ID %d atualizado com sucesso!", equipamentos[i].id_equipamento);
+    pausar();
+}
+
+/* UC23 - Inativar Equipamento: inativa um equipamento sem OS em andamento */
+void inativarEquipamento()
+{
+    int i;
+
+    imprimirCabecalho("Equipamentos > Inativar");
+
+    i = selecionarEquipamento(1);
+    if (i < 0)
+        return;
+
+    /* Bloqueio caso o equipamento tenha OS "aberta" ou "em andamento" (RN14) */
+    if (equipamentoTemOSEmAndamento(equipamentos[i].id_equipamento))
+    {
+        printf("\n[!] O equipamento ID %d tem ordem de servico aberta ou em andamento. Inativacao bloqueada (RN14).",
+               equipamentos[i].id_equipamento);
+        pausar();
+        return;
+    }
+
+    printf("\nInativar o equipamento ID %d (%s %s).", equipamentos[i].id_equipamento, equipamentos[i].tipo,
+           equipamentos[i].marca);
     if (!confirmar("\nTem certeza?"))
     {
         printf("\nOperacao de inativacao cancelada pelo usuario.");
@@ -393,62 +285,15 @@ void inativarEquipamento()
         return;
     }
 
-    strcpy(equipamentos[posicaoEquipamento].status, "inativo");
-    dataHoraAgora(equipamentos[posicaoEquipamento].atualizado_em);
-    /* salvarEquipamentos está em equipamento.c, linha 8 */
-    if (salvarEquipamentos())
-        printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
-    pausar();
-}
-
-/* UC49 - Reativar Equipamento: só se o cliente dono estiver ativo */
-void reativarEquipamento()
-{
-    int posicaoEquipamento, posicaoCliente, inativos = 0;
-
-    imprimirCabecalho("Equipamentos > Reativar");
-
-    /* Conta os equipamentos inativos (exceção 2a: nenhum) */
-    for (posicaoEquipamento = 0; posicaoEquipamento < totalEquipamentos; posicaoEquipamento++)
+    /* Inativação preservando o histórico (RN12) */
+    strcpy(equipamentos[i].status, "inativo");
+    dataHoraAgora(equipamentos[i].atualizado_em);
+    if (!salvarEquipamentos())
     {
-        if (strcmp(equipamentos[posicaoEquipamento].status, "inativo") == 0)
-            inativos++;
-    }
-    if (inativos == 0)
-    {
-        printf("\n[!] Nenhum equipamento inativo. Nao ha cadastro para reativar.");
         pausar();
         return;
     }
 
-    /* selecionarEquipamento está em equipamento.c, linha 195 */
-    posicaoEquipamento = selecionarEquipamento("inativo");
-    if (posicaoEquipamento < 0)
-        return;
-
-    /* RN01 e RN14: o dono precisa estar ativo */
-    /* buscarUsuarioPorId está em geral.c, linha 123 */
-    posicaoCliente = buscarUsuarioPorId(equipamentos[posicaoEquipamento].id_cliente);
-    if (strcmp(usuarios[posicaoCliente].status, "ativo") != 0)
-    {
-        printf("\n[!] O cliente %s esta inativo. Reative o cliente antes do equipamento (RN14).", usuarios[posicaoCliente].nome);
-        pausar();
-        return;
-    }
-
-    printf("\nReativar o equipamento ID %d (%s %s).", equipamentos[posicaoEquipamento].id_equipamento,
-           equipamentos[posicaoEquipamento].tipo, equipamentos[posicaoEquipamento].marca);
-    if (!confirmar("\nTem certeza?"))
-    {
-        printf("\nOperacao cancelada. O equipamento continua inativo.");
-        pausar();
-        return;
-    }
-
-    strcpy(equipamentos[posicaoEquipamento].status, "ativo");
-    dataHoraAgora(equipamentos[posicaoEquipamento].atualizado_em);
-    /* salvarEquipamentos está em equipamento.c, linha 8 */
-    if (salvarEquipamentos())
-        printf("\n[+] Equipamento reativado. Ele volta a poder receber novas OS.");
+    printf("\n[+] Equipamento inativado. O historico de OS foi preservado e ele nao recebe novas OS.");
     pausar();
 }

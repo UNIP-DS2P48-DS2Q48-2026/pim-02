@@ -1,133 +1,233 @@
-/* banco.c - conversa com o SQL Server (ODBC). Compilar com: gcc main.c -o output/main.exe -lodbc32 */
 
-/* Banco bytetech nesta máquina, com o login do Windows. Se só tiver o driver 17, troque 18 por 17 */
-#define CONEXAO_SQLSERVER "DRIVER={ODBC Driver 18 for SQL Server};" \
-                          "SERVER=localhost;"                        \
-                          "DATABASE=bytetech;"                       \
-                          "Trusted_Connection=yes;"                  \
-                          "Encrypt=yes;"                             \
-                          "TrustServerCertificate=yes;"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include "banco.h"
 
-/* Ligações com o ODBC: o ambiente, a conexão e o último comando executado */
-SQLHENV  bdAmbiente = SQL_NULL_HENV;
-SQLHDBC  bdConexao = SQL_NULL_HDBC;
-SQLHSTMT bdComando = SQL_NULL_HSTMT;
-
-/* Mostra a mensagem de erro que o SQL Server devolveu */
-void bdMostrarErro(SQLSMALLINT tipo, SQLHANDLE handle)
+// Exibe os erros retornados pelo ODBC.
+static void bdMostrarErro(SQLSMALLINT tipo, SQLHANDLE identificador)
 {
-    SQLCHAR estado[7];
+    SQLSMALLINT numero = 1;
+    SQLCHAR estado[6];
     SQLCHAR mensagem[512];
-    SQLINTEGER erroNativo;
+    SQLINTEGER codigo;
     SQLSMALLINT tamanho;
 
-    if (SQLGetDiagRec(tipo, handle, 1, estado, &erroNativo, mensagem, sizeof(mensagem), &tamanho) == SQL_SUCCESS)
-        printf("\n[!] Banco de dados: %s\n", mensagem);
+    while (SQLGetDiagRec(tipo, identificador, numero,
+                         estado, &codigo, mensagem,
+                         sizeof(mensagem), &tamanho) == SQL_SUCCESS)
+    {
+        fprintf(stderr, "ODBC [%s] (%ld): %s\n",
+                (char *)estado, (long)codigo, (char *)mensagem);
+        numero++;
+    }
 }
 
-/* Abre a conexão com o banco; devolve 1 se conectou */
-int bdConectar()
+// Estabelece conexao com o banco bytetech.
+int bdConectar(Banco *banco)
 {
-    SQLRETURN resultado;
+    SQLRETURN retorno;
+    SQLCHAR saida[1024];
+    SQLSMALLINT tamanhoSaida;
+    char conexao[1024];
+    const char *senha = getenv("BYTETECH_DB_PASSWORD");
+    if (senha == NULL || senha[0] == '\0')
+        senha = getenv("PIM02_DB_PASSWORD");  // compatibilidade com a configuracao antiga
+    const char *servidor = getenv("BYTETECH_DB_SERVER");
+    if (servidor == NULL || servidor[0] == '\0')
+        servidor = "localhost";
+    // Se so tiver o driver 17: BYTETECH_DB_DRIVER=ODBC Driver 17 for SQL Server
+    const char *driver = getenv("BYTETECH_DB_DRIVER");
+    if (driver == NULL || driver[0] == '\0')
+        driver = "ODBC Driver 18 for SQL Server";
 
-    SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &bdAmbiente);
-    SQLSetEnvAttr(bdAmbiente, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0);
-    SQLAllocHandle(SQL_HANDLE_DBC, bdAmbiente, &bdConexao);
-    SQLSetConnectAttr(bdConexao, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0); /* espera até 5 segundos */
-
-    resultado = SQLDriverConnect(bdConexao, NULL, (SQLCHAR *)CONEXAO_SQLSERVER, SQL_NTS,
-                                 NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
-    if (!SQL_SUCCEEDED(resultado))
-    {
-        /* bdMostrarErro está em banco.c, linha 17 */
-        bdMostrarErro(SQL_HANDLE_DBC, bdConexao);
+    if (banco == NULL)
         return 0;
-    }
-    return 1;
-}
 
-/* Fecha a conexão com o banco */
-void bdDesconectar()
-{
-    if (bdComando != SQL_NULL_HSTMT)
-        SQLFreeHandle(SQL_HANDLE_STMT, bdComando);
-    SQLDisconnect(bdConexao);
-    SQLFreeHandle(SQL_HANDLE_DBC, bdConexao);
-    SQLFreeHandle(SQL_HANDLE_ENV, bdAmbiente);
-}
+    banco->henv = SQL_NULL_HENV;
+    banco->hdbc = SQL_NULL_HDBC;
+    banco->hstmt = SQL_NULL_HSTMT;
 
-/* Roda um comando no banco (SELECT, INSERT, UPDATE ou SET); devolve 1 se deu certo.
-   As linhas de um SELECT são lidas depois com bdProximaLinha e bdLerTexto */
-int bdExecutar(char sql[])
-{
-    SQLRETURN resultado;
+    int tamanho;
 
-    if (bdComando != SQL_NULL_HSTMT)
-        SQLFreeHandle(SQL_HANDLE_STMT, bdComando); /* fecha o comando anterior */
-    SQLAllocHandle(SQL_HANDLE_STMT, bdConexao, &bdComando);
-
-    resultado = SQLExecDirect(bdComando, (SQLCHAR *)sql, SQL_NTS);
-    if (!SQL_SUCCEEDED(resultado) && resultado != SQL_NO_DATA) /* NO_DATA: rodou, mas não mudou nenhuma linha */
+    if (senha != NULL && senha[0] != '\0')
     {
-        /* bdMostrarErro está em banco.c, linha 17 */
-        bdMostrarErro(SQL_HANDLE_STMT, bdComando);
-        return 0;
+        // Com senha definida, entra com o usuario sa (Linux/Docker ou login SQL).
+        tamanho = snprintf(conexao, sizeof(conexao),
+            "DRIVER={%s};"
+            "SERVER=%s;DATABASE=bytetech;UID=sa;PWD=%s;"
+            "Encrypt=yes;TrustServerCertificate=yes;", driver, servidor, senha);
     }
-    return 1;
-}
-
-/* Passa para a próxima linha do SELECT; devolve 0 quando as linhas acabaram */
-int bdProximaLinha()
-{
-    if (SQL_SUCCEEDED(SQLFetch(bdComando)))
-        return 1;
-    return 0;
-}
-
-/* Copia a coluna (1, 2, 3...) da linha atual para destino; NULL no banco vira texto vazio */
-void bdLerTexto(int coluna, char destino[], int tamanho)
-{
-    SQLLEN indicador;
-
-    destino[0] = '\0';
-    SQLGetData(bdComando, coluna, SQL_C_CHAR, destino, tamanho, &indicador);
-    if (indicador == SQL_NULL_DATA)
-        destino[0] = '\0';
-}
-
-/* Prepara um texto para o SQL: vazio vira NULL, o resto vira N'texto'.
-   O apóstrofo é repetido (D'Avila vira D''Avila) para o SQL Server não achar que o texto acabou */
-void sqlTexto(char destino[], char texto[])
-{
-    int posicaoTexto, posicaoDestino, tamanho = strlen(texto);
-
-    if (tamanho == 0)
-    {
-        strcpy(destino, "NULL");
-        return;
-    }
-
-    strcpy(destino, "N'");
-    posicaoDestino = 2; /* depois do N' */
-    for (posicaoTexto = 0; posicaoTexto < tamanho; posicaoTexto++)
-    {
-        destino[posicaoDestino] = texto[posicaoTexto];
-        posicaoDestino++;
-        if (texto[posicaoTexto] == '\'')
-        {
-            destino[posicaoDestino] = '\''; /* repete o apóstrofo */
-            posicaoDestino++;
-        }
-    }
-    destino[posicaoDestino] = '\0';
-    strcat(destino, "'");
-}
-
-/* Prepara um valor em dinheiro para o SQL: -1 (ainda não informado) vira NULL */
-void sqlDinheiro(char destino[], double valor)
-{
-    if (valor < 0)
-        strcpy(destino, "NULL");
     else
-        sprintf(destino, "%.2f", valor);
+    {
+#ifdef _WIN32
+        // Sem senha no Windows, entra com o login do proprio Windows.
+        tamanho = snprintf(conexao, sizeof(conexao),
+            "DRIVER={%s};"
+            "SERVER=%s;DATABASE=bytetech;Trusted_Connection=yes;"
+            "Encrypt=yes;TrustServerCertificate=yes;", driver, servidor);
+#else
+        printf("Defina a variavel BYTETECH_DB_PASSWORD.\n");
+        return 0;
+#endif
+    }
+
+    if (tamanho < 0 || (size_t)tamanho >= sizeof(conexao))
+    {
+        printf("String de conexao muito longa.\n");
+        return 0;
+    }
+
+    // Cria o ambiente ODBC.
+    retorno = SQLAllocHandle(
+        SQL_HANDLE_ENV, SQL_NULL_HANDLE, &banco->henv
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+        return 0;
+
+    // Configura a versao do ODBC.
+    retorno = SQLSetEnvAttr(
+        banco->henv,
+        SQL_ATTR_ODBC_VERSION,
+        (SQLPOINTER)SQL_OV_ODBC3,
+        0
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+    {
+        bdMostrarErro(SQL_HANDLE_ENV, banco->henv);
+        bdDesconectar(banco);
+        return 0;
+    }
+
+    // Cria o identificador da conexao.
+    retorno = SQLAllocHandle(
+        SQL_HANDLE_DBC, banco->henv, &banco->hdbc
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+    {
+        bdDesconectar(banco);
+        return 0;
+    }
+
+    // Define tempo limite de cinco segundos.
+    retorno = SQLSetConnectAttr(
+        banco->hdbc, SQL_LOGIN_TIMEOUT,
+        (SQLPOINTER)(intptr_t)5, 0
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+    {
+        bdMostrarErro(SQL_HANDLE_DBC, banco->hdbc);
+        bdDesconectar(banco);
+        return 0;
+    }
+
+    // Estabelece a conexao com SQL Server.
+    retorno = SQLDriverConnect(
+        banco->hdbc,
+        NULL,
+        (SQLCHAR *)conexao,
+        SQL_NTS,
+        saida,
+        sizeof(saida),
+        &tamanhoSaida,
+        SQL_DRIVER_NOPROMPT
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+    {
+        printf("Erro ao conectar no SQL Server.\n");
+        bdMostrarErro(SQL_HANDLE_DBC, banco->hdbc);
+        bdDesconectar(banco);
+        return 0;
+    }
+
+    printf("Conexao com SQL Server estabelecida!\n");
+    return 1;
+}
+
+// Libera o identificador da consulta.
+void bdEncerrarConsulta(Banco *banco)
+{
+    if (banco != NULL &&
+        banco->hstmt != SQL_NULL_HSTMT)
+    {
+        SQLFreeHandle(SQL_HANDLE_STMT, banco->hstmt);
+        banco->hstmt = SQL_NULL_HSTMT;
+    }
+}
+
+// Encerra a conexao com o SQL Server.
+void bdDesconectar(Banco *banco)
+{
+    if (banco == NULL)
+        return;
+
+    bdEncerrarConsulta(banco);
+
+    if (banco->hdbc != SQL_NULL_HDBC)
+    {
+        SQLDisconnect(banco->hdbc);
+        SQLFreeHandle(SQL_HANDLE_DBC, banco->hdbc);
+        banco->hdbc = SQL_NULL_HDBC;
+    }
+
+    if (banco->henv != SQL_NULL_HENV)
+    {
+        SQLFreeHandle(SQL_HANDLE_ENV, banco->henv);
+        banco->henv = SQL_NULL_HENV;
+    }
+}
+
+// Executa uma consulta e mantem o resultado aberto.
+int bdConsultar(Banco *banco, const char *sql)
+{
+    SQLRETURN retorno;
+
+    if (banco == NULL || sql == NULL ||
+        banco->hdbc == SQL_NULL_HDBC ||
+        banco->hstmt != SQL_NULL_HSTMT)
+    {
+        printf("Conexao invalida ou consulta anterior aberta.\n");
+        return 0;
+    }
+
+    // Cria o identificador SQL.
+    retorno = SQLAllocHandle(
+        SQL_HANDLE_STMT, banco->hdbc, &banco->hstmt
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+    {
+        banco->hstmt = SQL_NULL_HSTMT;
+        return 0;
+    }
+
+    // Executa o comando SQL.
+    retorno = SQLExecDirect(
+        banco->hstmt, (SQLCHAR *)sql, SQL_NTS
+    );
+
+    if (!SQL_SUCCEEDED(retorno))
+    {
+        printf("Erro ao executar consulta SQL.\n");
+        bdMostrarErro(SQL_HANDLE_STMT, banco->hstmt);
+        bdEncerrarConsulta(banco);
+        return 0;
+    }
+
+    return 1;
+}
+
+// Executa um comando e libera o identificador.
+int bdExecutar(Banco *banco, const char *sql)
+{
+    if (!bdConsultar(banco, sql))
+        return 0;
+
+    bdEncerrarConsulta(banco);
+    return 1;
 }
