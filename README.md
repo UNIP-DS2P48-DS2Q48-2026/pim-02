@@ -58,7 +58,7 @@ Depois, para compilar e rodar:
 ```
 cd projeto
 mkdir output
-gcc main.c -o output/main.exe -lodbc32
+gcc main.c banco.c -o output/main.exe -lodbc32 -ladvapi32
 .\output\main.exe
 ```
 
