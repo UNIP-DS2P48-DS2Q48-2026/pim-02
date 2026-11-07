@@ -41,7 +41,7 @@ Todo fluxo principal começa pela opção do menu, escrita como caminho ("Client
 - **Note:** sempre com as mesmas 4 linhas, na mesma ordem:
   - **Herança** (ou **Associação direta**): explica por que o Admin aparece ou não no Actor. Texto padronizado, igual em todos.
   - **Regras:** as RN/RI/RF/RNF que o caso de uso aplica, com uma frase curta de cada.
-  - **Dados:** as tabelas e os campos do [schema.sql](../Modelagem_DB/schema.sql) que o caso de uso lê ou altera. Serve de ponte para o código e para o diagrama de sequência.
+  - **Dados:** as tabelas e os campos do [schema_sqlserver.sql](../Modelagem_DB/schema_sqlserver.sql) que o caso de uso lê ou altera. Serve de ponte para o código e para o diagrama de sequência.
   - **Observação:** detalhe que não cabe nos fluxos. Também registra decisões do grupo que não aparecem nos requisitos.
 
 ---

@@ -24,44 +24,47 @@ Essa restrição pode ser reforçada em SQL de duas formas: por chave estrangeir
 
 ```sql
 -- RN15: tecnico_os.id_tecnico so pode referenciar um usuario com perfil
--- tecnico ou admin (admin cobre a ausencia de tecnico, RN11). Cobre INSERT
--- e UPDATE.
-CREATE TRIGGER trg_tecnico_os_valida_perfil_ins
-BEFORE INSERT ON tecnico_os
-FOR EACH ROW
-WHEN (SELECT perfil FROM usuario WHERE id_usuario = NEW.id_tecnico) NOT IN ('tecnico', 'admin')
+-- tecnico ou admin (admin cobre a ausencia de tecnico, RN11).
+CREATE TRIGGER trg_tecnico_os_valida_perfil
+ON tecnico_os
+AFTER INSERT, UPDATE
+AS
 BEGIN
-    SELECT RAISE(ABORT, 'id_tecnico deve referenciar um usuario com perfil tecnico ou admin');
-END;
-
-CREATE TRIGGER trg_tecnico_os_valida_perfil_upd
-BEFORE UPDATE OF id_tecnico ON tecnico_os
-FOR EACH ROW
-WHEN (SELECT perfil FROM usuario WHERE id_usuario = NEW.id_tecnico) NOT IN ('tecnico', 'admin')
-BEGIN
-    SELECT RAISE(ABORT, 'id_tecnico deve referenciar um usuario com perfil tecnico ou admin');
+    SET NOCOUNT ON;
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN usuario u ON u.id_usuario = i.id_tecnico
+        WHERE u.perfil NOT IN ('tecnico', 'admin')
+    )
+    BEGIN
+        RAISERROR('id_tecnico deve referenciar um usuario com perfil tecnico ou admin', 16, 1);
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    END
 END;
 
 -- RN16: equipamento.id_cliente so pode referenciar um usuario com perfil
 -- cliente.
-CREATE TRIGGER trg_equipamento_valida_cliente_ins
-BEFORE INSERT ON equipamento
-FOR EACH ROW
-WHEN (SELECT perfil FROM usuario WHERE id_usuario = NEW.id_cliente) <> 'cliente'
+CREATE TRIGGER trg_equipamento_valida_cliente
+ON equipamento
+AFTER INSERT, UPDATE
+AS
 BEGIN
-    SELECT RAISE(ABORT, 'id_cliente deve referenciar um usuario com perfil cliente');
-END;
-
-CREATE TRIGGER trg_equipamento_valida_cliente_upd
-BEFORE UPDATE OF id_cliente ON equipamento
-FOR EACH ROW
-WHEN (SELECT perfil FROM usuario WHERE id_usuario = NEW.id_cliente) <> 'cliente'
-BEGIN
-    SELECT RAISE(ABORT, 'id_cliente deve referenciar um usuario com perfil cliente');
+    SET NOCOUNT ON;
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN usuario u ON u.id_usuario = i.id_cliente
+        WHERE u.perfil <> 'cliente'
+    )
+    BEGIN
+        RAISERROR('id_cliente deve referenciar um usuario com perfil cliente', 16, 1);
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    END
 END;
 ```
 
-Sintaxe em SQLite. A lógica equivalente para MySQL/MariaDB e SQL Server está em `schema_mysql.sql`/`schema_sqlserver.sql`; apenas a sintaxe de trigger varia entre motores, ao contrário de uma chave estrangeira ou `CHECK` comuns.
+Sintaxe do SQL Server (T-SQL), igual ao [`schema_sqlserver.sql`](./schema_sqlserver.sql). O T-SQL não tem trigger `BEFORE ... FOR EACH ROW`: cada trigger roda `AFTER INSERT, UPDATE`, confere todas as linhas afetadas pela tabela virtual `inserted` e desfaz a operação (`ROLLBACK`) quando alguma viola a regra. Por isso um único trigger por tabela cobre INSERT e UPDATE.
 
 ### Alternativa não adotada: chave estrangeira composta
 
@@ -73,32 +76,39 @@ A alternativa a um trigger é uma chave estrangeira composta: uma coluna redunda
 | Coluna adicional | Não | Sim - cópia do `perfil`, sem uso pelo negócio |
 | Mensagem de erro | Customizável, referencia a RN diretamente | Genérica do motor ("FOREIGN KEY constraint failed") |
 | Cobertura de UPDATE | Sim, com o trigger de `UPDATE` correspondente | Sim, automaticamente |
-| Portabilidade | Sintaxe de trigger varia entre SGBDs (três versões: SQLite, MySQL, SQL Server) | SQL padrão, sem alteração entre SGBDs |
+| Portabilidade | Sintaxe de trigger varia entre SGBDs | SQL padrão, sem alteração entre SGBDs |
 
 ### Alteração de perfil após vínculo existente
 
-O sistema não possui uma operação dedicada de alteração de perfil, mas RF02 permite "alterar" um usuário sem excluir o campo `perfil` dessa operação. Os quatro triggers anteriores não cobrem esse caso isoladamente: cada um reage a alterações na própria tabela (`id_tecnico` em `tecnico_os`, `id_cliente` em `equipamento`), não a uma alteração de `usuario.perfil`. Um técnico cujo perfil muda para `admin` permanece válido (RN11 já admite `admin`); um técnico cujo perfil mudasse para `recepcionista` deixaria linhas de `tecnico_os` inconsistentes sem que o banco identificasse o problema.
+O sistema não possui uma operação dedicada de alteração de perfil, mas RF02 permite "alterar" um usuário sem excluir o campo `perfil` dessa operação. Os dois triggers anteriores não cobrem esse caso isoladamente: cada um reage a alterações na própria tabela (`id_tecnico` em `tecnico_os`, `id_cliente` em `equipamento`), não a uma alteração de `usuario.perfil`. Um técnico cujo perfil muda para `admin` permanece válido (RN11 já admite `admin`); um técnico cujo perfil mudasse para `recepcionista` deixaria linhas de `tecnico_os` inconsistentes sem que o banco identificasse o problema.
 
-Um quinto trigger, em `usuario`, verifica as duas tabelas dependentes do perfil antes de aceitar a alteração:
+Um terceiro trigger, em `usuario`, verifica as duas tabelas dependentes do perfil antes de aceitar a alteração:
 
 ```sql
 CREATE TRIGGER trg_usuario_valida_troca_perfil
-BEFORE UPDATE OF perfil ON usuario
-FOR EACH ROW
-WHEN (
-        EXISTS (SELECT 1 FROM tecnico_os WHERE id_tecnico = NEW.id_usuario)
-        AND NEW.perfil NOT IN ('tecnico', 'admin')
-    )
-    OR (
-        EXISTS (SELECT 1 FROM equipamento WHERE id_cliente = NEW.id_usuario)
-        AND NEW.perfil <> 'cliente'
-    )
+ON usuario
+AFTER UPDATE
+AS
 BEGIN
-    SELECT RAISE(ABORT, 'novo perfil e incompativel com vinculos existentes em tecnico_os ou equipamento');
+    SET NOCOUNT ON;
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN deleted d ON d.id_usuario = i.id_usuario
+        WHERE i.perfil <> d.perfil
+          AND (
+              (EXISTS (SELECT 1 FROM tecnico_os WHERE id_tecnico = i.id_usuario) AND i.perfil NOT IN ('tecnico', 'admin'))
+              OR (EXISTS (SELECT 1 FROM equipamento WHERE id_cliente = i.id_usuario) AND i.perfil <> 'cliente')
+          )
+    )
+    BEGIN
+        RAISERROR('novo perfil e incompativel com vinculos existentes em tecnico_os ou equipamento', 16, 1);
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    END
 END;
 ```
 
-Se o `id_usuario` está referenciado em `tecnico_os.id_tecnico`, o novo perfil deve permanecer em `('tecnico', 'admin')`; se está referenciado em `equipamento.id_cliente`, deve permanecer `'cliente'`. A alteração é rejeitada quando qualquer uma das duas condições é violada. Validado nos três motores: a alteração de perfil de um técnico com atribuição ativa é rejeitada; a alteração para `admin` (RN11) é aceita; a alteração de perfil de um usuário sem vínculo existente é aceita.
+Se o `id_usuario` está referenciado em `tecnico_os.id_tecnico`, o novo perfil deve permanecer em `('tecnico', 'admin')`; se está referenciado em `equipamento.id_cliente`, deve permanecer `'cliente'`. A alteração é rejeitada quando qualquer uma das duas condições é violada. Validado no SQL Server: a alteração de perfil de um técnico com atribuição ativa é rejeitada; a alteração para `admin` (RN11) é aceita; a alteração de perfil de um usuário sem vínculo existente é aceita.
 
 ## Integridade de status: vínculos com usuário/equipamento inativo (RN14)
 
@@ -107,16 +117,24 @@ RN14 é reforçada por dois pares de triggers.
 O primeiro impede a vinculação de um registro inativo a uma nova ordem de serviço: ao abrir uma OS (`INSERT INTO os`), o equipamento, o cliente proprietário do equipamento e o atendente devem estar com `status = 'ativo'`; ao atribuir um técnico (`INSERT INTO tecnico_os`), o técnico também deve estar ativo.
 
 ```sql
-CREATE TRIGGER trg_os_valida_ativos_ins
-BEFORE INSERT ON os
-FOR EACH ROW
-WHEN (SELECT status FROM equipamento WHERE id_equipamento = NEW.id_equipamento) <> 'ativo'
-    OR (SELECT status FROM usuario WHERE id_usuario = (
-            SELECT id_cliente FROM equipamento WHERE id_equipamento = NEW.id_equipamento
-        )) <> 'ativo'
-    OR (SELECT status FROM usuario WHERE id_usuario = NEW.id_atendente) <> 'ativo'
+CREATE TRIGGER trg_os_valida_ativos
+ON os
+AFTER INSERT
+AS
 BEGIN
-    SELECT RAISE(ABORT, 'equipamento, cliente e atendente devem estar ativos para abrir uma OS (RN14)');
+    SET NOCOUNT ON;
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN equipamento e ON e.id_equipamento = i.id_equipamento
+        JOIN usuario cli ON cli.id_usuario = e.id_cliente
+        JOIN usuario atd ON atd.id_usuario = i.id_atendente
+        WHERE e.status <> 'ativo' OR cli.status <> 'ativo' OR atd.status <> 'ativo'
+    )
+    BEGIN
+        RAISERROR('equipamento, cliente e atendente devem estar ativos para abrir uma OS (RN14)', 16, 1);
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    END
 END;
 ```
 
@@ -124,25 +142,36 @@ O segundo impede a inativação de um registro com ordem de serviço em andament
 
 ```sql
 CREATE TRIGGER trg_usuario_valida_inativacao
-BEFORE UPDATE OF status ON usuario
-FOR EACH ROW
-WHEN NEW.status = 'inativo' AND OLD.status = 'ativo' AND (
-    EXISTS (SELECT 1 FROM os WHERE id_atendente = NEW.id_usuario AND status IN ('aberta', 'em_andamento'))
-    OR EXISTS (
-        SELECT 1 FROM tecnico_os t JOIN os o ON o.id_os = t.id_os
-        WHERE t.id_tecnico = NEW.id_usuario AND o.status IN ('aberta', 'em_andamento')
-    )
-    OR EXISTS (
-        SELECT 1 FROM equipamento e JOIN os o ON o.id_equipamento = e.id_equipamento
-        WHERE e.id_cliente = NEW.id_usuario AND o.status IN ('aberta', 'em_andamento')
-    )
-)
+ON usuario
+AFTER UPDATE
+AS
 BEGIN
-    SELECT RAISE(ABORT, 'usuario nao pode ser inativado com ordem de servico em andamento (RN14)');
+    SET NOCOUNT ON;
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN deleted d ON d.id_usuario = i.id_usuario
+        WHERE i.status = 'inativo' AND d.status = 'ativo'
+          AND (
+              EXISTS (SELECT 1 FROM os WHERE id_atendente = i.id_usuario AND status IN ('aberta', 'em_andamento'))
+              OR EXISTS (
+                  SELECT 1 FROM tecnico_os t JOIN os o ON o.id_os = t.id_os
+                  WHERE t.id_tecnico = i.id_usuario AND o.status IN ('aberta', 'em_andamento')
+              )
+              OR EXISTS (
+                  SELECT 1 FROM equipamento e JOIN os o ON o.id_equipamento = e.id_equipamento
+                  WHERE e.id_cliente = i.id_usuario AND o.status IN ('aberta', 'em_andamento')
+              )
+          )
+    )
+    BEGIN
+        RAISERROR('usuario nao pode ser inativado com ordem de servico em andamento (RN14)', 16, 1);
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    END
 END;
 ```
 
-A versão para `equipamento` segue a mesma lógica, restrita a `os.id_equipamento`. Script completo, com as quatro versões traduzidas para MySQL/MariaDB e SQL Server, em `schema.sql`/`schema_mysql.sql`/`schema_sqlserver.sql`. Validado nos três motores: a abertura de OS para cliente inativo é rejeitada; a inativação de atendente ou equipamento com OS aberta é rejeitada; a finalização da OS libera a inativação.
+A versão para `equipamento` segue a mesma lógica, restrita a `os.id_equipamento`. Script completo, com os quatro triggers, em [`schema_sqlserver.sql`](./schema_sqlserver.sql). Validado no SQL Server: a abertura de OS para cliente inativo é rejeitada; a inativação de atendente ou equipamento com OS aberta é rejeitada; a finalização da OS libera a inativação.
 
 ## Diagrama
 
@@ -246,81 +275,95 @@ erDiagram
 
 ## SQL - comandos principais
 
-Dialeto SQLite a seguir. A mesma modelagem está disponível em dois outros motores:
+Script completo: [`schema_sqlserver.sql`](./schema_sqlserver.sql), o modelo físico do projeto, usado pelo programa em C (`projeto/banco.c`). Os dados de exemplo ficam em [`dados_exemplo_sqlserver.sql`](./dados_exemplo_sqlserver.sql).
 
-| Script | Motor |
-|---|---|
-| [`schema.sql`](./schema.sql) | SQLite - referência |
-| [`schema_mysql.sql`](./schema_mysql.sql) | MySQL/MariaDB (XAMPP) |
-| [`schema_sqlserver.sql`](./schema_sqlserver.sql) | SQL Server - **modelo físico do projeto**, usado pelo programa em C (`projeto/banco.c`) |
-
-Os três scripts foram validados com inserções de teste executadas manualmente em cada motor. Duas diferenças de comportamento foram identificadas entre eles:
-
-- **SQL Server** trata `NULL` como valor igual a si mesmo em uma restrição `UNIQUE` comum, ao contrário de SQLite e MySQL, que permitem múltiplos valores `NULL`. Como `usuario.cpf` só é preenchido para clientes, essa diferença exigiu um índice único filtrado em vez de uma `UNIQUE` simples: `CREATE UNIQUE INDEX uq_usuario_cpf ON usuario (cpf) WHERE cpf IS NOT NULL;`, documentado em `schema_sqlserver.sql`.
-- **MySQL/MariaDB** usa `ENUM` nativo nos campos de domínio fixo (`perfil`, `status`, `categoria`), em vez de apenas `TEXT`/`VARCHAR` com `CHECK`; o phpMyAdmin exibe os valores permitidos diretamente na coluna "Type" da Structure. `ENUM` isoladamente não garante a restrição: com o `sql_mode` padrão do XAMPP (sem `STRICT_TRANS_TABLES`), um valor fora da lista é aceito e substituído silenciosamente por string vazia, em vez de gerar erro. Por esse motivo, `schema_mysql.sql` mantém `ENUM` (para a exibição no phpMyAdmin) e `CHECK` (para a validação), já que `CHECK` é avaliado independentemente do `sql_mode` da sessão.
+Uma particularidade do SQL Server: ele trata `NULL` como valor igual a si mesmo em uma restrição `UNIQUE` comum, ao contrário do SQL padrão, que permite múltiplos valores `NULL`. Como `usuario.cpf` só é preenchido para clientes, essa diferença exigiu um índice único filtrado em vez de uma `UNIQUE` simples: `CREATE UNIQUE INDEX uq_usuario_cpf ON usuario (cpf) WHERE cpf IS NOT NULL;`.
 
 ```sql
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE usuario (
-    id_usuario     INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome           TEXT    NOT NULL,
-    email          TEXT    NOT NULL UNIQUE,
-    telefone       TEXT,
-    senha          TEXT    NOT NULL,
-    perfil         TEXT    NOT NULL CHECK (perfil IN ('admin', 'recepcionista', 'tecnico', 'cliente')),
-    cpf            TEXT    UNIQUE,
-    especialidade  TEXT,
-    status         TEXT    NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo')),
-    criado_em      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_usuario     INT             IDENTITY(1,1) PRIMARY KEY,
+    nome           NVARCHAR(120)   NOT NULL,
+    email          NVARCHAR(120)   NOT NULL,
+    telefone       NVARCHAR(20)    NULL,
+    senha          NVARCHAR(255)   NOT NULL,
+    perfil         NVARCHAR(20)    NOT NULL,
+    cpf            NVARCHAR(14)    NULL,
+    especialidade  NVARCHAR(80)    NULL,
+    status         NVARCHAR(10)    NOT NULL DEFAULT 'ativo',
+    criado_em      DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    atualizado_em  DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT uq_usuario_email    UNIQUE (email),
+    CONSTRAINT chk_usuario_perfil CHECK (perfil IN ('admin', 'recepcionista', 'tecnico', 'cliente')),
+    CONSTRAINT chk_usuario_status CHECK (status IN ('ativo', 'inativo'))
 );
 
+-- cpf so e' preenchido para perfil = cliente (RN13). Uma UNIQUE constraint comum
+-- barraria isso: ao contrario do SQL padrao, o SQL Server trata NULL
+-- como valor igual a si mesmo numa UNIQUE constraint, entao a partir do 2o usuario
+-- sem cpf (admin, recepcionista, tecnico) o INSERT falharia. Um indice UNICO
+-- FILTRADO resolve: unico so entre os valores nao nulos.
+CREATE UNIQUE INDEX uq_usuario_cpf ON usuario (cpf) WHERE cpf IS NOT NULL;
+
+-- id_cliente e' uma FK simples para usuario - o perfil certo (cliente, RN16)
+-- e' garantido pelo trigger no final do arquivo, nao por uma coluna redundante.
 CREATE TABLE equipamento (
-    id_equipamento       INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_cliente           INTEGER NOT NULL REFERENCES usuario(id_usuario),
-    categoria            TEXT    NOT NULL CHECK (categoria IN ('hardware', 'software')),
-    tipo                 TEXT,
-    marca                TEXT,
-    modelo_numero_serie  TEXT,
-    status               TEXT    NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo')),
-    criado_em            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_equipamento       INT             IDENTITY(1,1) PRIMARY KEY,
+    id_cliente           INT             NOT NULL,
+    categoria            NVARCHAR(10)    NOT NULL,
+    tipo                 NVARCHAR(60)    NULL,
+    marca                NVARCHAR(60)    NULL,
+    modelo_numero_serie  NVARCHAR(120)   NULL,
+    status               NVARCHAR(10)    NOT NULL DEFAULT 'ativo',
+    criado_em            DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    atualizado_em        DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT fk_equipamento_cliente FOREIGN KEY (id_cliente) REFERENCES usuario (id_usuario),
+    CONSTRAINT chk_equipamento_categoria CHECK (categoria IN ('hardware', 'software')),
+    CONSTRAINT chk_equipamento_status CHECK (status IN ('ativo', 'inativo'))
 );
 
 CREATE TABLE os (
-    id_os                       INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_equipamento              INTEGER NOT NULL REFERENCES equipamento(id_equipamento),
-    id_atendente                INTEGER NOT NULL REFERENCES usuario(id_usuario),
-    data_abertura               DATE    NOT NULL DEFAULT CURRENT_DATE,
-    problema_relatado           TEXT,
-    diagnostico                 TEXT,
-    orcamento                   DECIMAL(10,2),
-    status                      TEXT    NOT NULL DEFAULT 'aberta'
-                                 CHECK (status IN ('aberta', 'em_andamento', 'finalizada', 'cancelada')),
-    resultado_resposta_cliente  TEXT    CHECK (resultado_resposta_cliente IN ('aprovado', 'recusado')),
-    data_entrega                DATE,
-    resultado_teste             TEXT    CHECK (resultado_teste IN ('aprovado', 'reprovado')),
-    valor_pago                  DECIMAL(10,2),
-    feedback_cliente            TEXT,
-    satisfeito                  TEXT    CHECK (satisfeito IN ('sim', 'nao')),
-    criado_em                   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_os                       INT             IDENTITY(1,1) PRIMARY KEY,
+    id_equipamento              INT             NOT NULL,
+    id_atendente                INT             NOT NULL,
+    data_abertura               DATE            NOT NULL,
+    problema_relatado           NVARCHAR(MAX)   NULL,
+    diagnostico                 NVARCHAR(MAX)   NULL,
+    orcamento                   DECIMAL(10,2)   NULL,
+    status                      NVARCHAR(20)    NOT NULL DEFAULT 'aberta',
+    resultado_resposta_cliente  NVARCHAR(10)    NULL,
+    data_entrega                DATE            NULL,
+    resultado_teste             NVARCHAR(10)    NULL,
+    valor_pago                  DECIMAL(10,2)   NULL,
+    feedback_cliente            NVARCHAR(MAX)   NULL,
+    satisfeito                  NVARCHAR(5)     NULL,
+    criado_em                   DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    atualizado_em                DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT fk_os_equipamento FOREIGN KEY (id_equipamento) REFERENCES equipamento (id_equipamento),
+    CONSTRAINT fk_os_atendente   FOREIGN KEY (id_atendente)   REFERENCES usuario (id_usuario),
+    CONSTRAINT chk_os_status CHECK (status IN ('aberta', 'em_andamento', 'finalizada', 'cancelada')),
+    CONSTRAINT chk_os_resultado_teste CHECK (resultado_teste IN ('aprovado', 'reprovado')),
+    CONSTRAINT chk_os_resposta_cliente CHECK (resultado_resposta_cliente IN ('aprovado', 'recusado')),
+    CONSTRAINT chk_os_satisfeito CHECK (satisfeito IN ('sim', 'nao'))
 );
 
+-- Associativa tecnico <-> os. id_tecnico e' uma FK simples para usuario - o
+-- perfil certo (tecnico, ou admin cobrindo ausencia, RN11/RN15) e' garantido
+-- pelo trigger no final do arquivo, nao por uma coluna redundante.
 CREATE TABLE tecnico_os (
-    id_tecnico_os        INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_tecnico           INTEGER NOT NULL REFERENCES usuario(id_usuario),
-    id_os                INTEGER NOT NULL REFERENCES os(id_os),
-    data_atribuicao      DATE    NOT NULL DEFAULT CURRENT_DATE,
-    observacoes_tecnicas TEXT,
-    criado_em            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_tecnico_os        INT             IDENTITY(1,1) PRIMARY KEY,
+    id_tecnico           INT             NOT NULL,
+    id_os                INT             NOT NULL,
+    data_atribuicao      DATE            NOT NULL,
+    observacoes_tecnicas NVARCHAR(MAX)   NULL,
+    criado_em            DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    atualizado_em        DATETIME2       NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT fk_tecnico_os_tecnico FOREIGN KEY (id_tecnico) REFERENCES usuario (id_usuario),
+    CONSTRAINT fk_tecnico_os_os      FOREIGN KEY (id_os)      REFERENCES os (id_os)
 );
 
--- + 9 triggers: 4 de integridade de papel (RN15, RN16), 4 de status/RN14
+-- + 7 triggers: 2 de integridade de papel (RN15, RN16), 4 de status/RN14
 -- e 1 de alteracao de perfil - ver "Integridade de papel" e "Integridade
--- de status" acima. Script completo em schema.sql.
+-- de status" acima. Script completo em schema_sqlserver.sql.
 ```
 
 ## Exemplo - OS com dois técnicos

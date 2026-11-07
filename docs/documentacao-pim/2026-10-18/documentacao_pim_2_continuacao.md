@@ -419,7 +419,7 @@ Essas decisões contribuem para a organização dos dados, mas não substituem u
 
 ## 5.4 Modelo físico e integridade
 
-O projeto contém scripts para SQLite, MySQL e SQL Server. O SQL Server é o banco indicado para a futura integração com o programa em C. Seu script utiliza `INT IDENTITY` nos identificadores, `NVARCHAR` nos textos, `DATE` nas datas de atendimento, `DATETIME2` nos registros de criação e alteração e `DECIMAL(10,2)` nos valores monetários.
+O banco do projeto é o SQL Server, usado pelo programa em C. O script utiliza `INT IDENTITY` nos identificadores, `NVARCHAR` nos textos, `DATE` nas datas de atendimento, `DATETIME2` nos registros de criação e alteração e `DECIMAL(10,2)` nos valores monetários.
 
 Quadro 8 — Restrições presentes no modelo físico
 

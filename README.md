@@ -71,7 +71,13 @@ O programa entra no SQL Server com o login do Windows. Para mudar a conexão, de
 - `BYTETECH_DB_PASSWORD`: senha do `sa`, para entrar com usuário do SQL em vez do login do Windows
 - `BYTETECH_DB_NAME`: outro banco no lugar do `bytetech` (ex.: `bytetech_teste`, para testar sem mexer nos dados)
 
-Para rodar no Linux/WSL (ou com SQL Server no Docker), veja o [Kit ByteTech](./projeto/Kit_ByteTech_Git/README.md).
+No Linux/WSL o código é o mesmo; troque só a linha de compilação e entre com o `sa` (no Linux não existe login do Windows):
+
+```
+export BYTETECH_DB_PASSWORD='senha-do-sa'
+gcc main.c banco.c -o output/main -lodbc
+./output/main
+```
 
 Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrador), `carla@bytetech.com` (Recepcionista), `rafael@bytetech.com` (Técnico) e `joao.pereira@email.com` (Cliente). Para voltar aos dados de exemplo depois de testar, rode de novo os dois comandos `sqlcmd` acima.
 
