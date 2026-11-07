@@ -1,5 +1,5 @@
 -- ByteTech - Sistema de Gestao de Manutencao de Equipamentos
--- Modelo fisico para SQL Server. Equivalente a schema.sql (SQLite) / schema_mysql.sql (XAMPP).
+-- Modelo fisico (SQL Server). Script oficial do banco do projeto.
 -- Detalhes e justificativas em der-simplificado.md.
 
 IF DB_ID('bytetech') IS NULL
@@ -39,7 +39,7 @@ CREATE TABLE usuario (
 GO
 
 -- cpf so e' preenchido para perfil = cliente (RN13). Uma UNIQUE constraint comum
--- barraria isso: ao contrario de SQLite/MySQL/ANSI SQL, o SQL Server trata NULL
+-- barraria isso: ao contrario do SQL padrao, o SQL Server trata NULL
 -- como valor igual a si mesmo numa UNIQUE constraint, entao a partir do 2o usuario
 -- sem cpf (admin, recepcionista, tecnico) o INSERT falharia. Um indice UNICO
 -- FILTRADO resolve: unico so entre os valores nao nulos.
