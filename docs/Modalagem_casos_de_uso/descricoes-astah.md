@@ -2149,7 +2149,7 @@ Observação: o nome da elipse no diagrama está "Consultar Histórico dos Equip
 ### UC43 - Consultar Relatórios
 
 **Summary**
-Permite que o Admin consulte quantas OS foram abertas em cada mês de um ano, separadas por status (RF10). Disponível apenas para o Admin (associação direta).
+Permite que o Admin consulte indicadores operacionais sobre o histórico, filtrando por período (RF10). Disponível apenas para o Admin (associação direta).
 
 **Actor**
 Admin (associação direta).
@@ -2162,14 +2162,14 @@ Nenhuma alteração de estado. Consulta apenas.
 
 **Base Sequence**
 1. O Admin seleciona a opção "Histórico e Relatórios > Relatórios" no menu.
-2. O sistema solicita o ano (ENTER para o ano atual).
-3. O Admin informa o ano.
-4. O sistema conta as OS abertas no ano numa matriz de 12 meses por 4 status (aberta, em andamento, finalizada e cancelada) e conta os clientes satisfeitos.
-5. O sistema exibe a tabela, um mês por linha, e o total de clientes satisfeitos.
+2. O sistema exibe os relatórios disponíveis e solicita o período.
+3. O Admin escolhe o relatório e informa o período.
+4. O sistema calcula as contagens e os indicadores operacionais do período (ex.: quantos equipamentos passaram por manutenção).
+5. O sistema exibe o relatório.
 6. O caso de uso é encerrado.
 
 **Branch Sequence**
-4a: Mês sem OS no ano. O mês não aparece na tabela.
+4a: Nenhum dado no período. O sistema informa que não há registros para o período escolhido. Retorna ao passo 2.
 
 *a: Voltar ao menu (em qualquer passo). O ator escolhe voltar. O sistema retorna ao menu anterior. O caso de uso é encerrado.
 
@@ -2182,5 +2182,6 @@ Não se aplica.
 **Note**
 Associação direta: caso de uso exclusivo do Admin (RN05), ligado diretamente a ele no diagrama. Não depende da generalização.
 Regras: RN06 - o Admin consulta quaisquer dados; RN10 - funcionalidade exclusiva do perfil Admin.
-Dados: lê `os` (contagens por mês de data_abertura e por status, e o campo satisfeito).
+Dados: lê `os` (contagens por data_abertura, status e equipamento).
+Histórico: de 20/10 a 02/11/2026, o programa usou um relatório por ano, com uma matriz de 12 meses por 4 status; na integração com o SQL Server voltou a seguir este caso de uso, por período.
 Observação: não inclui indicadores financeiros, de custo ou gerenciais, que estão fora do escopo (ver requisitos.md, Fora do Escopo).

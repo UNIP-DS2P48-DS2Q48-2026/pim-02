@@ -111,14 +111,15 @@ Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrado
 | [Dicionário de Dados](<./docs/dicionario-de-dados/Dicionário de Dados - ByteTech.pdf>) ([Word](<./docs/dicionario-de-dados/Dicionário de Dados - ByteTech.docx>)) | Resumo das 4 tabelas e dos relacionamentos, colunas de cada tabela (tipo, comprimento, restrições, valor padrão e descrição) e mapeamento das chaves estrangeiras, no formato pedido em Modelagem de Banco de Dados |
 | [DER Simplificado](./docs/Modelagem_DB/der-simplificado.md) | As 4 tabelas do sistema (`usuario`, `equipamento`, `os`, `tecnico_os`), campos, regras de negócio reforçadas por trigger e diagrama entidade-relacionamento |
 | [Modelagem do Banco de Dados](./docs/Modelagem_DB/) | Modelo anterior, mantido como histórico (abrir com [brModelo](https://www.sis4win.com.br/brmodelo/)) |
+| [Documento de Modelagem](<./docs/guia-modelagem/ByteTech - Documento de Modelagem.pdf>) ([Word](<./docs/guia-modelagem/ByteTech - Documento de Modelagem.docx>)) | Guia da modelagem do sistema e do banco de dados |
 
 ### Documentação Acadêmica
 
 | Documento | Conteúdo |
 |---|---|
-| [Documento do PIM - início](./docs/documentacao-pim/2026-10-12/documentacao_pim_2_inicio.md) | Texto do trabalho em construção: resumo, introdução, caracterização da empresa, pesquisa, engenharia de software e planejamento ágil |
-| [Documento do PIM - continuação](./docs/documentacao-pim/2026-10-18/documentacao_pim_2_continuacao.md) | Continuação do texto do trabalho (versão de 18/10) |
+| [Documento do PIM - início](./docs/documentacao-pim/2026-10-12/documentacao_pim_2_inicio.md) | Rascunho de 12/10, anterior ao documento final: resumo, introdução, caracterização da empresa, pesquisa, engenharia de software e planejamento ágil |
+| [Documento do PIM - continuação](./docs/documentacao-pim/2026-10-18/documentacao_pim_2_continuacao.md) | Rascunho de 18/10 com a continuação do texto, anterior ao documento final |
 | [Manual PIM II - ADS (PDF)](<./docs/manual-pim/Manual_PIM_II - ADS.pdf>) | Manual acadêmico oficial exigido pela instituição |
 | [Manual PIM II - ADS (Word)](<./docs/manual-pim/Manual_PIM_II - ADS.docx>) | Versão editável do manual acadêmico |
 
-O backup não se limita à documentação em Word: todo o conteúdo do repositório é versionado pelo Git, com histórico completo de alterações. O texto do trabalho é escrito em Markdown em [`docs/documentacao-pim/`](./docs/documentacao-pim/) e depois passado para o formato do manual.
+O backup não se limita à documentação em Word: todo o conteúdo do repositório é versionado pelo Git, com histórico completo de alterações. O texto do trabalho foi escrito em Markdown em [`docs/documentacao-pim/`](./docs/documentacao-pim/) e depois passado para o formato do manual. Os arquivos dessa pasta são rascunhos mantidos como histórico; o documento final foi concluído na Sprint 09 (11/11/2026).
