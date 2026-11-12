@@ -13,7 +13,6 @@ Projeto acadêmico (PIM) desenvolvido em **linguagem C** com interface em **term
 | Dev | Arthur dos Santos Moraes | H9189A5 |
 | Dev | Brunno Miranda da Silveira | H94GJG9 |
 | Dev | Matheus Gonçalves da Silva | H987814 |
-| Dev | Natália Nunes Vieira | R3129I8 |
 
 ## Sobre a empresa
 
