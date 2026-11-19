@@ -111,7 +111,7 @@ Os usuários de exemplo usam a senha `byte123`: `ana@bytetech.com` (Administrado
 | [Dicionário de Dados](<./docs/dicionario-de-dados/Dicionário de Dados - ByteTech.pdf>) ([Word](<./docs/dicionario-de-dados/Dicionário de Dados - ByteTech.docx>)) | Resumo das 4 tabelas e dos relacionamentos, colunas de cada tabela (tipo, comprimento, restrições, valor padrão e descrição) e mapeamento das chaves estrangeiras, no formato pedido em Modelagem de Banco de Dados |
 | [DER Simplificado](./docs/Modelagem_DB/der-simplificado.md) | As 4 tabelas do sistema (`usuario`, `equipamento`, `os`, `tecnico_os`), campos, regras de negócio reforçadas por trigger e diagrama entidade-relacionamento |
 | [Modelagem do Banco de Dados](./docs/Modelagem_DB/) | Modelo anterior, mantido como histórico (abrir com [brModelo](https://www.sis4win.com.br/brmodelo/)) |
-| [Documento de Modelagem](<./docs/guia-modelagem/ByteTech - Documento de Modelagem.pdf>) ([Word](<./docs/guia-modelagem/ByteTech - Documento de Modelagem.docx>)) | Guia da modelagem do sistema e do banco de dados |
+| [Material de Apoio](<./docs/material-apoio/ByteTech - Material de Apoio.pdf>) ([Word](<./docs/material-apoio/ByteTech - Material de Apoio.docx>)) | Material de apoio à modelagem do sistema, do banco de dados e à organização do código |
 
 ### Documentação Acadêmica
 
